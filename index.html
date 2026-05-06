@@ -3005,6 +3005,7 @@
   refreshLetterMeta();
   milestones = loadMilestones();
   loadJournal();
+  loadPlaces();
   applyState({
     dob: initialDOB,
     sex: initialSex,
@@ -3026,6 +3027,7 @@
   renderMilestones();
   renderMilestonePins();
   renderRecentJournal();
+  renderPlacesList();
 
   // ---- Wiring ----
   slider.addEventListener('input', update);
@@ -3228,11 +3230,109 @@
       if (text) letters[ageKey] = text; else delete letters[ageKey];
       writeLS('lifeStages.letters', JSON.stringify(letters));
       refreshLetterMeta();
-      // Update display in real-time if slider is on this letter
+      scheduleCloudSave();
       const currentAge = parseInt(slider.value, 10);
       if (Math.abs(ageKey - currentAge) <= 1) update();
     });
   });
+
+  // Photo upload (Phase 3) — file input + drag/drop
+  const photoArea = document.getElementById('photoUploadArea');
+  const photoInput = document.getElementById('photoInput');
+  photoInput.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please pick an image file.');
+      return;
+    }
+    try {
+      modalPhoto = await resizeImage(file);
+      setModalPhotoUI(modalPhoto);
+    } catch (err) {
+      alert('Could not read that image.');
+    }
+    photoInput.value = '';
+  });
+  photoArea.addEventListener('dragover', (e) => { e.preventDefault(); photoArea.style.borderColor = 'var(--accent)'; });
+  photoArea.addEventListener('dragleave', () => { photoArea.style.borderColor = ''; });
+  photoArea.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    photoArea.style.borderColor = '';
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    try { modalPhoto = await resizeImage(file); setModalPhotoUI(modalPhoto); } catch (err) {}
+  });
+  document.getElementById('removePhoto').addEventListener('click', () => {
+    modalPhoto = '';
+    setModalPhotoUI('');
+  });
+
+  // Places form (Phase 2)
+  const placesForm = document.getElementById('placesForm');
+  const placeAddBtn = document.getElementById('placeAddBtn');
+  const geoStatus = document.getElementById('geoStatus');
+  placesForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('placeQuery').value.trim();
+    const ageVal = parseInt(document.getElementById('placeYear').value, 10);
+    const note = document.getElementById('placeNote').value.trim();
+    if (!query || isNaN(ageVal) || ageVal < 0 || ageVal > SLIDER_MAX) return;
+    placeAddBtn.disabled = true;
+    geoStatus.textContent = 'Looking up location…';
+    try {
+      const result = await geocode(query);
+      places.push({
+        name: query,
+        displayName: result.displayName,
+        lat: result.lat,
+        lng: result.lng,
+        year: ageVal,
+        note
+      });
+      places.sort((a, b) => a.year - b.year);
+      savePlaces();
+      renderPlacesList(parseInt(slider.value, 10));
+      renderPlacesOnMap();
+      scheduleCloudSave();
+      document.getElementById('placeQuery').value = '';
+      document.getElementById('placeYear').value = '';
+      document.getElementById('placeNote').value = '';
+      geoStatus.textContent = '';
+    } catch (err) {
+      geoStatus.textContent = `Couldn't find "${query}". Try with country name.`;
+    } finally {
+      placeAddBtn.disabled = false;
+    }
+  });
+
+  // Trigger cloud save on existing UI changes by piggy-backing on existing handlers
+  // (We've added scheduleCloudSave() calls above for photos & letters & places already.)
+  // Add it to the personalize fields, milestones, year tags, priorities, sex, theme, journal.
+  ['change', 'input'].forEach(evt => {
+    [dobInput, countryInput, partnershipInput, kidsInput, careerInput, retirementInput,
+     document.getElementById('smokerInput'), document.getElementById('exerciseInput'),
+     document.getElementById('sleepInput'), document.getElementById('longevityInput'),
+     document.getElementById('bestYearInput'), document.getElementById('hardestYearInput')]
+      .forEach(el => el && el.addEventListener(evt, scheduleCloudSave));
+  });
+  sexButtons.forEach(b => b.addEventListener('click', scheduleCloudSave));
+  themeButtons.forEach(b => b.addEventListener('click', scheduleCloudSave));
+  document.querySelectorAll('.priority-chip').forEach(c => c.addEventListener('click', scheduleCloudSave));
+  document.getElementById('milestoneForm').addEventListener('submit', () => setTimeout(scheduleCloudSave, 50));
+
+  // Slide-to-highlight matching places
+  slider.addEventListener('input', () => {
+    renderPlacesList(parseInt(slider.value, 10));
+  });
+
+  // Init Leaflet map + Supabase auth (after CDNs load)
+  function startMapWhenReady() {
+    if (typeof L === 'undefined') { setTimeout(startMapWhenReady, 200); return; }
+    initMap();
+  }
+  startMapWhenReady();
+  initSupabase();
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !journalModal.hidden) { closeJournalModal(); return; }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
