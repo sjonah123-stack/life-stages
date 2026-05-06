@@ -44,8 +44,55 @@
   }
   header p {
     color: var(--ink-dim);
-    margin: 0 0 32px;
+    margin: 0 0 24px;
     font-size: 16px;
+  }
+  .personalize {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding: 14px 18px;
+    background: var(--panel);
+    border: 1px solid #232636;
+    border-radius: 12px;
+  }
+  .personalize label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    font-weight: 600;
+  }
+  .personalize input[type=date] {
+    background: var(--panel-2);
+    border: 1px solid #2c3046;
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color-scheme: dark;
+  }
+  .personalize button {
+    background: var(--accent);
+    color: #0e0f13;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .personalize button:hover { opacity: 0.85; }
+  .personalize button.copied { background: var(--health); }
+  .personalize .hint {
+    color: var(--ink-faint);
+    font-size: 12px;
+    margin-left: auto;
   }
   .stat-row {
     display: grid;
@@ -312,8 +359,15 @@
 <div class="container">
   <header>
     <h1>Your life, on a single line.</h1>
-    <p>Drag the slider to step through every year. Anchored to your birthdate (Dec 4, 2002) and a 90-year horizon.</p>
+    <p id="subtitle">Drag the slider to step through every year of a 90-year life.</p>
   </header>
+
+  <div class="personalize">
+    <label for="dobInput">Your birthdate</label>
+    <input type="date" id="dobInput" max="" />
+    <button id="copyShare" type="button" title="Copy a shareable link with this birthdate baked in">Copy share link</button>
+    <span class="hint">Send the link — it'll personalize automatically.</span>
+  </div>
 
   <div class="stat-row">
     <div class="stat">
@@ -406,35 +460,53 @@
 </div>
 
 <script>
-  const BIRTHDATE = new Date(2002, 11, 4); // Dec 4, 2002 (months are 0-indexed)
   const LIFESPAN = 90;
   const TOTAL_WEEKS = LIFESPAN * 52;
+  const DEFAULT_DOB = "2002-12-04";
 
-  // ----- Computed personal stats -----
-  function daysBetween(a, b) {
-    return Math.floor((b - a) / 86400000);
-  }
-  function ageInYears(now) {
-    let years = now.getFullYear() - BIRTHDATE.getFullYear();
-    const m = now.getMonth() - BIRTHDATE.getMonth();
-    if (m < 0 || (m === 0 && now.getDate() < BIRTHDATE.getDate())) years--;
+  // Mutable birthdate-derived state — recomputed on every birthdate change.
+  let BIRTHDATE, todayAge, todayPrecise, daysLived, daysRemaining, lifePct, weeksLived;
+
+  function daysBetween(a, b) { return Math.floor((b - a) / 86400000); }
+  function ageInYears(now, dob) {
+    let years = now.getFullYear() - dob.getFullYear();
+    const m = now.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) years--;
     return years;
   }
-  function preciseAge(now) {
-    const totalDays = daysBetween(BIRTHDATE, now);
-    return totalDays / 365.2425;
+  function parseDOB(str) {
+    // Expect "YYYY-MM-DD". Return Date in local time (no TZ surprises).
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str);
+    if (!m) return null;
+    const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+    if (isNaN(d.getTime())) return null;
+    const today = new Date();
+    if (d > today) return null; // future birthdates not allowed
+    if (d.getFullYear() < 1900) return null;
+    return d;
+  }
+  function formatDOB(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  function prettyDOB(d) {
+    return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
   }
 
-  const now = new Date();
-  const todayAge = ageInYears(now);
-  const todayPrecise = preciseAge(now);
-  const daysLived = daysBetween(BIRTHDATE, now);
-  const totalDaysInLife = LIFESPAN * 365.2425;
-  const daysRemaining = Math.max(0, Math.round(totalDaysInLife - daysLived));
-  const lifePct = (todayPrecise / LIFESPAN) * 100;
-  const weeksLived = Math.floor(daysLived / 7);
-
-  // Stats now update with the slider — see updateStats() inside update().
+  function recomputePersonal(dob) {
+    BIRTHDATE = dob;
+    const now = new Date();
+    todayAge = ageInYears(now, dob);
+    const totalDays = daysBetween(dob, now);
+    todayPrecise = totalDays / 365.2425;
+    daysLived = totalDays;
+    const totalDaysInLife = LIFESPAN * 365.2425;
+    daysRemaining = Math.max(0, Math.round(totalDaysInLife - daysLived));
+    lifePct = (todayPrecise / LIFESPAN) * 100;
+    weeksLived = Math.floor(daysLived / 7);
+  }
 
   // ----- Stage definitions -----
   // Each stage is keyed by [minAge, maxAge] (inclusive).
@@ -543,11 +615,15 @@
 
   // ----- Slider wiring -----
   const slider = document.getElementById('ageSlider');
-  slider.value = todayAge;
+  const subtitle = document.getElementById('subtitle');
+  const dobInput = document.getElementById('dobInput');
+  const copyBtn = document.getElementById('copyShare');
+  // Don't allow picking a future birthdate
+  dobInput.max = formatDOB(new Date());
 
   function setNowMarker() {
     const marker = document.getElementById('nowMarker');
-    const pct = (todayAge / LIFESPAN) * 100;
+    const pct = Math.max(0, Math.min(100, (todayAge / LIFESPAN) * 100));
     marker.style.left = `calc(${pct}% + ${(0.5 - pct/100) * 24}px)`;
   }
 
@@ -605,7 +681,7 @@
 
   // ----- Weeks grid -----
   const weeksGrid = document.getElementById('weeksGrid');
-  // Build once: 90 rows * 52 cols = 4680 cells
+  // Build once: 90 rows * 52 cols = 4680 cells. Painting lived/now is dynamic.
   const weekEls = [];
   for (let y = 0; y < LIFESPAN; y++) {
     for (let w = 0; w < 52; w++) {
@@ -613,12 +689,17 @@
       el.className = 'week';
       el.dataset.year = y;
       el.dataset.week = w;
-      const weekIndex = y * 52 + w;
-      if (weekIndex < weeksLived) el.classList.add('lived');
-      if (weekIndex === weeksLived) el.classList.add('now');
       weeksGrid.appendChild(el);
       weekEls.push(el);
     }
+  }
+
+  function paintWeeksByDOB() {
+    weekEls.forEach((el, i) => {
+      el.classList.remove('lived', 'now');
+      if (i < weeksLived) el.classList.add('lived');
+      else if (i === weeksLived) el.classList.add('now');
+    });
   }
 
   let lastSelectedYear = -1;
@@ -640,12 +721,55 @@
     lastSelectedYear = age;
   }
 
+  function applyDOB(dob, { syncURL = true } = {}) {
+    recomputePersonal(dob);
+    dobInput.value = formatDOB(dob);
+    subtitle.textContent =
+      `Drag the slider to step through every year. Anchored to ${prettyDOB(dob)} and a 90-year horizon.`;
+    paintWeeksByDOB();
+    setNowMarker();
+    // Snap the slider to the new "today" so the cards make sense immediately
+    slider.value = Math.max(0, Math.min(LIFESPAN, todayAge));
+    update();
+    if (syncURL) {
+      const u = new URL(window.location.href);
+      u.searchParams.set('dob', formatDOB(dob));
+      window.history.replaceState(null, '', u);
+    }
+  }
+
+  // Initial DOB: from ?dob= URL param if valid, else default.
+  const urlDOB = new URL(window.location.href).searchParams.get('dob');
+  const initialDOB = (urlDOB && parseDOB(urlDOB)) || parseDOB(DEFAULT_DOB);
+  applyDOB(initialDOB, { syncURL: false });
+
+  // Wiring
   slider.addEventListener('input', update);
-  setNowMarker();
-  update();
+  dobInput.addEventListener('change', () => {
+    const d = parseDOB(dobInput.value);
+    if (d) applyDOB(d);
+  });
+  copyBtn.addEventListener('click', async () => {
+    const u = new URL(window.location.href);
+    u.searchParams.set('dob', formatDOB(BIRTHDATE));
+    try {
+      await navigator.clipboard.writeText(u.toString());
+      const original = copyBtn.textContent;
+      copyBtn.textContent = 'Copied!';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = original;
+        copyBtn.classList.remove('copied');
+      }, 1400);
+    } catch (e) {
+      // Fallback: select-and-prompt
+      window.prompt('Copy this link:', u.toString());
+    }
+  });
 
   // Keyboard niceties
   document.addEventListener('keydown', (e) => {
+    if (e.target === dobInput) return;
     if (e.key === 'Home') { slider.value = 0; update(); }
     if (e.key === 'End') { slider.value = LIFESPAN; update(); }
     if (e.key === 't' || e.key === 'T') { slider.value = todayAge; update(); }
