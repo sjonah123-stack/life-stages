@@ -2623,6 +2623,314 @@
     window.history.replaceState(null, '', u);
   }
 
+  // ---- Phase 2: Places + Map ----
+  let leafletMap = null;
+  let placeMarkers = [];
+
+  function initMap() {
+    if (typeof L === 'undefined') return; // Leaflet not loaded yet
+    if (leafletMap) return;
+    leafletMap = L.map('placesMap', { worldCopyJump: true }).setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 18
+    }).addTo(leafletMap);
+    renderPlacesOnMap();
+  }
+  function renderPlacesOnMap() {
+    if (!leafletMap) return;
+    placeMarkers.forEach(m => leafletMap.removeLayer(m));
+    placeMarkers = [];
+    places.forEach(p => {
+      const marker = L.marker([p.lat, p.lng]);
+      const note = p.note ? `<br><em>${escapeHtml(p.note)}</em>` : '';
+      marker.bindPopup(`<strong>${escapeHtml(p.name)}</strong><br>Age ${p.year}${note}`);
+      marker.addTo(leafletMap);
+      placeMarkers.push(marker);
+    });
+    if (places.length > 0) {
+      const group = L.featureGroup(placeMarkers);
+      try { leafletMap.fitBounds(group.getBounds().pad(0.2), { maxZoom: 6 }); } catch (e) {}
+    }
+  }
+  function renderPlacesList(highlightAge) {
+    const list = document.getElementById('placesList');
+    const stats = document.getElementById('placesStats');
+    const countries = new Set(places.map(p => p.displayName?.split(',').pop()?.trim()).filter(Boolean));
+    stats.innerHTML = `
+      <span><span class="stat-num">${places.length}</span>place${places.length===1?'':'s'}</span>
+      <span><span class="stat-num">${countries.size}</span>${countries.size===1?'country':'countries'}</span>`;
+    if (places.length === 0) {
+      list.innerHTML = '<div class="milestone-empty">No places yet — add a city you\'ve loved.</div>';
+      return;
+    }
+    list.innerHTML = places.map((p, i) => {
+      const hi = (highlightAge !== undefined && p.year === highlightAge) ? ' highlighted' : '';
+      return `<span class="place-chip${hi}" data-idx="${i}">
+        <span class="age">${p.year}</span>
+        <span>${escapeHtml(p.name)}</span>
+        <button class="remove" data-idx="${i}" title="Remove">×</button>
+      </span>`;
+    }).join('');
+    list.querySelectorAll('.place-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove')) return;
+        const idx = parseInt(chip.dataset.idx, 10);
+        const p = places[idx];
+        if (p && leafletMap) leafletMap.flyTo([p.lat, p.lng], 8, { duration: 0.8 });
+      });
+    });
+    list.querySelectorAll('.remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.idx, 10);
+        places.splice(idx, 1);
+        savePlaces();
+        renderPlacesList();
+        renderPlacesOnMap();
+        scheduleCloudSave();
+      });
+    });
+  }
+  function savePlaces() {
+    writeLS('lifeStages.places', JSON.stringify(places));
+  }
+  function loadPlaces() {
+    try { places = JSON.parse(readLS('lifeStages.places') || '[]') || []; }
+    catch (e) { places = []; }
+  }
+  async function geocode(query) {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error('Geocoder error');
+    const data = await res.json();
+    if (!data || data.length === 0) throw new Error('No results');
+    return {
+      lat: parseFloat(data[0].lat),
+      lng: parseFloat(data[0].lon),
+      displayName: data[0].display_name
+    };
+  }
+
+  // ---- Phase 3: Photo per week ----
+  // Journal entries upgraded from string to {text, photo} object.
+  // Backward compat: existing string entries treated as {text}.
+  function getEntry(key) {
+    const raw = journal[key];
+    if (raw == null) return { text: '', photo: '' };
+    if (typeof raw === 'string') return { text: raw, photo: '' };
+    return { text: raw.text || '', photo: raw.photo || '' };
+  }
+  function setEntry(key, entry) {
+    if (!entry.text && !entry.photo) {
+      delete journal[key];
+    } else {
+      journal[key] = { text: entry.text || '', photo: entry.photo || '' };
+    }
+  }
+  function entryHasText(key) {
+    const e = getEntry(key);
+    return !!(e.text && e.text.trim());
+  }
+  function entryHasPhoto(key) {
+    return !!getEntry(key).photo;
+  }
+  // Resize image to max 800px on long edge, JPEG quality 0.82
+  async function resizeImage(file) {
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = dataUrl;
+    });
+    const MAX = 800;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvas.toDataURL('image/jpeg', 0.82);
+  }
+
+  // ---- Phase 1: Supabase auth + cloud sync ----
+  function supabaseConfigured() {
+    return !!(SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL.startsWith('http'));
+  }
+  function initSupabase() {
+    if (!supabaseConfigured()) {
+      renderAuthSlot(null, true);
+      return;
+    }
+    if (typeof window.supabase === 'undefined') {
+      // CDN may not have loaded yet; retry shortly
+      setTimeout(initSupabase, 200);
+      return;
+    }
+    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supa.auth.onAuthStateChange((_event, session) => {
+      currentUser = session?.user || null;
+      renderAuthSlot(currentUser, false);
+      if (currentUser) loadFromCloud();
+    });
+    supa.auth.getSession().then(({ data }) => {
+      currentUser = data.session?.user || null;
+      renderAuthSlot(currentUser, false);
+      if (currentUser) loadFromCloud();
+    });
+  }
+  function renderAuthSlot(user, notConfigured) {
+    const slot = document.getElementById('authSlot');
+    if (notConfigured) {
+      slot.innerHTML = '';
+      return;
+    }
+    if (!user) {
+      slot.innerHTML = `<button class="signin-btn" id="signInBtn"><span class="g-icon"></span>Sign in with Google</button>`;
+      document.getElementById('signInBtn').addEventListener('click', signInWithGoogle);
+    } else {
+      const avatar = user.user_metadata?.avatar_url || '';
+      const name = user.user_metadata?.name || user.email || 'You';
+      slot.innerHTML = `
+        <span class="auth-pill">
+          ${avatar ? `<img src="${escapeHtml(avatar)}" alt="" />` : ''}
+          <span>${escapeHtml(name.split(' ')[0])}</span>
+          <button class="signout" id="signOutBtn" title="Sign out">×</button>
+        </span>`;
+      document.getElementById('signOutBtn').addEventListener('click', signOut);
+    }
+  }
+  async function signInWithGoogle() {
+    if (!supa) return;
+    const { error } = await supa.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href.split('?')[0] }
+    });
+    if (error) setSyncStatus('error', `Sign-in error: ${error.message}`);
+  }
+  async function signOut() {
+    if (!supa) return;
+    await supa.auth.signOut();
+    currentUser = null;
+    renderAuthSlot(null, false);
+    setSyncStatus('', '');
+  }
+  function setSyncStatus(cls, text) {
+    const el = document.getElementById('syncStatus');
+    el.className = 'sync-status' + (cls ? ' ' + cls : '');
+    el.textContent = text;
+  }
+  function collectStateForCloud() {
+    return {
+      v: 1,
+      sex, country, partnership, kids, careerField, retirementAge, theme,
+      smoker, exerciseLevel, sleepHours, familyLongevity,
+      priorities, bestYear, hardestYear,
+      milestones, journal, letters, places,
+      dob: BIRTHDATE ? formatDOB(BIRTHDATE) : null,
+      updated: Date.now(),
+    };
+  }
+  function applyCloudState(cloud) {
+    if (!cloud || typeof cloud !== 'object') return;
+    if (cloud.journal) journal = cloud.journal;
+    if (cloud.letters) letters = cloud.letters;
+    if (cloud.places) places = cloud.places;
+    if (cloud.milestones) milestones = cloud.milestones;
+    // Persist locally so the data is durable
+    saveJournalToLS();
+    writeLS('lifeStages.letters', JSON.stringify(letters));
+    savePlaces();
+    saveMilestones();
+    // Persist all the other settings via writeLS
+    if (cloud.theme) writeLS('lifeStages.theme', cloud.theme);
+    if (cloud.sex) writeLS('lifeStages.sex', cloud.sex);
+    if (cloud.country !== undefined) writeLS('lifeStages.country', cloud.country || '');
+    if (cloud.partnership !== undefined) writeLS('lifeStages.partnership', cloud.partnership || '');
+    if (cloud.kids !== undefined) writeLS('lifeStages.kids', String(cloud.kids || 0));
+    if (cloud.careerField !== undefined) writeLS('lifeStages.career', cloud.careerField || '');
+    if (cloud.retirementAge !== undefined) writeLS('lifeStages.retirementAge', String(cloud.retirementAge || 0));
+    if (cloud.smoker !== undefined) writeLS('lifeStages.smoker', cloud.smoker || '');
+    if (cloud.exerciseLevel !== undefined) writeLS('lifeStages.exercise', cloud.exerciseLevel || '');
+    if (cloud.sleepHours !== undefined) writeLS('lifeStages.sleep', String(cloud.sleepHours || 0));
+    if (cloud.familyLongevity !== undefined) writeLS('lifeStages.familyLongevity', String(cloud.familyLongevity || 0));
+    if (cloud.priorities) writeLS('lifeStages.priorities', JSON.stringify(cloud.priorities));
+    if (cloud.bestYear !== undefined) writeLS('lifeStages.bestYear', String(cloud.bestYear || 0));
+    if (cloud.hardestYear !== undefined) writeLS('lifeStages.hardestYear', String(cloud.hardestYear || 0));
+    const dob = cloud.dob ? parseDOB(cloud.dob) : BIRTHDATE;
+    applyState({
+      dob,
+      sex: cloud.sex,
+      theme: cloud.theme,
+      country: cloud.country,
+      partnership: cloud.partnership,
+      kids: cloud.kids,
+      careerField: cloud.careerField,
+      retirementAge: cloud.retirementAge,
+      smoker: cloud.smoker,
+      exerciseLevel: cloud.exerciseLevel,
+      sleepHours: cloud.sleepHours,
+      familyLongevity: cloud.familyLongevity,
+      priorities: cloud.priorities,
+      bestYear: cloud.bestYear,
+      hardestYear: cloud.hardestYear,
+      syncURLOnApply: false,
+    });
+    renderMilestones();
+    renderMilestonePins();
+    renderRecentJournal();
+    renderPlacesList();
+    renderPlacesOnMap();
+    refreshLetterMeta();
+    document.querySelectorAll('textarea[data-letter-age]').forEach(ta => {
+      ta.value = letters[parseInt(ta.dataset.letterAge, 10)] || '';
+    });
+  }
+  async function loadFromCloud() {
+    if (!supa || !currentUser) return;
+    setSyncStatus('syncing', 'Loading from cloud…');
+    const { data, error } = await supa
+      .from(SUPABASE_TABLE)
+      .select('data, updated_at')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (error) { setSyncStatus('error', error.message); return; }
+    if (data && data.data) {
+      applyCloudState(data.data);
+      lastCloudVersion = data.data.updated || 0;
+      setSyncStatus('synced', 'Synced ✓');
+    } else {
+      // First sign-in on this account: push current local state up
+      setSyncStatus('synced', 'Synced ✓');
+      saveToCloud();
+    }
+  }
+  async function saveToCloud() {
+    if (!supa || !currentUser) return;
+    setSyncStatus('syncing', 'Saving…');
+    const payload = collectStateForCloud();
+    const { error } = await supa
+      .from(SUPABASE_TABLE)
+      .upsert({ user_id: currentUser.id, data: payload, updated_at: new Date().toISOString() },
+              { onConflict: 'user_id' });
+    if (error) { setSyncStatus('error', `Save failed: ${error.message}`); return; }
+    lastCloudVersion = payload.updated;
+    setSyncStatus('synced', 'Synced ✓');
+  }
+  function scheduleCloudSave() {
+    if (!supa || !currentUser) return;
+    if (saveTimer) clearTimeout(saveTimer);
+    setSyncStatus('syncing', 'Saving in 2s…');
+    saveTimer = setTimeout(() => { saveToCloud(); saveTimer = null; }, 2000);
+  }
+
   // ---- Init ----
   function readLS(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
   function writeLS(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
