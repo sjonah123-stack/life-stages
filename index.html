@@ -2339,8 +2339,11 @@
     if (kids > 0) u.searchParams.set('k', String(kids)); else u.searchParams.delete('k');
     if (careerField) u.searchParams.set('cf', careerField); else u.searchParams.delete('cf');
     if (retirementAge) u.searchParams.set('r', String(retirementAge)); else u.searchParams.delete('r');
+    if (priorities.length) u.searchParams.set('pr', priorities.join(',')); else u.searchParams.delete('pr');
+    if (bestYear) u.searchParams.set('by', String(bestYear)); else u.searchParams.delete('by');
+    if (hardestYear) u.searchParams.set('hy', String(hardestYear)); else u.searchParams.delete('hy');
     if (milestones.length) {
-      u.searchParams.set('m', milestones.map(m => `${m.age}:${encodeURIComponent(m.label)}`).join(','));
+      u.searchParams.set('m', milestones.map(m => `${m.age}:${encodeURIComponent(m.label)}:${m.completed?1:0}`).join(','));
     } else {
       u.searchParams.delete('m');
     }
@@ -2367,6 +2370,27 @@
   const initialExercise = readLS('lifeStages.exercise') || '';
   const initialSleep = parseFloat(readLS('lifeStages.sleep') || '0') || 0;
   const initialLongevity = parseInt(readLS('lifeStages.familyLongevity') || '0', 10) || 0;
+  // Wave 3
+  const urlPriorities = (params.get('pr') || '').split(',').filter(Boolean);
+  const initialPriorities = urlPriorities.length ? urlPriorities :
+    (() => { try { return JSON.parse(readLS('lifeStages.priorities') || '[]') || []; } catch (e) { return []; }})();
+  const initialBestYear = parseInt(params.get('by') || readLS('lifeStages.bestYear') || '0', 10) || 0;
+  const initialHardestYear = parseInt(params.get('hy') || readLS('lifeStages.hardestYear') || '0', 10) || 0;
+  // Letters: localStorage only (could be long, sensitive)
+  try { letters = JSON.parse(readLS('lifeStages.letters') || '{}') || {}; } catch (e) { letters = {}; }
+  // Hydrate letter textareas + meta
+  document.querySelectorAll('[data-letter-age]').forEach(el => {
+    const ageKey = parseInt(el.dataset.letterAge, 10);
+    if (el.tagName === 'TEXTAREA') el.value = letters[ageKey] || '';
+  });
+  function refreshLetterMeta() {
+    document.querySelectorAll('[data-meta]').forEach(el => {
+      const ageKey = parseInt(el.dataset.meta, 10);
+      const text = letters[ageKey] || '';
+      el.textContent = text ? `${text.length} chars` : 'empty';
+    });
+  }
+  refreshLetterMeta();
   milestones = loadMilestones();
   loadJournal();
   applyState({
@@ -2382,6 +2406,9 @@
     exerciseLevel: initialExercise,
     sleepHours: initialSleep,
     familyLongevity: initialLongevity,
+    priorities: initialPriorities,
+    bestYear: initialBestYear,
+    hardestYear: initialHardestYear,
     syncURLOnApply: false,
   });
   renderMilestones();
@@ -2540,12 +2567,57 @@
     e.preventDefault();
     const label = document.getElementById('msLabel').value.trim();
     const ageVal = parseInt(document.getElementById('msAge').value, 10);
+    const completedBox = document.getElementById('msCompleted');
+    const completed = completedBox.checked || (ageVal <= todayAge);
     if (!label || isNaN(ageVal) || ageVal < 0 || ageVal > SLIDER_MAX) return;
-    milestones.push({ age: ageVal, label });
+    milestones.push({ age: ageVal, label, completed });
     milestones.sort((a, b) => a.age - b.age);
     saveMilestones(); syncURL(); renderMilestones(); renderMilestonePins();
     document.getElementById('msLabel').value = '';
     document.getElementById('msAge').value = '';
+    completedBox.checked = false;
+  });
+
+  // Priority chips
+  document.querySelectorAll('.priority-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const dim = chip.dataset.dim;
+      const idx = priorities.indexOf(dim);
+      if (idx >= 0) {
+        priorities.splice(idx, 1);
+      } else {
+        if (priorities.length >= 3) return; // max 3
+        priorities.push(dim);
+      }
+      writeLS('lifeStages.priorities', JSON.stringify(priorities));
+      applyState({ priorities, snapToToday: false });
+    });
+  });
+
+  // Year tags
+  document.getElementById('bestYearInput').addEventListener('change', (e) => {
+    const n = parseInt(e.target.value, 10) || 0;
+    writeLS('lifeStages.bestYear', String(n));
+    applyState({ bestYear: n, snapToToday: false });
+  });
+  document.getElementById('hardestYearInput').addEventListener('change', (e) => {
+    const n = parseInt(e.target.value, 10) || 0;
+    writeLS('lifeStages.hardestYear', String(n));
+    applyState({ hardestYear: n, snapToToday: false });
+  });
+
+  // Future-self letters (textareas, save on blur)
+  document.querySelectorAll('textarea[data-letter-age]').forEach(ta => {
+    ta.addEventListener('input', () => {
+      const ageKey = parseInt(ta.dataset.letterAge, 10);
+      const text = ta.value;
+      if (text) letters[ageKey] = text; else delete letters[ageKey];
+      writeLS('lifeStages.letters', JSON.stringify(letters));
+      refreshLetterMeta();
+      // Update display in real-time if slider is on this letter
+      const currentAge = parseInt(slider.value, 10);
+      if (Math.abs(ageKey - currentAge) <= 1) update();
+    });
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !journalModal.hidden) { closeJournalModal(); return; }
