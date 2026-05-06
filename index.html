@@ -1842,6 +1842,131 @@
       });
     }
   }
+  // ---- Journal ----
+  const JOURNAL_KEY = 'lifeStages.journal';
+  function loadJournal() {
+    try {
+      const raw = localStorage.getItem(JOURNAL_KEY);
+      journal = raw ? (JSON.parse(raw) || {}) : {};
+    } catch (e) { journal = {}; }
+  }
+  function saveJournalToLS() {
+    try { localStorage.setItem(JOURNAL_KEY, JSON.stringify(journal)); } catch (e) {}
+  }
+  function weekStartDate(weekIndex) {
+    if (!BIRTHDATE) return new Date();
+    return new Date(BIRTHDATE.getTime() + weekIndex * 7 * 86400000);
+  }
+  function weekKey(weekIndex) { return formatDOB(weekStartDate(weekIndex)); }
+  function weekRangeStr(weekIndex) {
+    const start = weekStartDate(weekIndex);
+    const end = new Date(start.getTime() + 6 * 86400000);
+    const sameYear = start.getFullYear() === end.getFullYear();
+    const startOpts = { month: 'short', day: 'numeric' };
+    const endOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+    return `${start.toLocaleDateString(undefined, startOpts)} – ${end.toLocaleDateString(undefined, sameYear ? endOpts : endOpts)}`;
+  }
+  function ageAtWeek(weekIndex) {
+    const d = weekStartDate(weekIndex);
+    return ageInYears(d, BIRTHDATE);
+  }
+  function paintJournalDots() {
+    if (!BIRTHDATE) return;
+    const keys = new Set(Object.keys(journal));
+    weekEls.forEach((el, i) => {
+      el.classList.toggle('has-entry', keys.has(weekKey(i)));
+    });
+  }
+  function renderRecentJournal() {
+    const list = document.getElementById('recentEntriesList');
+    const countLabel = document.getElementById('journalCount');
+    const entries = Object.entries(journal)
+      .filter(([k, v]) => v && v.trim())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 6);
+    countLabel.textContent = `${Object.keys(journal).length} ${Object.keys(journal).length === 1 ? 'entry' : 'entries'}`;
+    if (entries.length === 0) {
+      list.innerHTML = '<div class="journal-empty">No entries yet — start with this week.</div>';
+      return;
+    }
+    list.innerHTML = entries.map(([key, text]) => {
+      const d = parseDOB(key);
+      if (!d) return '';
+      const weekIdx = Math.floor((d - BIRTHDATE) / (7 * 86400000));
+      const age = ageInYears(d, BIRTHDATE);
+      const range = weekRangeStr(weekIdx);
+      return `<div class="recent-entry" data-week="${weekIdx}">
+        <div class="recent-entry-meta">
+          <span class="age">Age ${age}</span>
+          <span>${range}</span>
+        </div>
+        <div class="recent-entry-preview">${escapeHtml(text)}</div>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.recent-entry').forEach(el => {
+      el.addEventListener('click', () => openJournalModal(parseInt(el.dataset.week, 10)));
+    });
+  }
+
+  // This-week inline panel
+  function currentWeekIndex() {
+    return Math.floor(daysLived / 7);
+  }
+  function refreshThisWeekPanel() {
+    if (!BIRTHDATE) return;
+    const idx = currentWeekIndex();
+    const range = weekRangeStr(idx);
+    document.getElementById('thisWeekRange').textContent = range;
+    const ta = document.getElementById('thisWeekText');
+    ta.value = journal[weekKey(idx)] || '';
+    document.getElementById('thisWeekStatus').textContent = '';
+  }
+
+  // Modal
+  let modalWeek = -1;
+  function openJournalModal(weekIndex) {
+    modalWeek = weekIndex;
+    const key = weekKey(weekIndex);
+    document.getElementById('journalWeekNum').textContent = formatNum(weekIndex + 1);
+    document.getElementById('journalWeekRange').textContent = weekRangeStr(weekIndex);
+    const age = ageAtWeek(weekIndex);
+    const ageStr = age < 0 ? `Before you were born` :
+                   age > LIFESPAN ? `Far ahead — age ${age}` :
+                   `Age ${age}`;
+    document.getElementById('journalWeekAge').textContent = ageStr;
+    const ta = document.getElementById('journalModalText');
+    ta.value = journal[key] || '';
+    document.getElementById('journalCharCount').textContent = `${ta.value.length} chars`;
+    document.getElementById('journalModalDelete').style.display = journal[key] ? '' : 'none';
+    document.getElementById('journalModal').hidden = false;
+    setTimeout(() => ta.focus(), 50);
+  }
+  function closeJournalModal() {
+    document.getElementById('journalModal').hidden = true;
+    modalWeek = -1;
+  }
+  function saveModalEntry() {
+    if (modalWeek < 0) return;
+    const text = document.getElementById('journalModalText').value.trim();
+    const key = weekKey(modalWeek);
+    if (text) journal[key] = text;
+    else delete journal[key];
+    saveJournalToLS();
+    paintJournalDots();
+    renderRecentJournal();
+    if (modalWeek === currentWeekIndex()) refreshThisWeekPanel();
+    closeJournalModal();
+  }
+  function deleteModalEntry() {
+    if (modalWeek < 0) return;
+    delete journal[weekKey(modalWeek)];
+    saveJournalToLS();
+    paintJournalDots();
+    renderRecentJournal();
+    if (modalWeek === currentWeekIndex()) refreshThisWeekPanel();
+    closeJournalModal();
+  }
+
   function renderMilestonePins() {
     const wrap = document.getElementById('milestonePins');
     wrap.innerHTML = milestones.map(m => {
@@ -1864,6 +1989,10 @@
     if ('careerField' in opts) careerField = opts.careerField;
     if ('retirementAge' in opts) retirementAge = opts.retirementAge;
     if (opts.theme) applyTheme(opts.theme);
+    if ('smoker' in opts) smoker = opts.smoker;
+    if ('exerciseLevel' in opts) exerciseLevel = opts.exerciseLevel;
+    if ('sleepHours' in opts) sleepHours = opts.sleepHours;
+    if ('familyLongevity' in opts) familyLongevity = opts.familyLongevity;
 
     if (BIRTHDATE) dobInput.value = formatDOB(BIRTHDATE);
     sexButtons.forEach(b => b.classList.toggle('active', b.dataset.sex === sex));
@@ -1873,14 +2002,22 @@
     careerInput.value = careerField || '';
     retirementInput.value = retirementAge || '';
 
+    document.getElementById('smokerInput').value = smoker || '';
+    document.getElementById('exerciseInput').value = exerciseLevel || '';
+    document.getElementById('sleepInput').value = sleepHours || '';
+    document.getElementById('longevityInput').value = familyLongevity || '';
+
     if (BIRTHDATE) {
       subtitle.textContent =
         `Slide through the years ahead. Anchored to ${prettyDOB(BIRTHDATE)} — every age is yours to walk through.`;
       paintWeeksByDOB();
+      paintJournalDots();
       setNowMarker();
+      refreshThisWeekPanel();
     }
     setRetirementMarker();
     renderMilestonePins();
+    updateHorizonDisplay();
     if (opts.snapToToday !== false && BIRTHDATE) {
       slider.value = Math.max(0, Math.min(SLIDER_MAX, todayAge));
     }
@@ -1922,7 +2059,13 @@
   const initialKids = parseInt(params.get('k') || readLS('lifeStages.kids') || '0', 10) || 0;
   const initialCareer = params.get('cf') || readLS('lifeStages.career') || '';
   const initialRetire = parseInt(params.get('r') || readLS('lifeStages.retirementAge') || '0', 10) || 0;
+  // Private (localStorage only — never URL)
+  const initialSmoker = readLS('lifeStages.smoker') || '';
+  const initialExercise = readLS('lifeStages.exercise') || '';
+  const initialSleep = parseFloat(readLS('lifeStages.sleep') || '0') || 0;
+  const initialLongevity = parseInt(readLS('lifeStages.familyLongevity') || '0', 10) || 0;
   milestones = loadMilestones();
+  loadJournal();
   applyState({
     dob: initialDOB,
     sex: initialSex,
@@ -1932,10 +2075,15 @@
     kids: initialKids,
     careerField: initialCareer,
     retirementAge: initialRetire,
+    smoker: initialSmoker,
+    exerciseLevel: initialExercise,
+    sleepHours: initialSleep,
+    familyLongevity: initialLongevity,
     syncURLOnApply: false,
   });
   renderMilestones();
   renderMilestonePins();
+  renderRecentJournal();
 
   // ---- Wiring ----
   slider.addEventListener('input', update);
@@ -1973,6 +2121,106 @@
     writeLS('lifeStages.retirementAge', String(n));
     applyState({ retirementAge: n, snapToToday: false });
   });
+
+  // Private fields — localStorage only, never URL
+  document.getElementById('smokerInput').addEventListener('change', (e) => {
+    writeLS('lifeStages.smoker', e.target.value);
+    applyState({ smoker: e.target.value, snapToToday: false });
+  });
+  document.getElementById('exerciseInput').addEventListener('change', (e) => {
+    writeLS('lifeStages.exercise', e.target.value);
+    applyState({ exerciseLevel: e.target.value, snapToToday: false });
+  });
+  document.getElementById('sleepInput').addEventListener('change', (e) => {
+    const n = parseFloat(e.target.value) || 0;
+    writeLS('lifeStages.sleep', String(n));
+    applyState({ sleepHours: n, snapToToday: false });
+  });
+  document.getElementById('longevityInput').addEventListener('change', (e) => {
+    const n = parseInt(e.target.value, 10) || 0;
+    writeLS('lifeStages.familyLongevity', String(n));
+    applyState({ familyLongevity: n, snapToToday: false });
+  });
+
+  // Journal — week click handlers
+  weekEls.forEach((el, i) => {
+    el.addEventListener('click', () => openJournalModal(i));
+  });
+
+  // Journal — this-week inline panel
+  const thisWeekText = document.getElementById('thisWeekText');
+  const thisWeekSave = document.getElementById('thisWeekSave');
+  const thisWeekStatus = document.getElementById('thisWeekStatus');
+  thisWeekSave.addEventListener('click', () => {
+    if (!BIRTHDATE) return;
+    const idx = currentWeekIndex();
+    const text = thisWeekText.value.trim();
+    const key = weekKey(idx);
+    if (text) journal[key] = text; else delete journal[key];
+    saveJournalToLS();
+    paintJournalDots();
+    renderRecentJournal();
+    thisWeekStatus.textContent = 'Saved ✓';
+    thisWeekSave.classList.add('saved');
+    setTimeout(() => {
+      thisWeekStatus.textContent = '';
+      thisWeekSave.classList.remove('saved');
+    }, 1600);
+  });
+
+  // Journal modal handlers
+  const journalModal = document.getElementById('journalModal');
+  const journalModalText = document.getElementById('journalModalText');
+  journalModal.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', closeJournalModal);
+  });
+  document.getElementById('journalModalSave').addEventListener('click', saveModalEntry);
+  document.getElementById('journalModalDelete').addEventListener('click', deleteModalEntry);
+  journalModalText.addEventListener('input', () => {
+    document.getElementById('journalCharCount').textContent = `${journalModalText.value.length} chars`;
+  });
+  journalModalText.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      saveModalEntry();
+    }
+  });
+
+  // Export / Import journal
+  document.getElementById('exportJournal').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(journal, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `life-journal-${formatDOB(new Date())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById('importJournalFile').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Bad format');
+        const importedCount = Object.keys(data).length;
+        // Merge: imported entries override existing on key collision
+        journal = { ...journal, ...data };
+        saveJournalToLS();
+        paintJournalDots();
+        renderRecentJournal();
+        refreshThisWeekPanel();
+        alert(`Imported ${importedCount} entries.`);
+      } catch (err) {
+        alert('Could not parse that file. Make sure it\'s a previously-exported journal JSON.');
+      }
+      e.target.value = ''; // reset for next import
+    };
+    reader.readAsText(file);
+  });
   copyBtn.addEventListener('click', async () => {
     syncURL();
     try {
@@ -1997,7 +2245,8 @@
     document.getElementById('msAge').value = '';
   });
   document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'Escape' && !journalModal.hidden) { closeJournalModal(); return; }
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
     if (e.key === 'Home') { slider.value = 0; update(); }
     if (e.key === 'End') { slider.value = SLIDER_MAX; update(); }
     if (e.key === 't' || e.key === 'T') { slider.value = todayAge; update(); }
