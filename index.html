@@ -6,7 +6,17 @@
 <title>Your one extraordinary life</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script type="module">
+  // Firebase v10 modular SDK — exposed on window.fb for the main script to use.
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  window.fb = {
+    initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+    signOut, onAuthStateChanged, getFirestore, doc, setDoc, getDoc, serverTimestamp,
+  };
+  window.dispatchEvent(new Event('fb-ready'));
+</script>
 <style>
   /* === Themes === Default = sunrise. Body class .theme-ocean / .theme-forest swap palettes. */
   :root, body.theme-sunrise {
@@ -1154,7 +1164,7 @@
   .sync-status.synced { color: var(--health); }
   .sync-status.error { color: var(--love); }
 
-  /* Setup notice when Supabase not configured */
+  /* Setup notice when Firebase not configured */
   .setup-notice {
     background: var(--panel-warm);
     border: 1px dashed var(--border);
@@ -1794,13 +1804,17 @@
   const DEFAULT_SEX = "male";
   const DEFAULT_THEME = "sunrise";
 
-  // ---- Supabase config (Phase 1) ----
-  // Paste your project URL + anon key here. Both are SAFE to expose publicly
-  // (the anon key has no special powers; row-level security in Supabase enforces
-  // that users only read/write their own row.)
-  const SUPABASE_URL = "";       // e.g. "https://abcd1234.supabase.co"
-  const SUPABASE_ANON_KEY = "";  // e.g. "eyJhbGc..."
-  const SUPABASE_TABLE = "user_data"; // table you'll create per the README/setup notes
+  // ---- Firebase config (Phase 1) ----
+  // Paste the firebaseConfig object Firebase gave you when you registered the web app.
+  // All these values are SAFE to expose publicly — Firestore security rules are what
+  // protect user data, not key secrecy.
+  const FIREBASE_CONFIG = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    appId: "",
+    // storageBucket and messagingSenderId optional for our use
+  };
 
   // ---- State ----
   let BIRTHDATE, todayAge, daysLived, weeksLived;
@@ -1815,8 +1829,9 @@
   let hardestYear = 0;  // 0 means unset
   let letters = {};     // {40: text, 60: text, 80: text}
   let places = [];      // [{name, displayName, lat, lng, year, note}]
-  // Auth/sync (Phase 1)
-  let supa = null;      // Supabase client (null if not configured)
+  // Auth/sync (Phase 1) — Firebase
+  let fbAuth = null;
+  let fbDB = null;
   let currentUser = null;
   let saveTimer = null;
   let lastCloudVersion = 0;
@@ -2791,28 +2806,33 @@
     return canvas.toDataURL('image/jpeg', 0.82);
   }
 
-  // ---- Phase 1: Supabase auth + cloud sync ----
-  function supabaseConfigured() {
-    return !!(SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL.startsWith('http'));
+  // ---- Phase 1: Firebase auth + Firestore sync ----
+  function firebaseConfigured() {
+    return !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
   }
-  function initSupabase() {
-    if (!supabaseConfigured()) {
+  function initFirebase() {
+    if (!firebaseConfigured()) {
       renderAuthSlot(null, true);
       return;
     }
-    if (typeof window.supabase === 'undefined') {
-      // CDN may not have loaded yet; retry shortly
-      setTimeout(initSupabase, 200);
+    if (typeof window.fb === 'undefined') {
+      // Module may still be loading
+      window.addEventListener('fb-ready', initFirebase, { once: true });
       return;
     }
-    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    supa.auth.onAuthStateChange((_event, session) => {
-      currentUser = session?.user || null;
-      renderAuthSlot(currentUser, false);
-      if (currentUser) loadFromCloud();
+    const app = window.fb.initializeApp(FIREBASE_CONFIG);
+    fbAuth = window.fb.getAuth(app);
+    fbDB = window.fb.getFirestore(app);
+
+    // Handle redirect-flow result (in case popup was blocked and we used redirect)
+    window.fb.getRedirectResult(fbAuth).catch(err => {
+      if (err && err.code !== 'auth/no-redirect-operation') {
+        setSyncStatus('error', `Sign-in error: ${err.message}`);
+      }
     });
-    supa.auth.getSession().then(({ data }) => {
-      currentUser = data.session?.user || null;
+
+    window.fb.onAuthStateChanged(fbAuth, (user) => {
+      currentUser = user || null;
       renderAuthSlot(currentUser, false);
       if (currentUser) loadFromCloud();
     });
@@ -2839,16 +2859,23 @@
     }
   }
   async function signInWithGoogle() {
-    if (!supa) return;
-    const { error } = await supa.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.href.split('?')[0] }
-    });
-    if (error) setSyncStatus('error', `Sign-in error: ${error.message}`);
+    if (!fbAuth) return;
+    const provider = new window.fb.GoogleAuthProvider();
+    try {
+      await window.fb.signInWithPopup(fbAuth, provider);
+    } catch (err) {
+      // Popup blocked or unsupported — fall back to redirect
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        try { await window.fb.signInWithRedirect(fbAuth, provider); }
+        catch (err2) { setSyncStatus('error', `Sign-in error: ${err2.message}`); }
+      } else {
+        setSyncStatus('error', `Sign-in error: ${err.message}`);
+      }
+    }
   }
   async function signOut() {
-    if (!supa) return;
-    await supa.auth.signOut();
+    if (!fbAuth) return;
+    await window.fb.signOut(fbAuth);
     currentUser = null;
     renderAuthSlot(null, false);
     setSyncStatus('', '');
@@ -2925,38 +2952,42 @@
     });
   }
   async function loadFromCloud() {
-    if (!supa || !currentUser) return;
+    if (!fbDB || !currentUser) return;
     setSyncStatus('syncing', 'Loading from cloud…');
-    const { data, error } = await supa
-      .from(SUPABASE_TABLE)
-      .select('data, updated_at')
-      .eq('user_id', currentUser.id)
-      .maybeSingle();
-    if (error) { setSyncStatus('error', error.message); return; }
-    if (data && data.data) {
-      applyCloudState(data.data);
-      lastCloudVersion = data.data.updated || 0;
-      setSyncStatus('synced', 'Synced ✓');
-    } else {
-      // First sign-in on this account: push current local state up
-      setSyncStatus('synced', 'Synced ✓');
-      saveToCloud();
+    try {
+      const ref = window.fb.doc(fbDB, 'users', currentUser.uid);
+      const snap = await window.fb.getDoc(ref);
+      if (snap.exists()) {
+        const cloudDoc = snap.data();
+        if (cloudDoc && cloudDoc.data) {
+          applyCloudState(cloudDoc.data);
+          lastCloudVersion = cloudDoc.data.updated || 0;
+        }
+        setSyncStatus('synced', 'Synced ✓');
+      } else {
+        // First sign-in: push current local state up
+        setSyncStatus('synced', 'Synced ✓');
+        saveToCloud();
+      }
+    } catch (err) {
+      setSyncStatus('error', `Load failed: ${err.message}`);
     }
   }
   async function saveToCloud() {
-    if (!supa || !currentUser) return;
+    if (!fbDB || !currentUser) return;
     setSyncStatus('syncing', 'Saving…');
     const payload = collectStateForCloud();
-    const { error } = await supa
-      .from(SUPABASE_TABLE)
-      .upsert({ user_id: currentUser.id, data: payload, updated_at: new Date().toISOString() },
-              { onConflict: 'user_id' });
-    if (error) { setSyncStatus('error', `Save failed: ${error.message}`); return; }
-    lastCloudVersion = payload.updated;
-    setSyncStatus('synced', 'Synced ✓');
+    try {
+      const ref = window.fb.doc(fbDB, 'users', currentUser.uid);
+      await window.fb.setDoc(ref, { data: payload, updated_at: window.fb.serverTimestamp() }, { merge: true });
+      lastCloudVersion = payload.updated;
+      setSyncStatus('synced', 'Synced ✓');
+    } catch (err) {
+      setSyncStatus('error', `Save failed: ${err.message}`);
+    }
   }
   function scheduleCloudSave() {
-    if (!supa || !currentUser) return;
+    if (!fbAuth || !currentUser) return;
     if (saveTimer) clearTimeout(saveTimer);
     setSyncStatus('syncing', 'Saving in 2s…');
     saveTimer = setTimeout(() => { saveToCloud(); saveTimer = null; }, 2000);
@@ -3326,13 +3357,13 @@
     renderPlacesList(parseInt(slider.value, 10));
   });
 
-  // Init Leaflet map + Supabase auth (after CDNs load)
+  // Init Leaflet map + Firebase auth (after CDNs load)
   function startMapWhenReady() {
     if (typeof L === 'undefined') { setTimeout(startMapWhenReady, 200); return; }
     initMap();
   }
   startMapWhenReady();
-  initSupabase();
+  initFirebase();
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !journalModal.hidden) { closeJournalModal(); return; }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
