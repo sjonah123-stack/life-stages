@@ -948,10 +948,123 @@
   const SLIDER_MAX = 100;
   const DEFAULT_DOB = "2002-12-04";
   const DEFAULT_SEX = "male";
+  const DEFAULT_THEME = "sunrise";
 
   // ---- State ----
-  let BIRTHDATE, todayAge, daysLived, weeksLived, sex;
+  let BIRTHDATE, todayAge, daysLived, weeksLived;
+  let sex, country, partnership, kids, careerField, retirementAge, theme;
   let milestones = [];
+
+  // ---- Country-specific ----
+  const COUNTRY_NOTES = {
+    US: { lifeExp: { male: 76, female: 81 }, retireMedian: 64 },
+    CA: { lifeExp: { male: 80, female: 84 }, retireMedian: 64 },
+    UK: { lifeExp: { male: 79, female: 83 }, retireMedian: 65 },
+    AU: { lifeExp: { male: 81, female: 85 }, retireMedian: 65 },
+    DE: { lifeExp: { male: 78, female: 83 }, retireMedian: 64 },
+    FR: { lifeExp: { male: 79, female: 85 }, retireMedian: 62 },
+    JP: { lifeExp: { male: 81, female: 87 }, retireMedian: 69 },
+    IN: { lifeExp: { male: 70, female: 73 }, retireMedian: 60 },
+    BR: { lifeExp: { male: 73, female: 79 }, retireMedian: 62 },
+    MX: { lifeExp: { male: 73, female: 78 }, retireMedian: 65 },
+  };
+
+  // ---- Career field callouts (3 brackets) ----
+  const CAREER_FIELDS = {
+    tech: {
+      young: "The 'young founder' myth is mostly myth. Founders launch in their 20s, but the actual peak founder age in tech is 45 (Azoulay et al). You have decades to do your best work.",
+      mid: "Senior IC tracks are now genuinely viable past 40 — Staff/Principal Engineer compensation often beats VP. Many of the most influential tech leaders are 35–55.",
+      late: "Reed Hastings led Netflix into his 60s. Plenty of room in this field at every age — especially for those who can mentor and shape culture."
+    },
+    medicine: {
+      young: "Med school + residency. Brutal but compounds. Most US physicians don't fully attend until ~30 — late start, long career.",
+      mid: "Peak clinical years. Many physicians shift toward leadership, research, or sub-specialty mastery in their 40s.",
+      late: "Senior practitioners and residency directors are some of the most respected — and busiest — people in any health system. Mentorship is its own form of practice."
+    },
+    science: {
+      young: "Most Nobel-prize work in physics happens in researchers' 30s, but in chemistry and medicine the average is mid-40s. Time at the bench compounds.",
+      mid: "Many scientists' most cited work happens in their 40s. Lab leadership, grant funding, and program-building hit stride.",
+      late: "Senior scientists shape entire fields. Some of the most generative science happens late — Avi Loeb, Jane Goodall, Sydney Brenner all kept producing into their 70s and 80s."
+    },
+    finance: {
+      young: "Analyst/associate years. Long hours, fast learning. Compensation curve steepens significantly through your 30s.",
+      mid: "MD, partner, or fund manager territory. Many transition to allocator side, family office, or principal investing.",
+      late: "Senior finance careers extend remarkably late — Warren Buffett is still the most-watched investor in the world in his 90s. Capital and judgment compound."
+    },
+    arts: {
+      young: "Apprenticeship years. Most great artistic work comes later than people think — the data on novelists, painters, and composers shows peak output in 40s–60s, not 20s.",
+      mid: "Many novelists peak now. Galenson's research on 'experimental' artists shows decades of refinement converging into the most acclaimed work.",
+      late: "Some of the most beloved late-career artists — Toni Morrison, Akira Kurosawa, Louise Bourgeois — produced their best work in their 60s, 70s, even 80s."
+    },
+    athletics: {
+      young: "Peak performance window for most sports. Make it count — but plan the second act early. Athletes' careers are short by design.",
+      mid: "Power sports tapering for most, but endurance peaks here. Many elite athletes pivot to coaching, broadcasting, or business in this decade.",
+      late: "Tom Brady played until 45. Tennis pros like Federer played into late 30s. Most former athletes find their richest contributions in coaching and mentorship."
+    },
+    education: {
+      young: "First years teaching. Hard but formative. The teachers students remember most often had decades of practice behind them.",
+      mid: "Mastery of craft. Many move into department leadership, curriculum design, or administrative roles in this decade.",
+      late: "Some of the most beloved teachers and professors hit stride in their 50s and 60s. Decades of practice show up in classroom presence."
+    },
+    trades: {
+      young: "Apprentice years. Real skills compound fast — by your late 20s you can already run circles around white-collar peers in problem-solving and self-direction.",
+      mid: "Master journeyman or business-owner territory. Many of the highest-paid skilled tradespeople run their own shops by 40.",
+      late: "Master craftspeople are revered for a reason. The trades reward decades of practice in ways office work rarely can."
+    },
+    hospitality: {
+      young: "Front of house, line cook, junior manager — the foundational years. Stamina and presence are your superpowers.",
+      mid: "GM, head chef, or owner territory for many. The decade where most great restaurants and hotels are conceived.",
+      late: "The most legendary hospitality figures — chefs, hoteliers, sommeliers — are often in their 50s and 60s. Taste compounds."
+    },
+    public_service: {
+      young: "Foundation building. Public service careers reward stamina and depth — your network and reputation will compound for decades.",
+      mid: "Many public servants and nonprofit leaders hit their most impactful stretch here, with both authority and credibility.",
+      late: "Most influential government leaders are in their 50s and 60s. Median age of US Senate: 65. Wisdom and relationships are the real currency."
+    },
+    entrepreneurship: {
+      young: "First companies, often first failures. Both teach. The data is clear: success rate climbs with age, not down.",
+      mid: "Statistical peak founder age is 45 (Azoulay et al, MIT/Harvard). Successful founders averaged 45 at company launch — not 25.",
+      late: "Repeat founders, advisors, and investors. Many of the best-performing early-stage funds are run by people in their 50s and 60s."
+    },
+    other: {
+      young: "Foundation years. Whatever the field, time on craft is what compounds.",
+      mid: "Mastery years. Most fields reward decades of accumulated judgment — yours is just getting started.",
+      late: "Senior practitioners shape every field. The skills and relationships you've built will keep paying for decades."
+    }
+  };
+  function getCareerCallout(age) {
+    if (!careerField || !CAREER_FIELDS[careerField]) return null;
+    const bucket = age < 30 ? 'young' : (age < 55 ? 'mid' : 'late');
+    return CAREER_FIELDS[careerField][bucket];
+  }
+
+  // ---- Partnership / kids callouts for the love card ----
+  const PARTNERSHIP_NOTES = {
+    single:   "Studies repeatedly show single people in their 30s and beyond report life satisfaction equal to or above partnered peers — when their social fabric is strong. Friends matter more than partners by some measures.",
+    dating:   "Dating in your 20s and 30s is statistically more about pattern recognition than picking. Most people figure out what fits through several relationships, not the first one.",
+    engaged:  "The best long-term predictor of marital happiness isn't passion — it's how much you genuinely like each other as friends.",
+    married:  "The happiest long-term partnerships often peak in satisfaction around year 25–30. The 'boring years' are the foundation, not the failure.",
+    divorced: "Most people who divorce report higher life satisfaction within 2 years post-divorce. Many describe their second chapter as more aligned with who they actually are.",
+    widowed:  "Long-term studies show widowed people gradually rebuild meaning and well-being, often with the strong support of community and family. Grief reshapes; it doesn't end the story."
+  };
+  function getLoveCallout(age) {
+    const parts = [];
+    if (partnership && PARTNERSHIP_NOTES[partnership]) parts.push(PARTNERSHIP_NOTES[partnership]);
+    if (kids > 0) {
+      // Approximate kid age at the selected age, assuming kids born around current age
+      const kidAgeNow = 0; // We don't ask for kid age; assume newborn-ish for now
+      const kidAgeAtSelected = (age - todayAge) + kidAgeNow;
+      if (kidAgeAtSelected >= 0 && kidAgeAtSelected <= 100) {
+        const kidCount = kids === 1 ? "your child" : `your ${kids} kids`;
+        if (age <= todayAge) {
+          parts.push(`With ${kids} kid${kids>1?'s':''}, the next chapters of life have a different shape — equal parts harder and richer in ways that aren't captured in averages.`);
+        } else {
+          parts.push(`If your kid${kids>1?'s are':' is'} small now, ${kidCount} will be roughly ${kidAgeAtSelected} when you're ${age}. The years go faster than anyone tells you.`);
+        }
+      }
+    }
+    return parts.join(" ");
+  }
 
   function daysBetween(a, b) { return Math.floor((b - a) / 86400000); }
   function ageInYears(now, dob) {
@@ -1133,14 +1246,37 @@
   const dobInput = document.getElementById('dobInput');
   const copyBtn = document.getElementById('copyShare');
   const sexButtons = document.querySelectorAll('.sex-toggle button');
+  const themeButtons = document.querySelectorAll('.theme-picker button');
+  const countryInput = document.getElementById('countryInput');
+  const partnershipInput = document.getElementById('partnershipInput');
+  const kidsInput = document.getElementById('kidsInput');
+  const careerInput = document.getElementById('careerInput');
+  const retirementInput = document.getElementById('retirementInput');
   dobInput.max = formatDOB(new Date());
 
+  function markerPosition(age) {
+    const pct = Math.max(0, Math.min(100, (age / SLIDER_MAX) * 100));
+    return `calc(${pct}% + ${(0.5 - pct/100) * 28}px)`;
+  }
   function setNowMarker() {
     const marker = document.getElementById('nowMarker');
     if (todayAge < 0 || todayAge > SLIDER_MAX) { marker.style.display = 'none'; return; }
     marker.style.display = '';
-    const pct = (todayAge / SLIDER_MAX) * 100;
-    marker.style.left = `calc(${pct}% + ${(0.5 - pct/100) * 28}px)`;
+    marker.style.left = markerPosition(todayAge);
+  }
+  function setRetirementMarker() {
+    const marker = document.getElementById('retirementMarker');
+    if (!retirementAge || retirementAge < 1 || retirementAge > SLIDER_MAX) {
+      marker.style.display = 'none'; return;
+    }
+    marker.style.display = '';
+    marker.style.left = markerPosition(retirementAge);
+  }
+  function applyTheme(t) {
+    theme = t || DEFAULT_THEME;
+    document.body.classList.remove('theme-sunrise', 'theme-ocean', 'theme-forest');
+    document.body.classList.add('theme-' + theme);
+    themeButtons.forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
   }
 
   function update() {
@@ -1206,6 +1342,20 @@
       }
       card.querySelector('[data-field=headline]').textContent = data.h;
       card.querySelector('[data-field=body]').textContent = data.b;
+      // Callouts (career & love only)
+      const callout = card.querySelector('[data-field=callout]');
+      if (callout) {
+        let text = '';
+        if (key === 'career') text = getCareerCallout(age) || '';
+        else if (key === 'love') text = getLoveCallout(age) || '';
+        const span = callout.querySelector('[data-field=callout-text]');
+        if (text) {
+          span.textContent = text;
+          callout.classList.remove('empty');
+        } else {
+          callout.classList.add('empty');
+        }
+      }
     });
 
     document.getElementById('goodNewsText').textContent = stage.goodNews;
@@ -1322,18 +1472,36 @@
   }
 
   // ---- Apply state ----
-  function applyState(dob, newSex, opts) {
+  function applyState(opts) {
     opts = opts || {};
-    sex = newSex || sex || DEFAULT_SEX;
-    recomputePersonal(dob);
-    dobInput.value = formatDOB(dob);
+    if (opts.dob) recomputePersonal(opts.dob);
+    if (opts.sex) sex = opts.sex;
+    if ('country' in opts) country = opts.country;
+    if ('partnership' in opts) partnership = opts.partnership;
+    if ('kids' in opts) kids = opts.kids;
+    if ('careerField' in opts) careerField = opts.careerField;
+    if ('retirementAge' in opts) retirementAge = opts.retirementAge;
+    if (opts.theme) applyTheme(opts.theme);
+
+    if (BIRTHDATE) dobInput.value = formatDOB(BIRTHDATE);
     sexButtons.forEach(b => b.classList.toggle('active', b.dataset.sex === sex));
-    subtitle.textContent =
-      `Slide through the years ahead. Anchored to ${prettyDOB(dob)} — every age is yours to walk through.`;
-    paintWeeksByDOB();
-    setNowMarker();
+    countryInput.value = country || '';
+    partnershipInput.value = partnership || '';
+    kidsInput.value = (kids || kids === 0) ? kids : '';
+    careerInput.value = careerField || '';
+    retirementInput.value = retirementAge || '';
+
+    if (BIRTHDATE) {
+      subtitle.textContent =
+        `Slide through the years ahead. Anchored to ${prettyDOB(BIRTHDATE)} — every age is yours to walk through.`;
+      paintWeeksByDOB();
+      setNowMarker();
+    }
+    setRetirementMarker();
     renderMilestonePins();
-    slider.value = Math.max(0, Math.min(SLIDER_MAX, todayAge));
+    if (opts.snapToToday !== false && BIRTHDATE) {
+      slider.value = Math.max(0, Math.min(SLIDER_MAX, todayAge));
+    }
     update();
     if (opts.syncURLOnApply !== false) syncURL();
   }
@@ -1342,6 +1510,13 @@
     const u = new URL(window.location.href);
     u.searchParams.set('dob', formatDOB(BIRTHDATE));
     u.searchParams.set('s', sex === 'female' ? 'f' : 'm');
+    if (theme && theme !== DEFAULT_THEME) u.searchParams.set('th', theme);
+    else u.searchParams.delete('th');
+    if (country) u.searchParams.set('c', country); else u.searchParams.delete('c');
+    if (partnership) u.searchParams.set('p', partnership); else u.searchParams.delete('p');
+    if (kids > 0) u.searchParams.set('k', String(kids)); else u.searchParams.delete('k');
+    if (careerField) u.searchParams.set('cf', careerField); else u.searchParams.delete('cf');
+    if (retirementAge) u.searchParams.set('r', String(retirementAge)); else u.searchParams.delete('r');
     if (milestones.length) {
       u.searchParams.set('m', milestones.map(m => `${m.age}:${encodeURIComponent(m.label)}`).join(','));
     } else {
@@ -1351,14 +1526,32 @@
   }
 
   // ---- Init ----
+  function readLS(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
+  function writeLS(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
+
   const params = new URL(window.location.href).searchParams;
   const urlDOB = params.get('dob');
   const urlSex = params.get('s');
   const initialDOB = (urlDOB && parseDOB(urlDOB)) || parseDOB(DEFAULT_DOB);
-  const storedSex = (() => { try { return localStorage.getItem('lifeStages.sex'); } catch(e) { return null; } })();
-  const initialSex = (urlSex === 'f') ? 'female' : (urlSex === 'm' ? 'male' : (storedSex || DEFAULT_SEX));
+  const initialSex = (urlSex === 'f') ? 'female' : (urlSex === 'm' ? 'male' : (readLS('lifeStages.sex') || DEFAULT_SEX));
+  const initialTheme = params.get('th') || readLS('lifeStages.theme') || DEFAULT_THEME;
+  const initialCountry = params.get('c') || readLS('lifeStages.country') || '';
+  const initialPartnership = params.get('p') || readLS('lifeStages.partnership') || '';
+  const initialKids = parseInt(params.get('k') || readLS('lifeStages.kids') || '0', 10) || 0;
+  const initialCareer = params.get('cf') || readLS('lifeStages.career') || '';
+  const initialRetire = parseInt(params.get('r') || readLS('lifeStages.retirementAge') || '0', 10) || 0;
   milestones = loadMilestones();
-  applyState(initialDOB, initialSex, { syncURLOnApply: false });
+  applyState({
+    dob: initialDOB,
+    sex: initialSex,
+    theme: initialTheme,
+    country: initialCountry,
+    partnership: initialPartnership,
+    kids: initialKids,
+    careerField: initialCareer,
+    retirementAge: initialRetire,
+    syncURLOnApply: false,
+  });
   renderMilestones();
   renderMilestonePins();
 
@@ -1366,12 +1559,38 @@
   slider.addEventListener('input', update);
   dobInput.addEventListener('change', () => {
     const d = parseDOB(dobInput.value);
-    if (d) applyState(d, sex);
+    if (d) applyState({ dob: d });
   });
   sexButtons.forEach(b => b.addEventListener('click', () => {
-    try { localStorage.setItem('lifeStages.sex', b.dataset.sex); } catch (e) {}
-    applyState(BIRTHDATE, b.dataset.sex);
+    writeLS('lifeStages.sex', b.dataset.sex);
+    applyState({ sex: b.dataset.sex });
   }));
+  themeButtons.forEach(b => b.addEventListener('click', () => {
+    writeLS('lifeStages.theme', b.dataset.theme);
+    applyState({ theme: b.dataset.theme, snapToToday: false });
+  }));
+  countryInput.addEventListener('change', () => {
+    writeLS('lifeStages.country', countryInput.value);
+    applyState({ country: countryInput.value, snapToToday: false });
+  });
+  partnershipInput.addEventListener('change', () => {
+    writeLS('lifeStages.partnership', partnershipInput.value);
+    applyState({ partnership: partnershipInput.value, snapToToday: false });
+  });
+  kidsInput.addEventListener('change', () => {
+    const n = parseInt(kidsInput.value, 10) || 0;
+    writeLS('lifeStages.kids', String(n));
+    applyState({ kids: n, snapToToday: false });
+  });
+  careerInput.addEventListener('change', () => {
+    writeLS('lifeStages.career', careerInput.value);
+    applyState({ careerField: careerInput.value, snapToToday: false });
+  });
+  retirementInput.addEventListener('change', () => {
+    const n = parseInt(retirementInput.value, 10) || 0;
+    writeLS('lifeStages.retirementAge', String(n));
+    applyState({ retirementAge: n, snapToToday: false });
+  });
   copyBtn.addEventListener('click', async () => {
     syncURL();
     try {
