@@ -1985,6 +1985,38 @@
 
     document.getElementById('goodNewsText').textContent = stage.goodNews;
 
+    // Priority cards: highlight & re-order
+    document.querySelectorAll('.card').forEach(card => {
+      card.classList.toggle('priority', priorities.includes(card.dataset.dim));
+    });
+
+    // Year tag callout
+    const yearCallout = document.getElementById('yearTagCallout');
+    if (bestYear && age === bestYear) {
+      document.getElementById('yearTagEmoji').textContent = '✨';
+      document.getElementById('yearTagText').innerHTML =
+        `<strong>You named this your best year so far.</strong> Whatever made it shine — the people, the place, what you were doing — that was the recipe. Worth remembering.`;
+      yearCallout.hidden = false;
+    } else if (hardestYear && age === hardestYear) {
+      document.getElementById('yearTagEmoji').textContent = '💪';
+      document.getElementById('yearTagText').innerHTML =
+        `<strong>You named this your hardest year — and you made it.</strong> Look at that. The version of you that came out the other side is the one reading this.`;
+      yearCallout.hidden = false;
+    } else {
+      yearCallout.hidden = true;
+    }
+
+    // Future-self letter display (when slider lands within ±1 of 40, 60, 80)
+    const letterDisplay = document.getElementById('letterDisplay');
+    const milestone = [40, 60, 80].find(a => Math.abs(a - age) <= 1);
+    if (milestone && letters[milestone]) {
+      document.getElementById('letterDisplayAge').textContent = milestone;
+      document.getElementById('letterDisplayText').textContent = letters[milestone];
+      letterDisplay.hidden = false;
+    } else {
+      letterDisplay.hidden = true;
+    }
+
     const livedPct = (Math.min(age, SLIDER_MAX) / SLIDER_MAX) * 100;
     slider.style.setProperty('--lived-pct', `${livedPct}%`);
 
@@ -2082,7 +2114,7 @@
       list.innerHTML = '<div class="milestone-empty">Nothing yet — what are you looking forward to?</div>';
     } else {
       list.innerHTML = milestones.map((m, i) => `
-        <span class="milestone-chip">
+        <span class="milestone-chip${m.completed ? ' done' : ''}">
           <span class="age">${m.age}</span>
           <span class="label">${escapeHtml(m.label)}</span>
           <button class="remove" data-idx="${i}" title="Remove">×</button>
@@ -2222,13 +2254,23 @@
 
   function renderMilestonePins() {
     const wrap = document.getElementById('milestonePins');
-    wrap.innerHTML = milestones.map(m => {
+    const milestoneHTML = milestones.map(m => {
       const pct = Math.max(0, Math.min(100, (m.age / SLIDER_MAX) * 100));
       const left = `calc(${pct}% + ${(0.5 - pct/100) * 28}px)`;
+      const icon = m.completed ? '✓' : '📍';
       return `<div class="milestone-pin" style="left:${left}">
-        <span class="pin-tip">${escapeHtml(m.label)} (age ${m.age})</span>📍
+        <span class="pin-tip">${escapeHtml(m.label)} (age ${m.age}${m.completed ? ' • done' : ''})</span>${icon}
       </div>`;
     }).join('');
+    const tags = [];
+    if (bestYear) tags.push({ age: bestYear, emoji: '✨', label: 'Best year so far' });
+    if (hardestYear) tags.push({ age: hardestYear, emoji: '💪', label: 'Hardest year — you made it' });
+    const tagHTML = tags.map(t => {
+      const pct = Math.max(0, Math.min(100, (t.age / SLIDER_MAX) * 100));
+      const left = `calc(${pct}% + ${(0.5 - pct/100) * 28}px)`;
+      return `<div class="year-tag-marker" style="left:${left}" title="${escapeHtml(t.label)} (age ${t.age})">${t.emoji}</div>`;
+    }).join('');
+    wrap.innerHTML = milestoneHTML + tagHTML;
   }
 
   // ---- Apply state ----
@@ -2246,6 +2288,9 @@
     if ('exerciseLevel' in opts) exerciseLevel = opts.exerciseLevel;
     if ('sleepHours' in opts) sleepHours = opts.sleepHours;
     if ('familyLongevity' in opts) familyLongevity = opts.familyLongevity;
+    if ('priorities' in opts) priorities = (opts.priorities || []).slice(0, 3);
+    if ('bestYear' in opts) bestYear = opts.bestYear;
+    if ('hardestYear' in opts) hardestYear = opts.hardestYear;
 
     if (BIRTHDATE) dobInput.value = formatDOB(BIRTHDATE);
     sexButtons.forEach(b => b.classList.toggle('active', b.dataset.sex === sex));
@@ -2259,6 +2304,11 @@
     document.getElementById('exerciseInput').value = exerciseLevel || '';
     document.getElementById('sleepInput').value = sleepHours || '';
     document.getElementById('longevityInput').value = familyLongevity || '';
+    document.getElementById('bestYearInput').value = bestYear || '';
+    document.getElementById('hardestYearInput').value = hardestYear || '';
+    document.querySelectorAll('.priority-chip').forEach(c => {
+      c.classList.toggle('selected', priorities.includes(c.dataset.dim));
+    });
 
     if (BIRTHDATE) {
       subtitle.textContent =
