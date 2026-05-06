@@ -2482,9 +2482,11 @@
 
   // Modal
   let modalWeek = -1;
+  let modalPhoto = '';
   function openJournalModal(weekIndex) {
     modalWeek = weekIndex;
     const key = weekKey(weekIndex);
+    const entry = getEntry(key);
     document.getElementById('journalWeekNum').textContent = formatNum(weekIndex + 1);
     document.getElementById('journalWeekRange').textContent = weekRangeStr(weekIndex);
     const age = ageAtWeek(weekIndex);
@@ -2493,26 +2495,48 @@
                    `Age ${age}`;
     document.getElementById('journalWeekAge').textContent = ageStr;
     const ta = document.getElementById('journalModalText');
-    ta.value = journal[key] || '';
+    ta.value = entry.text;
+    modalPhoto = entry.photo || '';
     document.getElementById('journalCharCount').textContent = `${ta.value.length} chars`;
-    document.getElementById('journalModalDelete').style.display = journal[key] ? '' : 'none';
+    document.getElementById('journalModalDelete').style.display = (entry.text || entry.photo) ? '' : 'none';
+    setModalPhotoUI(modalPhoto);
     document.getElementById('journalModal').hidden = false;
     setTimeout(() => ta.focus(), 50);
+  }
+  function setModalPhotoUI(photo) {
+    const area = document.getElementById('photoUploadArea');
+    const prompt = document.getElementById('uploadPrompt');
+    const img = document.getElementById('photoPreview');
+    const ctrls = document.getElementById('photoControls');
+    if (photo) {
+      img.src = photo;
+      img.style.display = 'block';
+      prompt.style.display = 'none';
+      area.classList.add('has-photo');
+      ctrls.style.display = '';
+    } else {
+      img.style.display = 'none';
+      img.src = '';
+      prompt.style.display = '';
+      area.classList.remove('has-photo');
+      ctrls.style.display = 'none';
+    }
   }
   function closeJournalModal() {
     document.getElementById('journalModal').hidden = true;
     modalWeek = -1;
+    modalPhoto = '';
   }
   function saveModalEntry() {
     if (modalWeek < 0) return;
     const text = document.getElementById('journalModalText').value.trim();
     const key = weekKey(modalWeek);
-    if (text) journal[key] = text;
-    else delete journal[key];
+    setEntry(key, { text, photo: modalPhoto });
     saveJournalToLS();
     paintJournalDots();
     renderRecentJournal();
     if (modalWeek === currentWeekIndex()) refreshThisWeekPanel();
+    scheduleCloudSave();
     closeJournalModal();
   }
   function deleteModalEntry() {
@@ -2522,6 +2546,7 @@
     paintJournalDots();
     renderRecentJournal();
     if (modalWeek === currentWeekIndex()) refreshThisWeekPanel();
+    scheduleCloudSave();
     closeJournalModal();
   }
 
