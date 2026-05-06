@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Your one extraordinary life</title>
 <style>
-  :root {
-    /* Warm light palette */
+  /* === Themes === Default = sunrise. Body class .theme-ocean / .theme-forest swap palettes. */
+  :root, body.theme-sunrise {
     --bg-1: #FFF7E8;
     --bg-2: #FFE4D6;
     --bg-3: #FFDEE9;
@@ -18,8 +18,6 @@
     --border: rgba(44, 24, 16, 0.08);
     --shadow-sm: 0 2px 8px rgba(206, 108, 74, 0.08);
     --shadow-md: 0 8px 24px rgba(206, 108, 74, 0.12);
-
-    /* Timeline */
     --past: #F4B860;
     --past-dim: #F8D9A8;
     --now: #FFC93C;
@@ -27,15 +25,64 @@
     --future-1: #FFD6A5;
     --future-2: #FF9A8B;
     --future-3: #FF6B9D;
-
-    /* Dimension hues */
     --career: #4ECDC4;
     --love: #FF6B9D;
     --health: #7AE582;
     --money: #FFB627;
     --growth: #B983FF;
-
     --accent: #FF8C61;
+  }
+  body.theme-ocean {
+    --bg-1: #E8F4FF;
+    --bg-2: #D6E9FF;
+    --bg-3: #DEF1FF;
+    --panel: #FFFFFF;
+    --panel-warm: #F2F8FF;
+    --ink: #102338;
+    --ink-dim: #486485;
+    --ink-faint: #8FA4BD;
+    --border: rgba(16, 35, 56, 0.08);
+    --shadow-sm: 0 2px 8px rgba(74, 108, 206, 0.08);
+    --shadow-md: 0 8px 24px rgba(74, 108, 206, 0.14);
+    --past: #6FA3C7;
+    --past-dim: #BCD7E8;
+    --now: #5EC8E5;
+    --now-glow: rgba(94, 200, 229, 0.5);
+    --future-1: #A7D9E8;
+    --future-2: #7AB6E0;
+    --future-3: #4F8FD8;
+    --career: #00B4D8;
+    --love: #FF77A8;
+    --health: #4FD8B0;
+    --money: #FFB627;
+    --growth: #9D8AFF;
+    --accent: #2E7BD6;
+  }
+  body.theme-forest {
+    --bg-1: #F0F7E8;
+    --bg-2: #E2F0D6;
+    --bg-3: #F5F0DE;
+    --panel: #FFFFFF;
+    --panel-warm: #F8FBF2;
+    --ink: #1F2D18;
+    --ink-dim: #56664B;
+    --ink-faint: #99A688;
+    --border: rgba(31, 45, 24, 0.08);
+    --shadow-sm: 0 2px 8px rgba(74, 108, 56, 0.08);
+    --shadow-md: 0 8px 24px rgba(74, 108, 56, 0.14);
+    --past: #B8A867;
+    --past-dim: #DCD2A8;
+    --now: #F2C94C;
+    --now-glow: rgba(242, 201, 76, 0.5);
+    --future-1: #C8DDA8;
+    --future-2: #97C97A;
+    --future-3: #6FB04C;
+    --career: #2A9D8F;
+    --love: #E76F51;
+    --health: #5A9355;
+    --money: #E9C46A;
+    --growth: #9F86C0;
+    --accent: #588157;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -69,27 +116,41 @@
     line-height: 1.5;
   }
 
-  /* Personalize bar */
+  /* Personalize panel */
   .personalize {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 14px;
     margin-bottom: 28px;
-    padding: 16px 20px;
+    padding: 18px 20px 14px;
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 16px;
     box-shadow: var(--shadow-sm);
   }
+  .personalize-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+  }
+  .personalize-row + .personalize-row {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  .field {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+  }
   .field-label {
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--ink-faint);
     font-weight: 700;
   }
-  .personalize input[type=date] {
+  .personalize input[type=date],
+  .personalize input[type=number],
+  .personalize select {
     background: var(--panel-warm);
     border: 1px solid var(--border);
     color: var(--ink);
@@ -97,6 +158,30 @@
     padding: 9px 12px;
     font-family: inherit;
     font-size: 14px;
+    min-height: 38px;
+  }
+  .personalize input[type=number] { width: 86px; }
+  .personalize select { cursor: pointer; }
+  .theme-picker {
+    display: inline-flex;
+    background: var(--panel-warm);
+    border-radius: 10px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    height: 38px;
+  }
+  .theme-picker button {
+    border: none;
+    background: transparent;
+    padding: 0 12px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.15s;
+  }
+  .theme-picker button.active {
+    background: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   }
   .sex-toggle {
     display: inline-flex;
@@ -283,6 +368,28 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
+  .retirement-marker {
+    position: absolute;
+    top: 22px;
+    width: 2px;
+    height: 32px;
+    background: repeating-linear-gradient(to bottom, var(--money) 0 4px, transparent 4px 7px);
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .retirement-marker::after {
+    content: 'freedom';
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--money);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
   .milestone-pin {
     position: absolute;
     top: 8px;
@@ -442,6 +549,26 @@
     font-size: 14px;
     line-height: 1.6;
   }
+  .card-callout {
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: var(--panel-warm);
+    border-left: 3px solid var(--card-color);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .card-callout-label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .card-callout.empty { display: none; }
   .card[data-dim=career] { --card-color: var(--career); }
   .card[data-dim=love]   { --card-color: var(--love); }
   .card[data-dim=health] { --card-color: var(--health); }
@@ -615,14 +742,85 @@
   </header>
 
   <div class="personalize">
-    <span class="field-label">Birthdate</span>
-    <input type="date" id="dobInput" max="" />
-    <span class="field-label">You are</span>
-    <div class="sex-toggle" role="tablist">
-      <button type="button" data-sex="female">Female</button>
-      <button type="button" data-sex="male">Male</button>
+    <div class="personalize-row">
+      <div class="field">
+        <span class="field-label">Birthdate</span>
+        <input type="date" id="dobInput" max="" />
+      </div>
+      <div class="field">
+        <span class="field-label">You are</span>
+        <div class="sex-toggle" role="tablist">
+          <button type="button" data-sex="female">Female</button>
+          <button type="button" data-sex="male">Male</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="field-label">Theme</span>
+        <div class="theme-picker">
+          <button type="button" data-theme="sunrise" title="Sunrise">☀️</button>
+          <button type="button" data-theme="ocean" title="Ocean">🌊</button>
+          <button type="button" data-theme="forest" title="Forest">🌲</button>
+        </div>
+      </div>
+      <button type="button" class="share-btn" id="copyShare">Copy share link</button>
     </div>
-    <button type="button" class="share-btn" id="copyShare">Copy share link</button>
+    <div class="personalize-row">
+      <div class="field">
+        <span class="field-label">Country</span>
+        <select id="countryInput">
+          <option value="">—</option>
+          <option value="US">United States</option>
+          <option value="CA">Canada</option>
+          <option value="UK">United Kingdom</option>
+          <option value="AU">Australia</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+          <option value="JP">Japan</option>
+          <option value="IN">India</option>
+          <option value="BR">Brazil</option>
+          <option value="MX">Mexico</option>
+          <option value="OTHER">Elsewhere</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">Partnership</span>
+        <select id="partnershipInput">
+          <option value="">—</option>
+          <option value="single">Single</option>
+          <option value="dating">Dating</option>
+          <option value="engaged">Engaged</option>
+          <option value="married">Married / partnered</option>
+          <option value="divorced">Divorced</option>
+          <option value="widowed">Widowed</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">Children</span>
+        <input type="number" id="kidsInput" min="0" max="12" placeholder="0" />
+      </div>
+      <div class="field">
+        <span class="field-label">Career field</span>
+        <select id="careerInput">
+          <option value="">—</option>
+          <option value="tech">Tech / software</option>
+          <option value="medicine">Medicine / healthcare</option>
+          <option value="science">Science / research</option>
+          <option value="finance">Finance / business</option>
+          <option value="arts">Arts / creative</option>
+          <option value="athletics">Athletics / sport</option>
+          <option value="education">Education / teaching</option>
+          <option value="trades">Trades / skilled labor</option>
+          <option value="hospitality">Hospitality / service</option>
+          <option value="public_service">Public service / nonprofit</option>
+          <option value="entrepreneurship">Entrepreneurship</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">Retire @</span>
+        <input type="number" id="retirementInput" min="40" max="100" placeholder="65" />
+      </div>
+    </div>
   </div>
 
   <div class="age-block">
@@ -635,6 +833,7 @@
 
     <div class="slider-track-wrap">
       <div class="now-marker" id="nowMarker"></div>
+      <div class="retirement-marker" id="retirementMarker" style="display:none"></div>
       <div id="milestonePins"></div>
       <input type="range" id="ageSlider" min="0" max="100" value="20" step="1" />
       <div class="ticks">
@@ -673,12 +872,20 @@
       <div class="card-title">Career &amp; craft</div>
       <div class="card-headline" data-field="headline">—</div>
       <div class="card-body" data-field="body">—</div>
+      <div class="card-callout empty" data-field="callout">
+        <span class="card-callout-label">In your field</span>
+        <span data-field="callout-text"></span>
+      </div>
     </div>
     <div class="card" data-dim="love">
       <div class="card-icon">💞</div>
       <div class="card-title">Love &amp; connection</div>
       <div class="card-headline" data-field="headline">—</div>
       <div class="card-body" data-field="body">—</div>
+      <div class="card-callout empty" data-field="callout">
+        <span class="card-callout-label">For you</span>
+        <span data-field="callout-text"></span>
+      </div>
     </div>
     <div class="card" data-dim="health">
       <div class="card-icon">🌿</div>
