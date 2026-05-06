@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Your Life — A Visual Walk Through 90 Years</title>
+<style>
+  :root {
+    --bg: #0e0f13;
+    --panel: #161821;
+    --panel-2: #1d2030;
+    --ink: #e8eaf2;
+    --ink-dim: #a0a4b8;
+    --ink-faint: #5b6079;
+    --past: #4a5275;
+    --now: #ffd166;
+    --future: #2a2f44;
+    --accent: #7aa2ff;
+    --career: #7aa2ff;
+    --love: #f08fb6;
+    --health: #6fd6a5;
+    --money: #ffc857;
+    --growth: #c88cff;
+    --shadow: 0 8px 30px rgba(0,0,0,0.35);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: radial-gradient(ellipse at top, #1a1d2c 0%, var(--bg) 60%);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 28px 80px;
+  }
+  header h1 {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  header p {
+    color: var(--ink-dim);
+    margin: 0 0 32px;
+    font-size: 16px;
+  }
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid #232636;
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .stat-value .unit { color: var(--ink-dim); font-weight: 400; font-size: 14px; margin-left: 4px; }
+
+  /* Slider */
+  .slider-card {
+    background: var(--panel);
+    border: 1px solid #232636;
+    border-radius: 18px;
+    padding: 28px 28px 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+  }
+  .age-display {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .age-num {
+    font-size: 86px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    background: linear-gradient(135deg, #fff 0%, #b0b8d8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .age-label { font-size: 18px; color: var(--ink-dim); }
+  .stage-pill {
+    display: inline-block;
+    background: var(--panel-2);
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 22px;
+  }
+
+  .slider-track-wrap { position: relative; padding: 22px 0 8px; }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+    margin: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right,
+      var(--past) 0%,
+      var(--past) var(--lived-pct, 0%),
+      var(--future) var(--lived-pct, 0%),
+      var(--future) 100%);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(122,162,255,0.25), 0 4px 12px rgba(0,0,0,0.4);
+    margin-top: -9px;
+    cursor: grab;
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.1); }
+  input[type=range]::-moz-range-track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--future);
+  }
+  input[type=range]::-moz-range-progress {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--past);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    box-shadow: 0 0 0 4px rgba(122,162,255,0.25), 0 4px 12px rgba(0,0,0,0.4);
+    cursor: grab;
+  }
+
+  .ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    color: var(--ink-faint);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .now-marker {
+    position: absolute;
+    top: 12px;
+    width: 2px;
+    height: 28px;
+    background: var(--now);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .now-marker::after {
+    content: "today";
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--now);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Dimension cards */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid #232636;
+    border-radius: 16px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--card-color, var(--accent));
+  }
+  .card-icon { font-size: 22px; margin-bottom: 10px; opacity: 0.9; }
+  .card-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .card-headline {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .card-body {
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .card[data-dim=career] { --card-color: var(--career); }
+  .card[data-dim=love]   { --card-color: var(--love); }
+  .card[data-dim=health] { --card-color: var(--health); }
+  .card[data-dim=money]  { --card-color: var(--money); }
+  .card[data-dim=growth] { --card-color: var(--growth); }
+
+  /* Life weeks grid */
+  .weeks-card {
+    background: var(--panel);
+    border: 1px solid #232636;
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: var(--shadow);
+  }
+  .weeks-card h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .weeks-card p.sub {
+    color: var(--ink-dim);
+    margin: 0 0 20px;
+    font-size: 14px;
+  }
+  .weeks-grid {
+    display: grid;
+    grid-template-columns: repeat(52, 1fr);
+    gap: 2px;
+    width: 100%;
+  }
+  .week {
+    aspect-ratio: 1 / 1;
+    border-radius: 1.5px;
+    background: var(--future);
+    transition: background 0.15s;
+  }
+  .week.lived { background: var(--past); }
+  .week.now { background: var(--now); box-shadow: 0 0 0 1.5px var(--now); }
+  .week.selected-stage { background: var(--accent); opacity: 0.85; }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    color: var(--ink-dim);
+    font-size: 12px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 2px; }
+
+  /* Reflection panel */
+  .reflection {
+    margin-top: 28px;
+    padding: 22px 26px;
+    background: linear-gradient(135deg, rgba(122,162,255,0.08), rgba(200,140,255,0.08));
+    border: 1px solid rgba(122,162,255,0.18);
+    border-radius: 16px;
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .reflection .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 600px) {
+    .age-num { font-size: 64px; }
+    header h1 { font-size: 28px; }
+    .container { padding: 28px 18px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Your life, on a single line.</h1>
+    <p>Drag the slider to step through every year. Anchored to your birthdate (Dec 4, 2002) and a 90-year horizon.</p>
+  </header>
+
+  <div class="stat-row">
+    <div class="stat">
+      <div class="stat-label" id="stat-label-age">Selected age</div>
+      <div class="stat-value" id="stat-today">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label" id="stat-label-days">Days lived by then</div>
+      <div class="stat-value" id="stat-days">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label" id="stat-label-remaining">Days remaining*</div>
+      <div class="stat-value" id="stat-remaining">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label" id="stat-label-pct">Life completed</div>
+      <div class="stat-value" id="stat-pct">—</div>
+    </div>
+  </div>
+
+  <div class="slider-card">
+    <div class="age-display">
+      <div class="age-num" id="ageNum">23</div>
+      <div class="age-label">years old</div>
+    </div>
+    <div class="stage-pill" id="stagePill">Emerging adulthood</div>
+
+    <div class="slider-track-wrap">
+      <div class="now-marker" id="nowMarker"></div>
+      <input type="range" id="ageSlider" min="0" max="90" value="23" step="1" />
+      <div class="ticks">
+        <span>0</span><span>15</span><span>30</span><span>45</span><span>60</span><span>75</span><span>90</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" id="cards">
+    <div class="card" data-dim="career">
+      <div class="card-icon">💼</div>
+      <div class="card-title">Career &amp; work</div>
+      <div class="card-headline" data-field="headline">—</div>
+      <div class="card-body" data-field="body">—</div>
+    </div>
+    <div class="card" data-dim="love">
+      <div class="card-icon">💞</div>
+      <div class="card-title">Relationships &amp; family</div>
+      <div class="card-headline" data-field="headline">—</div>
+      <div class="card-body" data-field="body">—</div>
+    </div>
+    <div class="card" data-dim="health">
+      <div class="card-icon">🫀</div>
+      <div class="card-title">Health &amp; body</div>
+      <div class="card-headline" data-field="headline">—</div>
+      <div class="card-body" data-field="body">—</div>
+    </div>
+    <div class="card" data-dim="money">
+      <div class="card-icon">📈</div>
+      <div class="card-title">Finances &amp; wealth</div>
+      <div class="card-headline" data-field="headline">—</div>
+      <div class="card-body" data-field="body">—</div>
+    </div>
+    <div class="card" data-dim="growth">
+      <div class="card-icon">🌱</div>
+      <div class="card-title">Personal growth</div>
+      <div class="card-headline" data-field="headline">—</div>
+      <div class="card-body" data-field="body">—</div>
+    </div>
+  </div>
+
+  <div class="reflection" id="reflection">
+    <div class="label">At this age</div>
+    <div id="reflectionText">—</div>
+  </div>
+
+  <div class="weeks-card" style="margin-top: 28px;">
+    <h2>4,680 weeks</h2>
+    <p class="sub">Each square is one week. Rows are years (top = age 0, bottom = age 90). Highlighted column shows the selected age.</p>
+    <div class="weeks-grid" id="weeksGrid"></div>
+    <div class="legend">
+      <div class="legend-item"><span class="swatch" style="background: var(--past)"></span>Lived</div>
+      <div class="legend-item"><span class="swatch" style="background: var(--now)"></span>This week</div>
+      <div class="legend-item"><span class="swatch" style="background: var(--accent); opacity: 0.85"></span>Selected age</div>
+      <div class="legend-item"><span class="swatch" style="background: var(--future)"></span>Yet to come</div>
+    </div>
+  </div>
+
+  <p style="color: var(--ink-faint); font-size: 12px; margin-top: 18px; text-align: center;">
+    *Assumes 90-year lifespan. Descriptions reflect statistical averages and developmental norms — your path is yours alone.
+  </p>
+</div>
+
+<script>
+  const BIRTHDATE = new Date(2002, 11, 4); // Dec 4, 2002 (months are 0-indexed)
+  const LIFESPAN = 90;
+  const TOTAL_WEEKS = LIFESPAN * 52;
+
+  // ----- Computed personal stats -----
+  function daysBetween(a, b) {
+    return Math.floor((b - a) / 86400000);
+  }
+  function ageInYears(now) {
+    let years = now.getFullYear() - BIRTHDATE.getFullYear();
+    const m = now.getMonth() - BIRTHDATE.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < BIRTHDATE.getDate())) years--;
+    return years;
+  }
+  function preciseAge(now) {
+    const totalDays = daysBetween(BIRTHDATE, now);
+    return totalDays / 365.2425;
+  }
+
+  const now = new Date();
+  const todayAge = ageInYears(now);
+  const todayPrecise = preciseAge(now);
+  const daysLived = daysBetween(BIRTHDATE, now);
+  const totalDaysInLife = LIFESPAN * 365.2425;
+  const daysRemaining = Math.max(0, Math.round(totalDaysInLife - daysLived));
+  const lifePct = (todayPrecise / LIFESPAN) * 100;
+  const weeksLived = Math.floor(daysLived / 7);
+
+  // Stats now update with the slider — see updateStats() inside update().
+
+  // ----- Stage definitions -----
+  // Each stage is keyed by [minAge, maxAge] (inclusive).
+  const STAGES = [
+    { range: [0, 2],   name: "Infancy",
+      career: { h: "Pre-career", b: "The 'work' is learning to walk, talk, and trust. The brain wires up faster than at any other point in life — about a million new neural connections per second." },
+      love:   { h: "Bonding & attachment", b: "Forming attachment patterns with caregivers that quietly shape every adult relationship that follows." },
+      health: { h: "Explosive growth", b: "Triple your birth weight in year one. Brain hits 80% of its adult size by age 2." },
+      money:  { h: "Cost center", b: "Cared for entirely by family. The first investments in your future are being made by others." },
+      growth: { h: "Pure exploration", b: "Object permanence, language, motor skills — building blocks the rest of life is built on." },
+      reflect: "These years aren't remembered, but they shape how you'll handle stress, intimacy, and risk for decades."
+    },
+    { range: [3, 5],   name: "Early childhood",
+      career: { h: "Imaginative play as work", b: "Pretend play is rehearsal for problem-solving, negotiation, and identity. It looks like nothing — it's everything." },
+      love:   { h: "First friendships", b: "Learning to share, take turns, and read other people's emotions for the first time." },
+      health: { h: "Peak agility", b: "Fine motor skills sharpen. Sleep needs are still high (~10–13 hrs)." },
+      money:  { h: "Pre-economic", b: "No real concept of money yet, though the seeds of patience and delayed gratification (the 'marshmallow test' age) are sown." },
+      growth: { h: "The 'why' years", b: "Curiosity is the engine. Every question is a foundation for adult reasoning." },
+      reflect: "If you've ever wondered why some adults stay curious and others don't, look here."
+    },
+    { range: [6, 12],  name: "Middle childhood",
+      career: { h: "School as proto-career", b: "Reading, math, sustained attention — the cognitive habits that determine future earnings start compounding now." },
+      love:   { h: "Tribe-building", b: "Same-gender friend groups dominate. Loyalty and belonging matter more than romance." },
+      health: { h: "Strong & resilient", b: "Lowest mortality rate of any life stage. Bones build density that has to last 80+ years." },
+      money:  { h: "Allowance economics", b: "First experiences with saving, spending, and wanting more than you have." },
+      growth: { h: "Competence > confidence", b: "Erikson called this 'industry vs. inferiority' — mastering skills builds a self-image that lasts." },
+      reflect: "Habits formed now (reading, exercise, sleep) become the path of least resistance later."
+    },
+    { range: [13, 17], name: "Adolescence",
+      career: { h: "Identity construction", b: "Picking subjects, hobbies, and aesthetics that hint at who you'll become. The prefrontal cortex is still under construction — risk-taking peaks." },
+      love:   { h: "First romantic stirrings", b: "First crushes, first heartbreaks. The neural template for how you love is being drafted." },
+      health: { h: "Puberty's earthquake", b: "Hormonal upheaval reshapes mood, sleep, and body. Adult height nearly reached." },
+      money:  { h: "First earned dollar", b: "Part-time jobs introduce the link between time and money — a relationship most people negotiate for the rest of their lives." },
+      growth: { h: "Who am I, really?", b: "The big question. Friends matter more than family. Peer feedback writes the first draft of self-esteem." },
+      reflect: "The brain doesn't finish wiring until around 25 — every choice you barely survived was partly biology."
+    },
+    { range: [18, 22], name: "Emerging adulthood",
+      career: { h: "First serious bets", b: "College, trade, first real job. Career trajectory often pivots on choices made now — though you can re-pivot many times." },
+      love:   { h: "Searching, not settling", b: "Most relationships at this age won't last. That's the point: you're learning what fits." },
+      health: { h: "Peak physical capacity", b: "VO2 max, muscle response, recovery — all near lifetime highs. Habits set now compound for 70 years." },
+      money:  { h: "Often net-negative", b: "Student loans, low starting wages. But time-in-market for early investments is the single biggest financial edge you'll ever have." },
+      growth: { h: "Beliefs get tested", b: "Politics, religion, values — many beliefs you arrived with get challenged. Some survive, sharper. Some don't." },
+      reflect: "You've left the script. The next decade is mostly improvisation — and that's a feature."
+    },
+    { range: [23, 29], name: "Early adulthood",
+      career: { h: "Compounding starts", b: "Skill-building years. Most people change jobs 4–7 times in their 20s. Each move teaches more than the title suggests." },
+      love:   { h: "Sorting & shortlisting", b: "Dating becomes more intentional. Many serious long-term partnerships form in late 20s — though average marriage age keeps rising." },
+      health: { h: "Quietly downhill from peak", b: "Recovery times start lengthening. VO2 max begins its very gentle decline. Sleep quality matters more than ever." },
+      money:  { h: "Habits beat income", b: "Roth IRA contributions made now are worth ~10x the same dollars at age 50. Lifestyle inflation is the silent killer." },
+      growth: { h: "Quarter-life recalibration", b: "Many people hit a 'why am I doing this?' moment around 25–28. It's normal, often productive, and rarely the last one." },
+      reflect: "You're here. Compound interest applies to skills, relationships, and savings — the rates differ, but the math is the same."
+    },
+    { range: [30, 39], name: "The thirties",
+      career: { h: "Specialization & leverage", b: "T-shape forms: deep in one thing, broad enough to lead. Earnings curve typically steepens. Many start their first business or hit senior IC/management." },
+      love:   { h: "Partnering & parenting", b: "Median first-marriage age in the US is now ~30. First kids commonly arrive 30–35 — with profound time/identity reshuffling." },
+      health: { h: "First metabolic shifts", b: "Metabolism doesn't actually 'slow' until 60 — but body composition does shift if habits don't. Resistance training starts mattering more than cardio." },
+      money:  { h: "Net worth inflection", b: "If saving started early, this is when accounts begin to feel real. House purchase, retirement contribution maxing, or — for many — debt management." },
+      growth: { h: "From 'who am I' to 'what do I want?'", b: "Identity stabilizes. The interesting question shifts from self-discovery to deliberate construction." },
+      reflect: "The 30s are where compounding turns visible — for better or worse."
+    },
+    { range: [40, 49], name: "Midlife",
+      career: { h: "Peak influence years", b: "Senior IC, executive, founder, master craftsperson. Decisions you make affect more people than ever. Career capital is at its highest." },
+      love:   { h: "Long-haul partnership", b: "If partnered, the relationship is no longer about chemistry but about shared infrastructure. Kids hit teenage years for many." },
+      health: { h: "Sneaky decade", b: "Most major chronic conditions seed here unnoticed: blood pressure, cholesterol, insulin sensitivity. Annual labs become non-negotiable." },
+      money:  { h: "Peak earning, peak expenses", b: "Salary often peaks 45–55. So do mortgage, college costs, and supporting parents. The 'sandwich' decade." },
+      growth: { h: "The U-curve low", b: "Life satisfaction studies show a measurable dip around age 45–50 — then a rebound. It passes." },
+      reflect: "The U-curve is real. So is the rebound that follows."
+    },
+    { range: [50, 59], name: "Late midlife",
+      career: { h: "Mastery & mentorship", b: "What you know is increasingly more valuable than what you do. Many shift toward mentorship, board work, or knowledge consolidation." },
+      love:   { h: "Empty nest & reinvention", b: "Kids leave (for many). Marriage either deepens or ruptures — divorce rates rise modestly here. Long friendships matter more." },
+      health: { h: "Menopause / andropause", b: "Hormonal shifts (women: 45–55; men: gradual). Strength training is now the single highest-leverage health habit." },
+      money:  { h: "The ten-year runway", b: "Retirement is in clear sight. Asset allocation typically shifts toward stability. Catch-up contributions matter." },
+      growth: { h: "Generativity", b: "Erikson's word for it. The pull is toward leaving something — kids, work, knowledge — that outlasts you." },
+      reflect: "Many people report rising happiness from here onward. The data backs them up."
+    },
+    { range: [60, 69], name: "The sixties",
+      career: { h: "Legacy phase", b: "Retirement for some; a third career or passion project for others. Median US retirement age is ~62–65 but climbing." },
+      love:   { h: "Rediscovered partnership", b: "If long-coupled, the post-kid relationship is essentially a new one. Friend networks become structurally critical." },
+      health: { h: "Strength is destiny", b: "Muscle mass loss accelerates without resistance training. VO2 max and grip strength predict mortality better than almost any other measure." },
+      money:  { h: "Drawdown begins", b: "Sequence-of-returns risk peaks early in retirement. Withdrawal strategy matters more than asset allocation now." },
+      growth: { h: "Time becomes precious", b: "Studies show emotional regulation and life satisfaction often peak in the 60s and 70s. The narrowing horizon clarifies." },
+      reflect: "Decades of evidence show this can be one of the happiest stretches of life."
+    },
+    { range: [70, 79], name: "The seventies",
+      career: { h: "Optional", b: "Many fully retired. Some still consult, write, mentor, or run small businesses for the meaning of it." },
+      love:   { h: "Grandparenting & deep ties", b: "If applicable, grandkids are a major source of joy. Long marriages and old friendships become anchors." },
+      health: { h: "Maintenance is everything", b: "Walking pace, balance, and strength are now strong predictors of how the next decade goes." },
+      money:  { h: "Steady drawdown", b: "Required minimum distributions kick in (US: age 73). Estate planning becomes practical, not theoretical." },
+      growth: { h: "Telling the story", b: "Many spend more time recounting and reframing — to themselves and others. It's not nostalgia; it's integration." },
+      reflect: "Eighty percent of 70-somethings rate their life satisfaction as moderate-to-high. Worth remembering."
+    },
+    { range: [80, 90], name: "Elderhood",
+      career: { h: "Beyond work", b: "For most, work is fully past. The question shifts to: what's worth doing with the time?" },
+      love:   { h: "Concentrated bonds", b: "Social circles narrow but deepen. Loneliness is the real health risk — connection is medicine." },
+      health: { h: "Variability dominates", b: "Two 85-year-olds can be 20 years apart in functional age. Habits from earlier decades cash out here." },
+      money:  { h: "Sufficiency over growth", b: "If well-planned, the money outlasts the spender. If not, family becomes the safety net." },
+      growth: { h: "Integrity vs. despair", b: "Erikson's final stage: looking back and finding it whole. Most people, given time and reflection, get there." },
+      reflect: "If you make it here in good health, you're in rare and remarkable company."
+    },
+  ];
+
+  function getStage(age) {
+    return STAGES.find(s => age >= s.range[0] && age <= s.range[1]) || STAGES[STAGES.length - 1];
+  }
+
+  // ----- Slider wiring -----
+  const slider = document.getElementById('ageSlider');
+  slider.value = todayAge;
+
+  function setNowMarker() {
+    const marker = document.getElementById('nowMarker');
+    const pct = (todayAge / LIFESPAN) * 100;
+    marker.style.left = `calc(${pct}% + ${(0.5 - pct/100) * 24}px)`;
+  }
+
+  function update() {
+    const age = parseInt(slider.value, 10);
+    const stage = getStage(age);
+    const isToday = age === todayAge;
+    const isPast = age < todayAge;
+    const isFuture = age > todayAge;
+
+    document.getElementById('ageNum').textContent = age;
+    document.getElementById('stagePill').textContent = stage.name;
+
+    // Stats — relative to selected age, not just today
+    const daysAtAge = Math.round(age * 365.2425);
+    const daysFromAgeToEnd = Math.max(0, Math.round((LIFESPAN - age) * 365.2425));
+    const pctAtAge = (age / LIFESPAN) * 100;
+
+    const ageLabel = isToday ? "Today's age" : (isPast ? "Age (past)" : "Age (future)");
+    const daysLabel = isToday ? "Days lived" : (isPast ? "Days lived by then" : "Days lived by then");
+    const remainingLabel = isToday ? "Days remaining*" : (isPast ? "Days that were ahead" : "Days remaining from then");
+    const pctLabel = isToday ? "Life completed" : (isPast ? "Life completed by then" : "Life completed by then");
+
+    document.getElementById('stat-label-age').textContent = ageLabel;
+    document.getElementById('stat-label-days').textContent = daysLabel;
+    document.getElementById('stat-label-remaining').textContent = remainingLabel;
+    document.getElementById('stat-label-pct').textContent = pctLabel;
+
+    document.getElementById('stat-today').innerHTML = age + '<span class="unit">yrs</span>';
+    document.getElementById('stat-days').innerHTML = daysAtAge.toLocaleString() + '<span class="unit">days</span>';
+    document.getElementById('stat-remaining').innerHTML = daysFromAgeToEnd.toLocaleString() + '<span class="unit">days</span>';
+    document.getElementById('stat-pct').innerHTML = pctAtAge.toFixed(1) + '<span class="unit">%</span>';
+
+    const dimMap = {
+      career: stage.career,
+      love: stage.love,
+      health: stage.health,
+      money: stage.money,
+      growth: stage.growth,
+    };
+    document.querySelectorAll('.card').forEach(card => {
+      const key = card.dataset.dim;
+      const data = dimMap[key];
+      card.querySelector('[data-field=headline]').textContent = data.h;
+      card.querySelector('[data-field=body]').textContent = data.b;
+    });
+
+    document.getElementById('reflectionText').textContent = stage.reflect;
+
+    // slider gradient — fills up to selected age
+    slider.style.setProperty('--lived-pct', `${pctAtAge}%`);
+
+    updateWeeks(age);
+  }
+
+  // ----- Weeks grid -----
+  const weeksGrid = document.getElementById('weeksGrid');
+  // Build once: 90 rows * 52 cols = 4680 cells
+  const weekEls = [];
+  for (let y = 0; y < LIFESPAN; y++) {
+    for (let w = 0; w < 52; w++) {
+      const el = document.createElement('div');
+      el.className = 'week';
+      el.dataset.year = y;
+      el.dataset.week = w;
+      const weekIndex = y * 52 + w;
+      if (weekIndex < weeksLived) el.classList.add('lived');
+      if (weekIndex === weeksLived) el.classList.add('now');
+      weeksGrid.appendChild(el);
+      weekEls.push(el);
+    }
+  }
+
+  let lastSelectedYear = -1;
+  function updateWeeks(age) {
+    if (lastSelectedYear === age) return;
+    if (lastSelectedYear !== -1) {
+      for (let w = 0; w < 52; w++) {
+        const el = weekEls[lastSelectedYear * 52 + w];
+        if (el) el.classList.remove('selected-stage');
+      }
+    }
+    if (age >= 0 && age < LIFESPAN) {
+      for (let w = 0; w < 52; w++) {
+        const el = weekEls[age * 52 + w];
+        // don't override the 'now' marker
+        if (el && !el.classList.contains('now')) el.classList.add('selected-stage');
+      }
+    }
+    lastSelectedYear = age;
+  }
+
+  slider.addEventListener('input', update);
+  setNowMarker();
+  update();
+
+  // Keyboard niceties
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Home') { slider.value = 0; update(); }
+    if (e.key === 'End') { slider.value = LIFESPAN; update(); }
+    if (e.key === 't' || e.key === 'T') { slider.value = todayAge; update(); }
+  });
+</script>
+</body>
+</html>
