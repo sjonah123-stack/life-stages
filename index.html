@@ -2430,35 +2430,41 @@
   }
   function paintJournalDots() {
     if (!BIRTHDATE) return;
-    const keys = new Set(Object.keys(journal));
     weekEls.forEach((el, i) => {
-      el.classList.toggle('has-entry', keys.has(weekKey(i)));
+      const k = weekKey(i);
+      const e = getEntry(k);
+      const has = !!(e.text && e.text.trim()) || !!e.photo;
+      el.classList.toggle('has-entry', has && !!(e.text && e.text.trim()));
+      el.classList.toggle('has-photo', !!e.photo);
     });
   }
   function renderRecentJournal() {
     const list = document.getElementById('recentEntriesList');
     const countLabel = document.getElementById('journalCount');
     const entries = Object.entries(journal)
-      .filter(([k, v]) => v && v.trim())
+      .map(([k, v]) => [k, getEntry(k)])
+      .filter(([k, e]) => (e.text && e.text.trim()) || e.photo)
       .sort((a, b) => b[0].localeCompare(a[0]))
       .slice(0, 6);
-    countLabel.textContent = `${Object.keys(journal).length} ${Object.keys(journal).length === 1 ? 'entry' : 'entries'}`;
+    const total = Object.keys(journal).length;
+    countLabel.textContent = `${total} ${total === 1 ? 'entry' : 'entries'}`;
     if (entries.length === 0) {
       list.innerHTML = '<div class="journal-empty">No entries yet — start with this week.</div>';
       return;
     }
-    list.innerHTML = entries.map(([key, text]) => {
+    list.innerHTML = entries.map(([key, e]) => {
       const d = parseDOB(key);
       if (!d) return '';
       const weekIdx = Math.floor((d - BIRTHDATE) / (7 * 86400000));
       const age = ageInYears(d, BIRTHDATE);
       const range = weekRangeStr(weekIdx);
+      const photoIcon = e.photo ? ' 📸' : '';
       return `<div class="recent-entry" data-week="${weekIdx}">
         <div class="recent-entry-meta">
-          <span class="age">Age ${age}</span>
+          <span class="age">Age ${age}${photoIcon}</span>
           <span>${range}</span>
         </div>
-        <div class="recent-entry-preview">${escapeHtml(text)}</div>
+        <div class="recent-entry-preview">${escapeHtml(e.text || '(photo only)')}</div>
       </div>`;
     }).join('');
     list.querySelectorAll('.recent-entry').forEach(el => {
@@ -2476,7 +2482,7 @@
     const range = weekRangeStr(idx);
     document.getElementById('thisWeekRange').textContent = range;
     const ta = document.getElementById('thisWeekText');
-    ta.value = journal[weekKey(idx)] || '';
+    ta.value = getEntry(weekKey(idx)).text;
     document.getElementById('thisWeekStatus').textContent = '';
   }
 
@@ -3092,10 +3098,12 @@
     const idx = currentWeekIndex();
     const text = thisWeekText.value.trim();
     const key = weekKey(idx);
-    if (text) journal[key] = text; else delete journal[key];
+    const entry = getEntry(key);
+    setEntry(key, { text, photo: entry.photo });
     saveJournalToLS();
     paintJournalDots();
     renderRecentJournal();
+    scheduleCloudSave();
     thisWeekStatus.textContent = 'Saved ✓';
     thisWeekSave.classList.add('saved');
     setTimeout(() => {
