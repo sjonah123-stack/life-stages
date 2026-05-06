@@ -910,6 +910,185 @@
   }
   .delete-btn:hover { color: var(--love); border-color: var(--love); }
 
+  /* Priority chips above cards */
+  .priorities-bar {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    box-shadow: var(--shadow-sm);
+  }
+  .priorities-bar .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    font-weight: 700;
+  }
+  .priority-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .priority-chip {
+    background: var(--panel-warm);
+    border: 1.5px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-dim);
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .priority-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .priority-chip.selected {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .priority-chip.selected::before { content: '★ '; }
+
+  /* Priority cards */
+  .card.priority {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    order: -1;
+  }
+  .card.priority::after {
+    content: '★';
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    color: var(--accent);
+    font-size: 16px;
+  }
+
+  /* Year tag markers on slider */
+  .year-tag-marker {
+    position: absolute;
+    top: 0px;
+    font-size: 16px;
+    transform: translateX(-50%);
+    z-index: 2;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+  }
+
+  /* Year tag callout (shows when slider lands on a tagged year) */
+  .year-tag-callout {
+    background: linear-gradient(135deg, rgba(255, 201, 60, 0.22), rgba(255, 107, 157, 0.14));
+    border: 1px solid rgba(255, 140, 97, 0.28);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink);
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .year-tag-callout .emoji { font-size: 28px; }
+  .year-tag-callout[hidden] { display: none; }
+
+  /* Year tags inputs (in milestones section) */
+  .year-tags {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 0;
+    margin-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+  .year-tags .field { gap: 4px; }
+
+  /* Milestone form: completed checkbox */
+  .milestone-form .check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-dim);
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .milestone-form .check input { margin: 0; cursor: pointer; }
+  .milestone-chip.done { background: linear-gradient(135deg, rgba(244, 184, 96, 0.18), rgba(255, 140, 97, 0.10)); }
+  .milestone-chip.done .age { color: var(--past); }
+  .milestone-chip.done::before { content: '✓ '; color: var(--past); font-weight: 700; }
+
+  /* Future-self letters section */
+  .future-letters {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 26px 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .future-letters h2 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
+  .future-letters .sub { color: var(--ink-dim); margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
+  .letter-block {
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    background: var(--panel-warm);
+    border-radius: 12px;
+  }
+  .letter-block summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .letter-block summary::-webkit-details-marker { display: none; }
+  .letter-block .age-label { color: var(--accent); font-weight: 800; }
+  .letter-block .letter-meta { color: var(--ink-faint); font-size: 11px; font-weight: 600; }
+  .letter-block textarea {
+    width: 100%;
+    min-height: 100px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+    resize: vertical;
+    margin-top: 10px;
+  }
+  .letter-block textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* Letter display callout (when slider hits 40/60/80) */
+  .letter-display {
+    background: linear-gradient(135deg, rgba(185, 131, 255, 0.14), rgba(122, 162, 255, 0.12));
+    border: 1px solid rgba(185, 131, 255, 0.28);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-bottom: 18px;
+  }
+  .letter-display[hidden] { display: none; }
+  .letter-display .letter-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--growth);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .letter-display .letter-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+
   /* Journal modal */
   .journal-modal {
     position: fixed;
@@ -1164,6 +1343,28 @@
     <div class="texture-grid" id="textureGrid"></div>
   </div>
 
+  <div class="year-tag-callout" id="yearTagCallout" hidden>
+    <span class="emoji" id="yearTagEmoji">✨</span>
+    <div id="yearTagText">—</div>
+  </div>
+
+  <div class="letter-display" id="letterDisplay" hidden>
+    <div class="letter-label">From you, at <span id="letterDisplayAge">—</span></div>
+    <div class="letter-text" id="letterDisplayText">—</div>
+  </div>
+
+  <div class="priorities-bar">
+    <span class="label">What matters most</span>
+    <div class="priority-chips" id="priorityChips">
+      <button class="priority-chip" type="button" data-dim="career">Career</button>
+      <button class="priority-chip" type="button" data-dim="love">Love</button>
+      <button class="priority-chip" type="button" data-dim="health">Body</button>
+      <button class="priority-chip" type="button" data-dim="money">Wealth</button>
+      <button class="priority-chip" type="button" data-dim="growth">Growth</button>
+    </div>
+    <span class="label" style="margin-left:auto">Pick up to 3 — they'll be starred &amp; floated up</span>
+  </div>
+
   <div class="cards">
     <div class="card" data-dim="career">
       <div class="card-icon">💫</div>
@@ -1220,8 +1421,19 @@
     <form class="milestone-form" id="milestoneForm">
       <input type="text" id="msLabel" placeholder="What's the milestone? (e.g. Trip to Japan)" maxlength="48" />
       <input type="number" id="msAge" placeholder="Age" min="0" max="100" />
+      <label class="check"><input type="checkbox" id="msCompleted" /> Already done</label>
       <button type="submit">Add</button>
     </form>
+    <div class="year-tags">
+      <div class="field">
+        <span class="field-label">✨ Best year so far</span>
+        <input type="number" id="bestYearInput" min="0" max="100" placeholder="—" />
+      </div>
+      <div class="field">
+        <span class="field-label">💪 Hardest year (you made it)</span>
+        <input type="number" id="hardestYearInput" min="0" max="100" placeholder="—" />
+      </div>
+    </div>
   </div>
 
   <div class="weeks-card">
@@ -1265,6 +1477,32 @@
     </div>
   </div>
 
+  <div class="future-letters">
+    <h2>Letters from your future self</h2>
+    <p class="sub">Write notes from the version of you at 40, 60, and 80 — back to where you are now. They'll surface when you slide to those ages. Saved on this device only. 🔒</p>
+    <details class="letter-block" data-letter-age="40">
+      <summary>
+        <span><span class="age-label">At 40</span> — what you'd want yourself to know</span>
+        <span class="letter-meta" data-meta="40">empty</span>
+      </summary>
+      <textarea data-letter-age="40" placeholder="Hey, you. Here's what's been worth it. Here's what didn't matter as much as it felt like. Here's what I wish I'd known sooner..."></textarea>
+    </details>
+    <details class="letter-block" data-letter-age="60">
+      <summary>
+        <span><span class="age-label">At 60</span> — what's mattered most</span>
+        <span class="letter-meta" data-meta="60">empty</span>
+      </summary>
+      <textarea data-letter-age="60" placeholder="Halfway through this third act. The people who've stuck around. The work that aged well. What I'd tell you to keep going on..."></textarea>
+    </details>
+    <details class="letter-block" data-letter-age="80">
+      <summary>
+        <span><span class="age-label">At 80</span> — looking back at the whole thing</span>
+        <span class="letter-meta" data-meta="80">empty</span>
+      </summary>
+      <textarea data-letter-age="80" placeholder="Now I can see the shape of it. The chapters. What was a gift. What I'd do again..."></textarea>
+    </details>
+  </div>
+
   <footer>
     Numbers reflect statistical norms — your path is yours alone, and almost certainly more wonderful than averages can capture.
   </footer>
@@ -1304,6 +1542,11 @@
   let smoker, exerciseLevel, sleepHours, familyLongevity;
   let milestones = [];
   let journal = {}; // {YYYY-MM-DD : entry text}
+  // Wave 3
+  let priorities = []; // up to 3 dim keys: career, love, health, money, growth
+  let bestYear = 0;     // 0 means unset
+  let hardestYear = 0;  // 0 means unset
+  let letters = {};     // {40: text, 60: text, 80: text}
 
   // ---- Country-specific ----
   const COUNTRY_NOTES = {
@@ -1809,14 +2052,24 @@
     if (url) {
       try {
         return url.split(',').map(s => {
-          const [age, ...rest] = s.split(':');
-          return { age: parseInt(age, 10), label: decodeURIComponent(rest.join(':')) };
+          const parts = s.split(':');
+          const age = parseInt(parts[0], 10);
+          // Last segment may be 0/1 completion flag — if it's '0' or '1' treat as flag
+          let completed = false;
+          let labelParts = parts.slice(1);
+          if (labelParts.length > 1 && (labelParts[labelParts.length - 1] === '0' || labelParts[labelParts.length - 1] === '1')) {
+            completed = labelParts.pop() === '1';
+          }
+          return { age, label: decodeURIComponent(labelParts.join(':')), completed };
         }).filter(m => !isNaN(m.age) && m.label);
       } catch (e) {}
     }
     try {
       const raw = localStorage.getItem('lifeStages.milestones');
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        return arr.map(m => ({ age: m.age, label: m.label, completed: !!m.completed }));
+      }
     } catch (e) {}
     return [];
   }
