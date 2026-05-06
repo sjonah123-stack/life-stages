@@ -1814,6 +1814,12 @@
   let bestYear = 0;     // 0 means unset
   let hardestYear = 0;  // 0 means unset
   let letters = {};     // {40: text, 60: text, 80: text}
+  let places = [];      // [{name, displayName, lat, lng, year, note}]
+  // Auth/sync (Phase 1)
+  let supa = null;      // Supabase client (null if not configured)
+  let currentUser = null;
+  let saveTimer = null;
+  let lastCloudVersion = 0;
 
   // ---- Country-specific ----
   const COUNTRY_NOTES = {
