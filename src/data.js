@@ -2,7 +2,7 @@
 
 
 // ---- Country-specific ----
-const COUNTRY_NOTES = {
+export const COUNTRY_NOTES = {
   US: { lifeExp: { male: 76, female: 81 }, retireMedian: 64 },
   CA: { lifeExp: { male: 80, female: 84 }, retireMedian: 64 },
   UK: { lifeExp: { male: 79, female: 83 }, retireMedian: 65 },
@@ -17,7 +17,7 @@ const COUNTRY_NOTES = {
 
 
 // ---- Career field callouts (3 brackets) ----
-const CAREER_FIELDS = {
+export const CAREER_FIELDS = {
   tech: {
     young: "The 'young founder' myth is mostly myth. Founders launch in their 20s, but the actual peak founder age in tech is 45 (Azoulay et al). You have decades to do your best work.",
     mid: "Senior IC tracks are now genuinely viable past 40 — Staff/Principal Engineer compensation often beats VP. Many of the most influential tech leaders are 35–55.",
@@ -82,7 +82,7 @@ const CAREER_FIELDS = {
 
 
 // ---- Partnership / kids callouts for the love card ----
-const PARTNERSHIP_NOTES = {
+export const PARTNERSHIP_NOTES = {
   single:   "Studies repeatedly show single people in their 30s and beyond report life satisfaction equal to or above partnered peers — when their social fabric is strong. Friends matter more than partners by some measures.",
   dating:   "Dating in your 20s and 30s is statistically more about pattern recognition than picking. Most people figure out what fits through several relationships, not the first one.",
   engaged:  "The best long-term predictor of marital happiness isn't passion — it's how much you genuinely like each other as friends.",
@@ -100,7 +100,7 @@ export const RELATION_LABEL = {
 
 
 // ---- Writing prompts ----
-const PROMPTS = [
+export const PROMPTS = [
   "Who made you laugh this week?",
   "What surprised you?",
   "Something small that mattered?",
@@ -135,7 +135,7 @@ const PROMPTS = [
 
 
 // ---- Stages ----
-const STAGES = [
+export const STAGES = [
   { range: [0, 2], name: "Spark",
     poetic: "Pure beginning. Everything is new.",
     career: { h: "Pure exploration", b: "The 'work' is learning to walk, talk, and trust. About a million new neural connections form per second — the most a brain will ever build." },
