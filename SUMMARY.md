@@ -1,26 +1,29 @@
 # Session Summary — life-stages
 
-Last updated: 2026-05-07, after shipping the Wealth tab to prod.
+Last updated: 2026-05-07, after shipping the wealth-on-Today refactor to prod.
 
 ## Where things stand right now
 
 | | URL | Status |
 |---|---|---|
-| **Production** | https://life-stages-90806.web.app | Svelte v2 — Wealth tab live as of 2026-05-07 |
-| **Wealth preview** | https://life-stages-90806--wealth-preview-t403dfvx.web.app | Same code as prod now; can let it expire ~2026-05-14 |
+| **Production** | https://life-stages-90806.web.app | Wealth assessment now lives on the Today page; no top-level Wealth tab. Live as of 2026-05-07. |
+| **Latest preview** | https://life-stages-90806--wealth-on-today-j8thxrh3.web.app | Same code as prod; expires ~2026-05-14 |
 | **Legacy archive** | https://life-stages-90806.web.app/legacy.html | Old single-file app, viewable but not maintained |
 
-**Open thread (user's stated direction for next session):** restructure how Wealth lives in the app. The user shipped the tab as-is but wants three changes before "wealth" becomes the larger feature:
+**Open thread:** none committed. Three plausible next directions, in rough priority:
 
-1. **Move the assessment off its own tab and into the dashboard (Today page).** The Wealth tab as a top-level destination is temporary; the assessment should be a card/section users can open from Today. Wealth-the-feature is going to grow into something bigger and the standalone tab is in the wrong place to be the front door.
-2. **Save / retake / delete controls on the assessment result.** Today only the latest result persists silently. The user wants explicit "save this result", "retake the assessment" (which currently exists but is implicit), and "delete and start fresh" actions. Likely also want named/dated saves so a user can see "I took this on March 2026" rather than overwriting.
-3. **Recommendation check-off.** Each result surfaces recommendations (deep-links to existing tools when a wealth score < 60). The user wants to mark each recommendation as fulfilled. Persist completion state, ideally with a date stamp, and reflect it in the wealth card UI (strikethrough + checkmark, or move completed recs to a separate list).
-
-These three ideas reshape the data model: a single `assessmentResult` writable becomes a list of saved results, each with completion state on its recommendations. Plan this carefully before coding — touches `stores/assessment.ts`, `cloud-sync.ts` (for the Firestore shape), and most components in `components/wealth/`.
+1. **Net-worth tracker** — the biggest known data thinness. Financial Wealth's behavioral score reads only `retirementAge` + `careerField`. Adding monthly net-worth check-ins, a savings rate input, and at least one financial goal would let "Financial Wealth" carry its own weight. Likely a new sub-section on Today or a small dedicated page reachable from a wealth card CTA. Wire it into `assessment.ts`'s Financial scoring rules.
+2. **Mobile responsiveness pass** — at 375px the Today hero h1 (48px) and the new Wealth section's headline overlap awkwardly. Composer-meta row also wraps. Audit each page at 375px in Claude Preview, fix typography/spacing per page.
+3. **Tests** — zero coverage. The wealth refactor introduced a non-trivial migration path (v1 → v2) and per-result mutation logic that would benefit from store-level round-trip tests. Vitest + @testing-library/svelte; start with `stores/assessment.ts` round-trip + `toggleRecommendation` semantics.
 
 ## Pending git state
 
-`origin/main` is up to date with local `main` as of this writing. Working tree was clean after the wealth-tab ship (no commits made this session — the deploy ran from existing HEAD). Confirm any time:
+As of last check, `origin/main` is up to date with local `main` (the user pushes via GitHub Desktop). Most recent commits:
+- `03ba00e` Working to continue building out wealth tab (the refactor below)
+- `f5936e8` Update SUMMARY.md
+- `ca62823` Add CLAUDE.md + SUMMARY.md handoff docs
+
+Confirm any time:
 
 ```bash
 cd /Users/Jonahs/Code/life-stages && git status && git rev-list --count origin/main..HEAD
@@ -54,13 +57,13 @@ Mid-rewrite polish pass before phase 9 added: composer auto-save 30s max-wait, d
 
 Tagged the milestone as `svelte-v1`.
 
-### 2. 5 Types of Wealth assessment — committed, on preview, not on prod
+### 2. 5 Types of Wealth assessment — shipped to prod 2026-05-07
 
-Built the 7th nav tab "Wealth" hosting a survey-driven assessment using Sahil Bloom's framework. Three states based on whether the user has taken the assessment:
+Built a survey-driven assessment using Sahil Bloom's framework. Three states based on whether the user has taken the assessment:
 
 - **Intro** — 5 wealth tiles + "Take the 3-minute assessment" CTA
 - **Survey** — 15 questions (3 per wealth), one-at-a-time, Likert 1–5, progress bar, prev/next
-- **Results** — radar chart + 5 wealth cards + top-2 growth callout + retake button
+- **Results** — radar chart + 5 wealth cards + top-2 growth callout + per-result controls
 
 Scoring is **blended**:
 - **Self-report** comes from survey answers (0–100 per wealth)
@@ -69,14 +72,24 @@ Scoring is **blended**:
 
 Recommendations surface when either score < 60. Each rec is a deep-link to an existing tool (`/people`, `/journal`, `/settings`, etc.).
 
-Files added (see `CLAUDE.md` for full layout):
-- `frontend/src/data/assessment.ts` — 15 questions + 5 wealth metas + recommendation library + `computeSelfScores`
-- `frontend/src/stores/assessment.ts` — `assessmentResult` writable + `behavioralScores` derived
-- `frontend/src/components/wealth/` — `AssessmentIntro`, `AssessmentSurvey`, `AssessmentResults`, `WealthRadar` (hand-rolled SVG), `WealthCard`
-- `frontend/src/components/pages/Wealth.svelte`
-- `frontend/src/types.ts`, `lib/router.ts`, `App.svelte`, `stores/cloud-sync.ts` all extended
+### 3. Wealth-on-Today refactor — shipped to prod 2026-05-07 (commit `03ba00e`)
 
-Verification done: svelte-check 0 errors, build success, DOM-query confirmed radar SVG with 2 polygons + 5 wealth cards + 2 focus items + retake button.
+Three changes shipped together:
+
+1. **Assessment moved off its own tab onto the Today page.** The Wealth tab is gone from TopNav; new `components/today/TodayWealth.svelte` wraps the intro→survey→results state machine and lives at the bottom of Today. `components/pages/Wealth.svelte` deleted. Old `#/wealth` URLs fall through to Today via `pageFromHash`'s default.
+2. **Saved-result list with per-result delete/retake.** `assessmentResult` (single writable) → `assessmentResults` (list, newest first). "Take again" creates a new entry; "Delete" removes a specific result with confirm. When 2+ results exist, a date-picker dropdown appears in the results header to switch between them.
+3. **Recommendation check-off.** Each `Recommendation` got a stable `id`. Each saved result has a `completedRecommendations: Record<recId, ISO-date>` map. Clicking a rec's checkbox toggles completion; persisted in LS + Firestore; visualised as strikethrough text + filled orange check.
+
+**Migration path** lifts v1 single-result data into the v2 list shape automatically:
+- `stores/assessment.ts → migrateLegacyLocal()` reads `lifeStages.assessment`, wraps it as one entry, writes to `lifeStages.assessmentResults`, deletes the old key.
+- `stores/cloud-sync.ts → applyCloudState()` falls back to `cloud.assessmentResult` when `cloud.assessmentResults` is absent.
+- `normalizeResults()` in `assessment.ts` is the single funnel that fills in missing `id` / `completedRecommendations` and sorts newest-first. Keep using it for any inbound list.
+
+**Subtle Svelte 5 gotcha caught in verification:** template expressions like `aria-pressed={isDone(r.id)}` calling a plain function don't reliably re-evaluate when the function reads a prop — Svelte's dependency tracker doesn't see through the call. Symptom was `class:checked` updating mid-session while sibling `aria-pressed` stayed stale. Fix: introduce a `$:` reactive copy of the prop (`doneMap`) and read it directly via `{@const done = !!doneMap[r.id]}` inside a keyed `{#each}`. If you add new wealth-card UI that depends on `completedRecommendations`, follow the same pattern.
+
+Files touched (see commit `03ba00e`): `types.ts`, `data/assessment.ts`, `stores/assessment.ts`, `stores/cloud-sync.ts`, `lib/router.ts`, `App.svelte`, `components/pages/Today.svelte`, `components/today/TodayWealth.svelte` (new), `components/wealth/AssessmentResults.svelte`, `AssessmentSurvey.svelte`, `WealthCard.svelte`. Deleted: `components/pages/Wealth.svelte`.
+
+Verification done: svelte-check 0 errors, build success, in-browser preview confirmed migration (legacy LS key removed, new list populated with UUID + empty completedRecommendations), check-off click → persists in LS with timestamp → reload → state hydrates correctly.
 
 ## Confirmed design decisions (don't relitigate)
 
