@@ -2408,46 +2408,61 @@
 
   <section class="page" data-page="journal">
   <h1 class="page-title">Your journal</h1>
-  <p class="page-subtitle">Write what's true. Past weeks become memory. The grid grows richer every week you show up.</p>
-  <div class="weeks-card">
-    <h2>Your weeks of possibility</h2>
-    <p class="sub">Each square is one week. Past weeks shine in warm gold (memory). Future weeks glow in possibility colors. <strong>Click any week to write a journal entry.</strong> Weeks with entries get an accent ring.</p>
-    <div class="weeks-grid" id="weeksGrid"></div>
-    <div class="legend">
-      <div class="legend-item"><span class="swatch" style="background: var(--past-dim)"></span>Lived &amp; lovely</div>
-      <div class="legend-item"><span class="swatch" style="background: var(--now)"></span>This week</div>
-      <div class="legend-item"><span class="swatch" style="background: var(--future-1)"></span>Possibility ahead</div>
-      <div class="legend-item"><span class="swatch" style="background: transparent; box-shadow: inset 0 0 0 1.5px var(--accent)"></span>Has a journal entry</div>
+  <p class="page-subtitle">Write at the top, edit anything below, view the full timeline at the bottom. Pick any date — write about any week of your life.</p>
+
+  <div class="journal-composer" id="journalComposer">
+    <div class="composer-meta">
+      <input type="date" id="composerDate" max="" />
+      <div class="week-info">
+        <span class="age-tag" id="composerAge">—</span>
+        <span id="composerWeekRange">—</span>
+      </div>
+      <span class="editing-tag" id="composerEditingTag" hidden>Editing</span>
+    </div>
+    <textarea class="composer-textarea" id="composerText" placeholder="What's on your mind? What happened this week? Big things, small things — write what's true." maxlength="5000"></textarea>
+    <div class="composer-photo-strip">
+      <label class="composer-photo-add">
+        📸 <span id="composerPhotoLabel">Add photo</span>
+        <input type="file" id="composerPhotoInput" accept="image/*" />
+      </label>
+      <img id="composerPhotoPreview" class="composer-photo-thumb" style="display:none" alt="" />
+      <button type="button" class="cancel-btn" id="composerPhotoRemove" hidden>Remove photo</button>
+    </div>
+    <div class="composer-actions">
+      <button type="button" class="save-btn" id="composerSave">Save entry</button>
+      <button type="button" class="cancel-btn" id="composerCancel">Reset</button>
+      <button type="button" class="delete-btn" id="composerDelete" hidden>Delete</button>
+      <span class="composer-status" id="composerStatus"></span>
     </div>
   </div>
 
-  <div class="journal-section">
-    <h2>Your weekly journal</h2>
-    <p class="sub">A few sentences a week becomes the most precious record you'll ever own. Write whatever's true — what happened, what you noticed, who you love. <strong>🔒 Saved only on this device.</strong> Export below to back up.</p>
+  <div class="entries-feed-header">
+    <span class="label"><span class="count" id="feedCount">0</span> entries</span>
+    <div class="year-filter" id="yearFilter"></div>
+  </div>
+  <div class="entries-feed" id="entriesFeed"></div>
 
-    <div class="this-week-entry">
-      <div class="this-week-label">
-        <span>This week</span>
-        <span class="this-week-range" id="thisWeekRange">—</span>
+  <details class="calendar-collapse">
+    <summary>Calendar view — all 4,680 weeks</summary>
+    <div class="calendar-collapse-content">
+      <div class="weeks-card">
+        <p class="sub">Each square is one week of life. Past weeks in warm gold (memory). Future weeks in possibility colors. <strong>Click any week to write/edit.</strong> Accent ring = has an entry.</p>
+        <div class="weeks-grid" id="weeksGrid"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="swatch" style="background: var(--past-dim)"></span>Lived</div>
+          <div class="legend-item"><span class="swatch" style="background: var(--now)"></span>This week</div>
+          <div class="legend-item"><span class="swatch" style="background: var(--future-1)"></span>Ahead</div>
+          <div class="legend-item"><span class="swatch" style="background: transparent; box-shadow: inset 0 0 0 1.5px var(--accent)"></span>Has entry</div>
+        </div>
       </div>
-      <textarea id="thisWeekText" placeholder="What happened this week? What did you notice? Who made you laugh?" maxlength="5000"></textarea>
-      <div class="this-week-actions">
-        <button type="button" class="save-btn" id="thisWeekSave">Save entry</button>
-        <span class="save-status" id="thisWeekStatus"></span>
-      </div>
     </div>
+  </details>
 
-    <div class="recent-entries">
-      <h3>Recent entries</h3>
-      <div id="recentEntriesList"></div>
-    </div>
-
-    <div class="journal-tools">
-      <button type="button" id="exportJournal" title="Download all entries as a JSON file">⬇ Export journal</button>
-      <label class="btn" for="importJournalFile" title="Restore entries from a previously exported file">⬆ Import journal</label>
-      <input type="file" id="importJournalFile" accept="application/json" style="display:none" />
-      <span class="count" id="journalCount">0 entries</span>
-    </div>
+  <div class="journal-tools">
+    <button type="button" id="exportJournal" title="Download all entries as a JSON file">⬇ Export journal</button>
+    <label class="btn" for="importJournalFile" title="Restore entries from a previously exported file">⬆ Import journal</label>
+    <input type="file" id="importJournalFile" accept="application/json" style="display:none" />
+    <span class="count" id="journalCount">0 entries</span>
   </div>
 
   <div class="future-letters">
@@ -3388,53 +3403,182 @@
       el.classList.toggle('has-photo', !!e.photo);
     });
   }
+  // Year filter state for the entries feed
+  let feedYearFilter = 'all';
   function renderRecentJournal() {
-    const list = document.getElementById('recentEntriesList');
+    const feed = document.getElementById('entriesFeed');
     const countLabel = document.getElementById('journalCount');
-    const entries = Object.entries(journal)
+    const feedCount = document.getElementById('feedCount');
+    const yearFilterEl = document.getElementById('yearFilter');
+    if (!feed || !BIRTHDATE) return;
+    const allEntries = Object.entries(journal)
       .map(([k, v]) => [k, getEntry(k)])
       .filter(([k, e]) => (e.text && e.text.trim()) || e.photo)
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .slice(0, 6);
+      .sort((a, b) => b[0].localeCompare(a[0]));
     const total = Object.keys(journal).length;
-    countLabel.textContent = `${total} ${total === 1 ? 'entry' : 'entries'}`;
-    if (entries.length === 0) {
-      list.innerHTML = '<div class="journal-empty">No entries yet — start with this week.</div>';
+    if (countLabel) countLabel.textContent = `${total} ${total === 1 ? 'entry' : 'entries'}`;
+    // Year filter chips
+    const yearsSet = new Set();
+    allEntries.forEach(([k]) => {
+      const d = parseDOB(k);
+      if (d) yearsSet.add(d.getFullYear());
+    });
+    const years = [...yearsSet].sort((a, b) => b - a);
+    if (yearFilterEl) {
+      yearFilterEl.innerHTML = (years.length > 1)
+        ? [`<button class="year-chip${feedYearFilter==='all'?' active':''}" data-year="all">All</button>`]
+            .concat(years.map(y => `<button class="year-chip${String(feedYearFilter)===String(y)?' active':''}" data-year="${y}">${y}</button>`))
+            .join('')
+        : '';
+      yearFilterEl.querySelectorAll('.year-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          feedYearFilter = btn.dataset.year === 'all' ? 'all' : parseInt(btn.dataset.year, 10);
+          renderRecentJournal();
+        });
+      });
+    }
+    // Filter entries
+    const visibleEntries = feedYearFilter === 'all'
+      ? allEntries
+      : allEntries.filter(([k]) => {
+          const d = parseDOB(k);
+          return d && d.getFullYear() === feedYearFilter;
+        });
+    if (feedCount) feedCount.textContent = visibleEntries.length;
+    if (visibleEntries.length === 0) {
+      feed.innerHTML = total === 0
+        ? '<div class="entries-empty">No entries yet. Write your first one above — even a single sentence becomes precious in 10 years.</div>'
+        : '<div class="entries-empty">No entries from that year. Try another filter.</div>';
       return;
     }
-    list.innerHTML = entries.map(([key, e]) => {
+    feed.innerHTML = visibleEntries.map(([key, e]) => {
       const d = parseDOB(key);
-      if (!d) return '';
       const weekIdx = Math.floor((d - BIRTHDATE) / (7 * 86400000));
       const age = ageInYears(d, BIRTHDATE);
-      const range = weekRangeStr(weekIdx);
-      const photoIcon = e.photo ? ' 📸' : '';
-      return `<div class="recent-entry" data-week="${weekIdx}">
-        <div class="recent-entry-meta">
-          <span class="age">Age ${age}${photoIcon}</span>
-          <span>${range}</span>
+      const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      const photoHTML = e.photo
+        ? `<img class="photo-thumb" src="${e.photo}" alt="" />`
+        : `<div class="photo-placeholder">📝</div>`;
+      const previewText = e.text && e.text.trim()
+        ? escapeHtml(e.text)
+        : '(photo only)';
+      const previewClass = (e.text && e.text.trim()) ? '' : ' italic';
+      return `<div class="entry-card" data-key="${key}">
+        ${photoHTML}
+        <div class="body">
+          <div class="meta">
+            <span class="date">${dateStr}</span>
+            <span class="age-pill">Age ${age}</span>
+          </div>
+          <div class="preview${previewClass}">${previewText}</div>
         </div>
-        <div class="recent-entry-preview">${escapeHtml(e.text || '(photo only)')}</div>
       </div>`;
     }).join('');
-    list.querySelectorAll('.recent-entry').forEach(el => {
-      el.addEventListener('click', () => openJournalModal(parseInt(el.dataset.week, 10)));
+    feed.querySelectorAll('.entry-card').forEach(el => {
+      el.addEventListener('click', () => {
+        const key = el.dataset.key;
+        const d = parseDOB(key);
+        if (d) composerLoadForDate(d, true);
+      });
     });
+  }
+
+  // ---- Composer ----
+  let composerPhoto = '';
+  function dateToWeekStart(d) {
+    if (!BIRTHDATE) return d;
+    // Snap any date to the start-of-week date relative to user's BIRTHDATE
+    const days = Math.floor((d - BIRTHDATE) / 86400000);
+    return new Date(BIRTHDATE.getTime() + Math.floor(days / 7) * 7 * 86400000);
+  }
+  function composerLoadForDate(d, scrollIntoView) {
+    if (!d) d = new Date();
+    const weekStart = dateToWeekStart(d);
+    const dateInput = document.getElementById('composerDate');
+    if (!dateInput) return;
+    dateInput.value = formatDOB(weekStart);
+    const days = Math.floor((weekStart - BIRTHDATE) / 86400000);
+    const weekIdx = Math.floor(days / 7);
+    document.getElementById('composerWeekRange').textContent = weekRangeStr(weekIdx);
+    const age = ageAtWeek(weekIdx);
+    document.getElementById('composerAge').textContent = age >= 0 && age <= 110 ? `Age ${age}` : '—';
+    const key = weekKey(weekIdx);
+    const entry = getEntry(key);
+    document.getElementById('composerText').value = entry.text || '';
+    composerPhoto = entry.photo || '';
+    setComposerPhotoUI(composerPhoto);
+    const isExisting = !!(entry.text || entry.photo);
+    document.getElementById('composerEditingTag').hidden = !isExisting;
+    document.getElementById('composerDelete').hidden = !isExisting;
+    document.getElementById('composerSave').textContent = isExisting ? 'Update entry' : 'Save entry';
+    const composer = document.getElementById('journalComposer');
+    composer.classList.toggle('editing', isExisting);
+    if (scrollIntoView) {
+      composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => document.getElementById('composerText').focus(), 300);
+    }
+  }
+  function setComposerPhotoUI(photo) {
+    const preview = document.getElementById('composerPhotoPreview');
+    const label = document.getElementById('composerPhotoLabel');
+    const remove = document.getElementById('composerPhotoRemove');
+    if (photo) {
+      preview.src = photo;
+      preview.style.display = 'block';
+      label.textContent = 'Change photo';
+      remove.hidden = false;
+    } else {
+      preview.src = '';
+      preview.style.display = 'none';
+      label.textContent = 'Add photo';
+      remove.hidden = true;
+    }
+  }
+  function composerSave() {
+    if (!BIRTHDATE) return;
+    const dateStr = document.getElementById('composerDate').value;
+    const d = parseDOB(dateStr);
+    if (!d) return;
+    const days = Math.floor((dateToWeekStart(d) - BIRTHDATE) / 86400000);
+    const weekIdx = Math.floor(days / 7);
+    const key = weekKey(weekIdx);
+    const text = document.getElementById('composerText').value.trim();
+    setEntry(key, { text, photo: composerPhoto });
+    saveJournalToLS();
+    paintJournalDots();
+    renderRecentJournal();
+    scheduleCloudSave();
+    const status = document.getElementById('composerStatus');
+    status.textContent = 'Saved ✓';
+    setTimeout(() => { status.textContent = ''; }, 1600);
+    composerLoadForDate(d, false); // refresh editing state
+  }
+  function composerDelete() {
+    if (!BIRTHDATE) return;
+    const dateStr = document.getElementById('composerDate').value;
+    const d = parseDOB(dateStr);
+    if (!d) return;
+    if (!confirm('Delete this entry?')) return;
+    const days = Math.floor((dateToWeekStart(d) - BIRTHDATE) / 86400000);
+    const weekIdx = Math.floor(days / 7);
+    const key = weekKey(weekIdx);
+    delete journal[key];
+    saveJournalToLS();
+    paintJournalDots();
+    renderRecentJournal();
+    scheduleCloudSave();
+    composerLoadForDate(d, false);
+  }
+  function composerReset() {
+    composerLoadForDate(new Date(), false);
   }
 
   // This-week inline panel
   function currentWeekIndex() {
     return Math.floor(daysLived / 7);
   }
-  function refreshThisWeekPanel() {
-    if (!BIRTHDATE) return;
-    const idx = currentWeekIndex();
-    const range = weekRangeStr(idx);
-    document.getElementById('thisWeekRange').textContent = range;
-    const ta = document.getElementById('thisWeekText');
-    ta.value = getEntry(weekKey(idx)).text;
-    document.getElementById('thisWeekStatus').textContent = '';
-  }
+  // Replaced by composerLoadForDate. Kept as a no-op shim so old call sites work.
+  function refreshThisWeekPanel() { composerLoadForDate(new Date()); }
 
   // Modal
   let modalWeek = -1;
@@ -4325,33 +4469,67 @@
     applyState({ familyLongevity: n, snapToToday: false });
   });
 
-  // Journal — week click handlers
+  // Journal — week click handlers (open in composer, navigate to journal page)
   weekEls.forEach((el, i) => {
-    el.addEventListener('click', () => openJournalModal(i));
+    el.addEventListener('click', () => {
+      const d = weekStartDate(i);
+      // Navigate to journal page if not there
+      if (currentPage() !== 'journal') {
+        window.location.hash = '#/journal';
+        // Wait for page transition then load
+        setTimeout(() => composerLoadForDate(d, true), 100);
+      } else {
+        composerLoadForDate(d, true);
+      }
+    });
   });
 
-  // Journal — this-week inline panel
-  const thisWeekText = document.getElementById('thisWeekText');
-  const thisWeekSave = document.getElementById('thisWeekSave');
-  const thisWeekStatus = document.getElementById('thisWeekStatus');
-  thisWeekSave.addEventListener('click', () => {
-    if (!BIRTHDATE) return;
-    const idx = currentWeekIndex();
-    const text = thisWeekText.value.trim();
-    const key = weekKey(idx);
-    const entry = getEntry(key);
-    setEntry(key, { text, photo: entry.photo });
-    saveJournalToLS();
-    paintJournalDots();
-    renderRecentJournal();
-    scheduleCloudSave();
-    thisWeekStatus.textContent = 'Saved ✓';
-    thisWeekSave.classList.add('saved');
-    setTimeout(() => {
-      thisWeekStatus.textContent = '';
-      thisWeekSave.classList.remove('saved');
-    }, 1600);
-  });
+  // Composer (replaces this-week inline panel)
+  const composerDateInput = document.getElementById('composerDate');
+  if (composerDateInput) {
+    composerDateInput.max = formatDOB(new Date());
+    composerDateInput.addEventListener('change', () => {
+      const d = parseDOB(composerDateInput.value);
+      if (d) composerLoadForDate(d, false);
+    });
+  }
+  const composerPhotoInput = document.getElementById('composerPhotoInput');
+  if (composerPhotoInput) {
+    composerPhotoInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      try {
+        composerPhoto = await resizeImage(file);
+        setComposerPhotoUI(composerPhoto);
+      } catch (err) {
+        alert('Could not read that image.');
+      }
+      composerPhotoInput.value = '';
+    });
+  }
+  const composerPhotoRemove = document.getElementById('composerPhotoRemove');
+  if (composerPhotoRemove) {
+    composerPhotoRemove.addEventListener('click', () => {
+      composerPhoto = '';
+      setComposerPhotoUI('');
+    });
+  }
+  const composerSaveBtn = document.getElementById('composerSave');
+  if (composerSaveBtn) composerSaveBtn.addEventListener('click', composerSave);
+  const composerCancelBtn = document.getElementById('composerCancel');
+  if (composerCancelBtn) composerCancelBtn.addEventListener('click', composerReset);
+  const composerDeleteBtn = document.getElementById('composerDelete');
+  if (composerDeleteBtn) composerDeleteBtn.addEventListener('click', composerDelete);
+  // Cmd+Enter to save
+  const composerTextEl = document.getElementById('composerText');
+  if (composerTextEl) {
+    composerTextEl.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        composerSave();
+      }
+    });
+  }
 
   // Journal modal handlers
   const journalModal = document.getElementById('journalModal');
