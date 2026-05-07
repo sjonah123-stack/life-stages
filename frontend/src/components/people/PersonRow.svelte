@@ -120,6 +120,8 @@
         {/if}
       </div>
     </div>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div class="person-actions" on:click|stopPropagation>
       <button class="log-chat-btn" on:click={logChat} title="Log a chat">+ Chat</button>
       <button class="remove" on:click={removePerson} title="Remove">×</button>

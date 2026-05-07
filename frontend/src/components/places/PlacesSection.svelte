@@ -88,7 +88,14 @@
       <div class="empty">No places yet — add a city you've loved.</div>
     {:else}
       {#each $places as p, i}
-        <span class="place-chip" class:highlighted={p.year === $selectedAge} on:click={() => flyTo(i)}>
+        <span
+          class="place-chip"
+          class:highlighted={p.year === $selectedAge}
+          role="button"
+          tabindex="0"
+          on:click={() => flyTo(i)}
+          on:keydown={(e) => { if (e.key === 'Enter') flyTo(i); }}
+        >
           <span class="age">{p.year}</span>
           <span>{p.name}</span>
           <button class="remove" on:click|stopPropagation={() => removePlace(i)} title="Remove">×</button>
