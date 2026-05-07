@@ -1,18 +1,44 @@
 <script lang="ts">
-  import PlaceholderPage from '../shared/PlaceholderPage.svelte';
+  import Composer from '../journal/Composer.svelte';
+  import EntryFeed from '../journal/EntryFeed.svelte';
+
+  // Reference to the Composer so we can scroll to it / load an entry on Edit.
+  let composerLoadFor: ((key: string) => void) | undefined;
+
+  function handleEdit(key: string) {
+    // Composer reads its own date input, so simplest cross-component
+    // approach: dispatch a custom event the Composer listens for.
+    window.dispatchEvent(new CustomEvent('journal:load', { detail: { key } }));
+  }
 </script>
 
-<PlaceholderPage
-  title="Your journal"
-  subtitle="Composer at top, entry feed below, calendar view collapsible at the bottom."
-  phase={8}
-  items={[
-    'Streak counter + "this week last year" anniversary banner',
-    'Composer (date picker, mood, prompt chip, photo, word count, auto-save)',
-    'Search input + year filter + mood filter chips',
-    'Entry feed (cards with photo, date, age pill, edit/delete)',
-    'Weeks-of-possibility calendar grid (4,680 squares, collapsible)',
-    'Future-self letters at 40 / 60 / 80',
-    'Export / import journal (JSON)',
-  ]}
-/>
+<section class="page">
+  <h1 class="page-title">Your journal</h1>
+  <p class="page-subtitle">
+    Write at the top, edit anything below, view the full timeline at the bottom. Pick any date —
+    write about any week of your life.
+  </p>
+
+  <Composer />
+  <EntryFeed onEditEntry={handleEdit} />
+</section>
+
+<style>
+  .page { animation: fadeInPage 0.25s ease-out; }
+  @keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .page-title {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+  .page-subtitle {
+    color: var(--ink-dim);
+    margin: 0 0 28px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+</style>
