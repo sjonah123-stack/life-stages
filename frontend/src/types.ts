@@ -40,8 +40,11 @@ export interface JournalEntry {
 // Map of week-start date string → entry
 export type Journal = Record<DateString, JournalEntry>;
 
-// Future-self letters keyed by age (40, 60, 80)
-export type LetterMap = Partial<Record<40 | 60 | 80, string>>;
+// Future-self letters keyed by absolute age. Active slots are computed
+// dynamically from the user's current age (see letterHorizonsForAge); this
+// type is a flat number-keyed map so an old letter "to my 40-year-old self"
+// stays its own immutable artifact regardless of which horizons are active.
+export type LetterMap = Partial<Record<number, string>>;
 
 // ---- People + interactions ----
 export interface Interaction {

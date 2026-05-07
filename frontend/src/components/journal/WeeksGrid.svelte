@@ -1,15 +1,11 @@
 <script lang="ts">
   import { weeksLived } from '../../stores/personal';
-  import { journal } from '../../stores/collections';
-  import { weekKey, getEntry, weekStartDate, ageAtWeek, weekRangeStr } from '../../stores/journal-helpers';
+  import { weekKey, getEntry, ageAtWeek, weekRangeStr, entryKeySet } from '../../stores/journal-helpers';
   import { LIFESPAN } from '../../config';
 
   // Total cells: 52 weeks × 90 years = 4680
   const TOTAL = LIFESPAN * 52;
   const indices = Array.from({ length: TOTAL }, (_, i) => i);
-
-  // Which weeks have entries / photos? Recompute when journal changes.
-  $: entryKeys = new Set(Object.keys($journal));
 
   function classFor(i: number, lived: number, hasEntry: boolean, hasPhoto: boolean): string {
     let cls = 'week';
@@ -39,7 +35,7 @@
   <div class="weeks-grid" role="list">
     {#each indices as i}
       {@const k = weekKey(i)}
-      {@const e = entryKeys.has(k) ? getEntry(k) : null}
+      {@const e = $entryKeySet.has(k) ? getEntry(k) : null}
       {@const hasEntry = !!(e && e.text && e.text.trim())}
       {@const hasPhoto = !!(e && e.photo)}
       <div
