@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>Your one extraordinary life</title>
+<meta name="description" content="An interactive life dashboard — slide through every year, journal each week, see where you've been." />
+<meta name="theme-color" content="#FF8C61" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Life" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="preconnect" href="https://rsms.me/" />
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script type="module">
@@ -103,20 +113,27 @@
     background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
     background-attachment: fixed;
     color: var(--ink);
-    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01", "ss03";
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  @supports (font-variation-settings: normal) {
+    html, body { font-family: "Inter var", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
   }
   .container {
-    max-width: 1180px;
+    max-width: 1080px;
     margin: 0 auto;
-    padding: 56px 28px 80px;
+    padding: 64px 32px 96px;
   }
+  header { margin-bottom: 8px; }
   header h1 {
-    font-size: 44px;
+    font-size: 48px;
     font-weight: 800;
-    letter-spacing: -0.03em;
-    margin: 0 0 10px;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    margin: 0 0 12px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--future-3) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -124,18 +141,19 @@
   }
   header p#subtitle {
     color: var(--ink-dim);
-    margin: 0 0 28px;
+    margin: 0 0 32px;
     font-size: 17px;
-    line-height: 1.5;
+    line-height: 1.55;
+    max-width: 640px;
   }
 
   /* Personalize panel */
   .personalize {
-    margin-bottom: 28px;
-    padding: 18px 20px 14px;
+    margin-bottom: 32px;
+    padding: 18px 22px 16px;
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 18px;
     box-shadow: var(--shadow-sm);
   }
   .personalize-row {
@@ -144,11 +162,37 @@
     align-items: center;
     gap: 14px;
   }
-  .personalize-row + .personalize-row {
-    margin-top: 12px;
-    padding-top: 12px;
+  details.personalize-section {
+    margin-top: 14px;
+    padding-top: 14px;
     border-top: 1px dashed var(--border);
   }
+  details.personalize-section[open] { padding-bottom: 4px; }
+  details.personalize-section > summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+  details.personalize-section > summary::-webkit-details-marker { display: none; }
+  details.personalize-section > summary::before {
+    content: '›';
+    display: inline-block;
+    transition: transform 0.15s;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  details.personalize-section[open] > summary::before { transform: rotate(90deg); }
+  details.personalize-section:hover > summary { color: var(--ink-dim); }
   .field {
     display: inline-flex;
     flex-direction: column;
@@ -1102,6 +1146,269 @@
     white-space: pre-wrap;
   }
 
+  /* Top navigation bar */
+  .top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(255, 247, 232, 0.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  body.theme-ocean .top-nav { background: rgba(232, 244, 255, 0.85); }
+  body.theme-forest .top-nav { background: rgba(240, 247, 232, 0.85); }
+  .top-nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent), var(--future-3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    white-space: nowrap;
+    margin-right: auto;
+  }
+  .brand-mark {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--future-3));
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    background: transparent;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-dim);
+    transition: all 0.15s;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+  .nav-tab:hover { color: var(--ink); }
+  .nav-tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--future-3));
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 140, 97, 0.3);
+  }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  /* Page sections — only one shows at a time */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeInPage 0.25s ease-out; }
+  @keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .page-title {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+  .page-subtitle {
+    color: var(--ink-dim);
+    margin: 0 0 28px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* Compact people rows */
+  .people-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .person-row {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: background 0.15s;
+  }
+  .person-row.expanded { background: var(--panel); box-shadow: var(--shadow-sm); }
+  .person-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+  }
+  .person-summary:hover { background: rgba(0, 0, 0, 0.02); border-radius: 12px; }
+  .person-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--love));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  .person-text { flex: 1; min-width: 0; }
+  .person-name-line {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .person-name-line .name { font-weight: 700; font-size: 14px; color: var(--ink); }
+  .person-name-line .relation {
+    font-size: 10px;
+    color: var(--love);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .person-meta {
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-top: 2px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .person-meta .stale { color: var(--love); font-weight: 600; }
+  .person-meta .fresh { color: var(--health); font-weight: 600; }
+  .person-meta .ok { color: var(--accent); font-weight: 600; }
+  .person-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .person-actions button {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--ink-dim);
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .person-actions button:hover { background: rgba(255, 140, 97, 0.08); color: var(--accent); border-color: var(--accent); }
+  .person-actions .remove:hover { color: var(--love); border-color: var(--love); background: rgba(255,107,157,0.06); }
+  .person-details {
+    display: none;
+    padding: 0 14px 14px;
+  }
+  .person-row.expanded .person-details { display: block; }
+  .person-details-inner {
+    border-top: 1px dashed var(--border);
+    padding-top: 12px;
+  }
+  .interactions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .interaction {
+    display: flex;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .interaction:first-child { border-top: none; }
+  .interaction .date {
+    color: var(--ink-faint);
+    font-weight: 600;
+    min-width: 70px;
+    flex-shrink: 0;
+  }
+  .interaction .topic {
+    flex: 1;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .interaction .remove-int {
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+  }
+  .interaction .remove-int:hover { color: var(--love); }
+  .interaction-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .interaction-form input[type=date] {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .interaction-form input[type=text] {
+    flex: 1;
+    min-width: 160px;
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .interaction-form button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .interactions-empty { color: var(--ink-faint); font-size: 12px; font-style: italic; padding: 4px 0; }
+
   /* Auth pill */
   .auth-pill {
     display: inline-flex;
@@ -1298,6 +1605,202 @@
   }
   .place-chip .remove:hover { color: var(--love); }
 
+  /* Shared structured-list module sections (people, reading, rituals) */
+  .module-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 26px 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .module-section h2 { margin: 0 0 4px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .module-section .sub { color: var(--ink-dim); margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
+  .module-stats {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    color: var(--ink-dim);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .module-stats .stat-num {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 18px;
+    margin-right: 4px;
+  }
+  .entry-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .entry-form input[type=text],
+  .entry-form input[type=number],
+  .entry-form input[type=date],
+  .entry-form select {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    min-height: 38px;
+  }
+  .entry-form input[type=text] { flex: 1; min-width: 140px; }
+  .entry-form input[type=number] { width: 80px; }
+  .entry-form button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .entry-form button:hover { opacity: 0.92; }
+
+  /* People */
+  .people-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+  .person-card {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .person-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .person-card .name { font-weight: 700; color: var(--ink); font-size: 15px; }
+  .person-card .relation {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--love);
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .person-card .age-now {
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-top: 6px;
+  }
+  .person-card .age-then {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .person-card .remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .person-card .remove:hover { color: var(--love); background: rgba(255,107,157,0.08); }
+
+  /* Reading log */
+  .reading-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .reading-year-group {
+    margin-top: 12px;
+  }
+  .reading-year-group:first-child { margin-top: 0; }
+  .reading-year-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .reading-year-label .age-tag { color: var(--accent); }
+  .reading-year-label .count { color: var(--ink-dim); font-weight: 600; }
+  .book-row {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .book-row:first-child { border-top: none; }
+  .book-info { flex: 1; min-width: 0; }
+  .book-title { font-weight: 600; color: var(--ink); font-size: 14px; }
+  .book-author { color: var(--ink-dim); font-size: 13px; }
+  .book-takeaway { color: var(--ink-dim); font-size: 13px; font-style: italic; margin-top: 4px; line-height: 1.45; }
+  .book-row .remove {
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    align-self: center;
+    border-radius: 4px;
+  }
+  .book-row .remove:hover { color: var(--love); }
+
+  /* Rituals */
+  .rituals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ritual-row {
+    display: flex;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    align-items: center;
+  }
+  .ritual-info { flex: 1; min-width: 0; }
+  .ritual-name { font-weight: 700; color: var(--ink); font-size: 15px; }
+  .ritual-meta { color: var(--ink-dim); font-size: 12px; margin-top: 2px; }
+  .ritual-remaining {
+    background: linear-gradient(135deg, var(--accent), var(--future-3));
+    color: white;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .ritual-row .remove {
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .ritual-row .remove:hover { color: var(--love); }
+
   /* Photo upload in journal modal */
   .photo-upload {
     margin-top: 14px;
@@ -1431,7 +1934,25 @@
 </style>
 </head>
 <body>
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="#/today" class="brand"><span class="brand-mark"></span>Your Life</a>
+    <div class="nav-tabs" role="tablist">
+      <a href="#/today" class="nav-tab" data-tab="today">Today</a>
+      <a href="#/journal" class="nav-tab" data-tab="journal">Journal</a>
+      <a href="#/people" class="nav-tab" data-tab="people">People</a>
+      <a href="#/places" class="nav-tab" data-tab="places">Places</a>
+      <a href="#/reading" class="nav-tab" data-tab="reading">Reading</a>
+      <a href="#/goals" class="nav-tab" data-tab="goals">Goals</a>
+    </div>
+    <div class="nav-right">
+      <span id="authSlot"></span>
+    </div>
+  </div>
+</nav>
 <div class="container">
+
+  <section class="page" data-page="today">
   <header>
     <h1>Your one extraordinary life</h1>
     <p id="subtitle">Slide through the years ahead. Each one is yours to shape.</p>
@@ -1459,10 +1980,11 @@
         </div>
       </div>
       <button type="button" class="share-btn" id="copyShare">Copy share link</button>
-      <span id="authSlot"></span>
       <span class="sync-status" id="syncStatus"></span>
     </div>
-    <div class="personalize-row">
+    <details class="personalize-section">
+      <summary>More about you</summary>
+      <div class="personalize-row">
       <div class="field">
         <span class="field-label">Country</span>
         <select id="countryInput">
@@ -1518,8 +2040,11 @@
         <span class="field-label">Retire @</span>
         <input type="number" id="retirementInput" min="40" max="100" placeholder="65" />
       </div>
-    </div>
-    <div class="personalize-row personalize-private">
+      </div>
+    </details>
+    <details class="personalize-section">
+      <summary>🔒 Private (only on this device)</summary>
+      <div class="personalize-row personalize-private">
       <div class="private-label">
         <span class="lock">🔒</span>
         <span>Private — saved on this device only, never in your share link</span>
@@ -1555,7 +2080,8 @@
         <div>Your horizon</div>
         <div class="num"><span id="horizonNum">—</span> yrs</div>
       </div>
-    </div>
+      </div>
+    </details>
   </div>
 
   <div class="age-block">
@@ -1671,7 +2197,11 @@
       <div class="good-news-text" id="goodNewsText">—</div>
     </div>
   </div>
+  </section>
 
+  <section class="page" data-page="goals">
+  <h1 class="page-title">Goals &amp; milestones</h1>
+  <p class="page-subtitle">Things you're aiming toward. They show up as pins on your timeline on the Today page.</p>
   <div class="milestones-section">
     <h2>Things you're looking forward to</h2>
     <p class="sub">Add experiences, trips, milestones — they show up as pins on your timeline. Saved on this device, and baked into the share link so friends see yours when they open it.</p>
@@ -1694,6 +2224,11 @@
     </div>
   </div>
 
+  </section>
+
+  <section class="page" data-page="journal">
+  <h1 class="page-title">Your journal</h1>
+  <p class="page-subtitle">Write what's true. Past weeks become memory. The grid grows richer every week you show up.</p>
   <div class="weeks-card">
     <h2>Your weeks of possibility</h2>
     <p class="sub">Each square is one week. Past weeks shine in warm gold (memory). Future weeks glow in possibility colors. <strong>Click any week to write a journal entry.</strong> Weeks with entries get an accent ring.</p>
@@ -1735,21 +2270,6 @@
     </div>
   </div>
 
-  <div class="places-section">
-    <h2>Places that became part of you</h2>
-    <p class="sub">Add cities and countries that shaped you, with the year you were there. Each shows up as a pin on the map. Slide to a year and the matching places highlight.</p>
-    <div class="places-stats" id="placesStats"></div>
-    <div id="placesMap"></div>
-    <form class="places-form" id="placesForm">
-      <input type="text" id="placeQuery" placeholder="City, country (e.g. Tokyo, Japan)" maxlength="80" />
-      <input type="number" id="placeYear" placeholder="Age" min="0" max="100" />
-      <input type="text" id="placeNote" placeholder="Optional note" maxlength="60" />
-      <button type="submit" id="placeAddBtn">Add place</button>
-      <span class="geo-status" id="geoStatus"></span>
-    </form>
-    <div class="places-list" id="placesList"></div>
-  </div>
-
   <div class="future-letters">
     <h2>Letters from your future self</h2>
     <p class="sub">Write notes from the version of you at 40, 60, and 80 — back to where you are now. They'll surface when you slide to those ages. Saved on this device only. 🔒</p>
@@ -1775,6 +2295,92 @@
       <textarea data-letter-age="80" placeholder="Now I can see the shape of it. The chapters. What was a gift. What I'd do again..."></textarea>
     </details>
   </div>
+
+  </section>
+
+  <section class="page" data-page="places">
+  <h1 class="page-title">Places</h1>
+  <p class="page-subtitle">Cities and countries that became part of who you are. Sliding through ages on Today highlights pins from those years.</p>
+  <div class="places-section">
+    <h2>Places that became part of you</h2>
+    <p class="sub">Add cities and countries that shaped you, with the year you were there. Each shows up as a pin on the map. Slide to a year and the matching places highlight.</p>
+    <div class="places-stats" id="placesStats"></div>
+    <div id="placesMap"></div>
+    <form class="places-form" id="placesForm">
+      <input type="text" id="placeQuery" placeholder="City, country (e.g. Tokyo, Japan)" maxlength="80" />
+      <input type="number" id="placeYear" placeholder="Age" min="0" max="100" />
+      <input type="text" id="placeNote" placeholder="Optional note" maxlength="60" />
+      <button type="submit" id="placeAddBtn">Add place</button>
+      <span class="geo-status" id="geoStatus"></span>
+    </form>
+    <div class="places-list" id="placesList"></div>
+  </div>
+
+  </section>
+
+  <section class="page" data-page="people">
+  <h1 class="page-title">People</h1>
+  <p class="page-subtitle">Track the people who shape your life and the conversations worth remembering. Click any person to log a chat.</p>
+  <div class="module-section">
+    <h2>People who shape your life</h2>
+    <p class="sub">The most underused dimension of any life dashboard. Add the people who matter — when you slide through ages, you'll see how old they'll be at each one.</p>
+    <div class="module-stats" id="peopleStats"></div>
+    <div class="people-list" id="peopleList"></div>
+    <form class="entry-form" id="peopleForm">
+      <input type="text" id="personName" placeholder="Name" maxlength="40" />
+      <select id="personRelation">
+        <option value="">Relationship…</option>
+        <option value="parent">Parent</option>
+        <option value="sibling">Sibling</option>
+        <option value="partner">Partner / Spouse</option>
+        <option value="child">Child</option>
+        <option value="grandparent">Grandparent</option>
+        <option value="grandchild">Grandchild</option>
+        <option value="friend">Friend</option>
+        <option value="mentor">Mentor</option>
+        <option value="other">Other</option>
+      </select>
+      <input type="date" id="personDob" max="" />
+      <button type="submit">Add</button>
+    </form>
+  </div>
+
+  <div class="module-section">
+    <h2>Rituals worth keeping</h2>
+    <p class="sub">Things you want to do every year — Thanksgiving with grandma, summer trip with college friends, your birthday tradition. We'll show you how many more times you'll likely do each one.</p>
+    <div class="module-stats" id="ritualsStats"></div>
+    <div class="rituals-list" id="ritualsList"></div>
+    <form class="entry-form" id="ritualsForm">
+      <input type="text" id="ritualName" placeholder="Ritual (e.g. Thanksgiving with family)" maxlength="60" />
+      <select id="ritualFrequency">
+        <option value="1">Yearly</option>
+        <option value="2">Twice a year</option>
+        <option value="4">Quarterly</option>
+        <option value="12">Monthly</option>
+      </select>
+      <button type="submit">Add</button>
+    </form>
+  </div>
+
+  </section>
+
+  <section class="page" data-page="reading">
+  <h1 class="page-title">Reading</h1>
+  <p class="page-subtitle">A line per book. Logged with the age you read it. Becomes a private library you'll be glad you kept.</p>
+  <div class="module-section">
+    <h2>What you've been reading</h2>
+    <p class="sub">A line per book. Logged with the age you read it, with optional one-sentence takeaway. Becomes your private library you'll be glad you kept.</p>
+    <div class="module-stats" id="readingStats"></div>
+    <div class="reading-list" id="readingList"></div>
+    <form class="entry-form" id="readingForm">
+      <input type="text" id="bookTitle" placeholder="Book title" maxlength="80" />
+      <input type="text" id="bookAuthor" placeholder="Author (optional)" maxlength="60" />
+      <input type="number" id="bookAge" placeholder="Age" min="0" max="100" />
+      <input type="text" id="bookTakeaway" placeholder="One-line takeaway (optional)" maxlength="120" />
+      <button type="submit">Add</button>
+    </form>
+  </div>
+  </section>
 
   <footer>
     Numbers reflect statistical norms — your path is yours alone, and almost certainly more wonderful than averages can capture.
@@ -1843,6 +2449,10 @@
   let hardestYear = 0;  // 0 means unset
   let letters = {};     // {40: text, 60: text, 80: text}
   let places = [];      // [{name, displayName, lat, lng, year, note}]
+  // Phase A modules
+  let people = [];      // [{name, relation, dob (YYYY-MM-DD or ''), note}]
+  let books = [];       // [{title, author, age, takeaway}]
+  let rituals = [];     // [{name, frequency (per year)}]
   // Auth/sync (Phase 1) — Firebase
   let fbAuth = null;
   let fbDB = null;
@@ -2759,6 +3369,256 @@
     try { places = JSON.parse(readLS('lifeStages.places') || '[]') || []; }
     catch (e) { places = []; }
   }
+  // ---- Phase A: People / Reading / Rituals ----
+  function loadModuleArrays() {
+    try { people = JSON.parse(readLS('lifeStages.people') || '[]') || []; } catch (e) { people = []; }
+    try { books = JSON.parse(readLS('lifeStages.books') || '[]') || []; } catch (e) { books = []; }
+    try { rituals = JSON.parse(readLS('lifeStages.rituals') || '[]') || []; } catch (e) { rituals = []; }
+  }
+  function savePeople() { writeLS('lifeStages.people', JSON.stringify(people)); }
+  function saveBooks() { writeLS('lifeStages.books', JSON.stringify(books)); }
+  function saveRituals() { writeLS('lifeStages.rituals', JSON.stringify(rituals)); }
+
+  const RELATION_LABEL = {
+    parent: 'Parent', sibling: 'Sibling', partner: 'Partner', child: 'Child',
+    grandparent: 'Grandparent', grandchild: 'Grandchild',
+    friend: 'Friend', mentor: 'Mentor', other: 'Other'
+  };
+  function ageOnDate(dob, atDate) {
+    let years = atDate.getFullYear() - dob.getFullYear();
+    const m = atDate.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && atDate.getDate() < dob.getDate())) years--;
+    return years;
+  }
+  function lastInteraction(person) {
+    if (!person.interactions || !person.interactions.length) return null;
+    const sorted = [...person.interactions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    return sorted[0];
+  }
+  function daysAgo(dateStr) {
+    if (!dateStr) return null;
+    const d = parseDOB(dateStr);
+    if (!d) return null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    return Math.max(0, Math.floor((today - d) / 86400000));
+  }
+  function freshnessLabel(dateStr) {
+    const days = daysAgo(dateStr);
+    if (days === null) return { text: 'Never logged a chat', cls: 'stale' };
+    if (days === 0) return { text: 'Last chat: today ✓', cls: 'fresh' };
+    if (days === 1) return { text: 'Last chat: yesterday', cls: 'fresh' };
+    if (days < 14) return { text: `Last chat: ${days} days ago`, cls: 'fresh' };
+    if (days < 60) return { text: `Last chat: ${days} days ago`, cls: 'ok' };
+    if (days < 180) return { text: `Last chat: ${Math.floor(days/30)} months ago`, cls: 'stale' };
+    return { text: `Last chat: ${Math.floor(days/365 * 10)/10}+ years ago`, cls: 'stale' };
+  }
+  function renderPeople(currentSliderAge) {
+    const list = document.getElementById('peopleList');
+    const stats = document.getElementById('peopleStats');
+    if (!list || !stats) return;
+    const totalChats = people.reduce((sum, p) => sum + ((p.interactions || []).length), 0);
+    stats.innerHTML = `
+      <span><span class="stat-num">${people.length}</span>${people.length === 1 ? 'person' : 'people'} tracked</span>
+      <span><span class="stat-num">${totalChats}</span>chats logged</span>`;
+    if (people.length === 0) {
+      list.innerHTML = '<div class="milestone-empty">No one yet — start with the people who matter most.</div>';
+      return;
+    }
+    const today = new Date();
+    list.innerHTML = people.map((p, i) => {
+      const dob = p.dob ? parseDOB(p.dob) : null;
+      const ageNow = dob ? ageOnDate(dob, today) : null;
+      const initial = (p.name?.[0] || '?').toUpperCase();
+      const relation = RELATION_LABEL[p.relation] || (p.relation || '');
+      const last = lastInteraction(p);
+      const fresh = freshnessLabel(last?.date);
+      let ageThenLine = '';
+      if (dob && BIRTHDATE && currentSliderAge !== undefined) {
+        const userAtSelected = new Date(BIRTHDATE.getTime());
+        userAtSelected.setFullYear(userAtSelected.getFullYear() + currentSliderAge);
+        const personAtThen = ageOnDate(dob, userAtSelected);
+        if (personAtThen >= 0 && currentSliderAge !== todayAge) {
+          ageThenLine = `<span class="age-then" style="color: var(--accent); font-weight: 600;">At your ${currentSliderAge}: they're ${personAtThen}</span>`;
+        }
+      }
+      const interactionsHTML = (p.interactions || []).length === 0
+        ? '<div class="interactions-empty">No chats logged yet. The first time you log one, you start a record you\'ll be glad you have.</div>'
+        : `<div class="interactions-list">${
+            [...p.interactions].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((it, j) => `
+              <div class="interaction">
+                <span class="date">${it.date ? new Date(it.date).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'2-digit'}) : '—'}</span>
+                <span class="topic">${escapeHtml(it.topic || '')}</span>
+                <button class="remove-int" data-pidx="${i}" data-iidx="${j}" title="Remove">×</button>
+              </div>`).join('')
+          }</div>`;
+      return `<div class="person-row" data-idx="${i}">
+        <div class="person-summary">
+          <div class="person-avatar">${escapeHtml(initial)}</div>
+          <div class="person-text">
+            <div class="person-name-line">
+              <span class="name">${escapeHtml(p.name)}</span>
+              ${relation ? `<span class="relation">${escapeHtml(relation)}</span>` : ''}
+            </div>
+            <div class="person-meta">
+              ${ageNow !== null ? `<span>${ageNow} yrs</span>` : ''}
+              <span class="${fresh.cls}">${fresh.text}</span>
+              ${ageThenLine}
+            </div>
+          </div>
+          <div class="person-actions">
+            <button class="log-chat-btn" data-idx="${i}" title="Log a chat">+ Chat</button>
+            <button class="remove" data-idx="${i}" title="Remove">×</button>
+          </div>
+        </div>
+        <div class="person-details">
+          <div class="person-details-inner">
+            ${interactionsHTML}
+            <div class="interaction-form" data-pidx="${i}">
+              <input type="date" class="int-date" max="${formatDOB(new Date())}" value="${formatDOB(new Date())}" />
+              <input type="text" class="int-topic" placeholder="What did you talk about?" maxlength="120" />
+              <button type="button" class="add-int" data-pidx="${i}">Save chat</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    // Click summary toggles expand
+    list.querySelectorAll('.person-summary').forEach(s => {
+      s.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        s.parentElement.classList.toggle('expanded');
+      });
+    });
+    // Log chat button: open expansion + focus topic
+    list.querySelectorAll('.log-chat-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const row = btn.closest('.person-row');
+        row.classList.add('expanded');
+        const ti = row.querySelector('.int-topic');
+        if (ti) ti.focus();
+      });
+    });
+    // Remove person
+    list.querySelectorAll('.person-actions .remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!confirm('Remove this person and all their chat history?')) return;
+        people.splice(parseInt(btn.dataset.idx, 10), 1);
+        savePeople(); renderPeople(parseInt(slider.value, 10)); scheduleCloudSave();
+      });
+    });
+    // Add interaction
+    list.querySelectorAll('.add-int').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pidx = parseInt(btn.dataset.pidx, 10);
+        const form = btn.closest('.interaction-form');
+        const date = form.querySelector('.int-date').value;
+        const topic = form.querySelector('.int-topic').value.trim();
+        if (!topic) return;
+        if (!people[pidx].interactions) people[pidx].interactions = [];
+        people[pidx].interactions.push({ date, topic });
+        savePeople();
+        renderPeople(parseInt(slider.value, 10));
+        scheduleCloudSave();
+        // Re-expand row
+        setTimeout(() => {
+          const row = document.querySelector(`.person-row[data-idx="${pidx}"]`);
+          if (row) row.classList.add('expanded');
+        }, 0);
+      });
+    });
+    // Remove a single interaction
+    list.querySelectorAll('.remove-int').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pidx = parseInt(btn.dataset.pidx, 10);
+        const iidx = parseInt(btn.dataset.iidx, 10);
+        // Re-derive index from sort order: easier to remove by date+topic match
+        const sorted = [...people[pidx].interactions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        const target = sorted[iidx];
+        people[pidx].interactions = people[pidx].interactions.filter(it => !(it.date === target.date && it.topic === target.topic));
+        savePeople();
+        renderPeople(parseInt(slider.value, 10));
+        scheduleCloudSave();
+        setTimeout(() => {
+          const row = document.querySelector(`.person-row[data-idx="${pidx}"]`);
+          if (row) row.classList.add('expanded');
+        }, 0);
+      });
+    });
+  }
+  function renderReading() {
+    const list = document.getElementById('readingList');
+    const stats = document.getElementById('readingStats');
+    const total = books.length;
+    const thisYear = todayAge !== undefined ? books.filter(b => b.age === todayAge).length : 0;
+    stats.innerHTML = `
+      <span><span class="stat-num">${total}</span>${total === 1 ? 'book' : 'books'} read</span>
+      <span><span class="stat-num">${thisYear}</span>this year</span>`;
+    if (books.length === 0) {
+      list.innerHTML = '<div class="milestone-empty">No books logged yet. The first one is the hardest.</div>';
+      return;
+    }
+    // Group by age, descending
+    const byAge = {};
+    books.forEach((b, i) => { (byAge[b.age] = byAge[b.age] || []).push({ ...b, _idx: i }); });
+    const ages = Object.keys(byAge).map(Number).sort((a, b) => b - a);
+    list.innerHTML = ages.map(age => {
+      const group = byAge[age];
+      return `<div class="reading-year-group">
+        <div class="reading-year-label">
+          <span class="age-tag">Age ${age}</span>
+          <span class="count">· ${group.length} ${group.length === 1 ? 'book' : 'books'}</span>
+        </div>
+        ${group.map(b => `<div class="book-row">
+          <div class="book-info">
+            <div class="book-title">${escapeHtml(b.title)}</div>
+            ${b.author ? `<div class="book-author">${escapeHtml(b.author)}</div>` : ''}
+            ${b.takeaway ? `<div class="book-takeaway">"${escapeHtml(b.takeaway)}"</div>` : ''}
+          </div>
+          <button class="remove" data-idx="${b._idx}" title="Remove">×</button>
+        </div>`).join('')}
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        books.splice(parseInt(btn.dataset.idx, 10), 1);
+        saveBooks(); renderReading(); scheduleCloudSave();
+      });
+    });
+  }
+  function renderRituals() {
+    const list = document.getElementById('ritualsList');
+    const stats = document.getElementById('ritualsStats');
+    stats.innerHTML = `<span><span class="stat-num">${rituals.length}</span>${rituals.length === 1 ? 'ritual' : 'rituals'} worth keeping</span>`;
+    if (rituals.length === 0) {
+      list.innerHTML = '<div class="milestone-empty">Add one. Even a small annual thing — a hike, a dinner, a phone call — becomes deeply meaningful when you can count remaining occurrences.</div>';
+      return;
+    }
+    const horizon = computePersonalHorizon();
+    const yearsAhead = todayAge !== undefined ? Math.max(0, horizon - todayAge) : 0;
+    const FREQ_LABEL = {1: 'yearly', 2: 'twice a year', 4: 'quarterly', 12: 'monthly'};
+    list.innerHTML = rituals.map((r, i) => {
+      const remaining = Math.round(yearsAhead * (r.frequency || 1));
+      return `<div class="ritual-row">
+        <div class="ritual-info">
+          <div class="ritual-name">${escapeHtml(r.name)}</div>
+          <div class="ritual-meta">${FREQ_LABEL[r.frequency] || 'yearly'}</div>
+        </div>
+        <div class="ritual-remaining">~${remaining} more times</div>
+        <button class="remove" data-idx="${i}" title="Remove">×</button>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        rituals.splice(parseInt(btn.dataset.idx, 10), 1);
+        saveRituals(); renderRituals(); scheduleCloudSave();
+      });
+    });
+  }
+
   async function geocode(query) {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
     const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -2910,11 +3770,12 @@
   }
   function collectStateForCloud() {
     return {
-      v: 1,
+      v: 2,
       sex, country, partnership, kids, careerField, retirementAge, theme,
       smoker, exerciseLevel, sleepHours, familyLongevity,
       priorities, bestYear, hardestYear,
       milestones, journal, letters, places,
+      people, books, rituals,
       dob: BIRTHDATE ? formatDOB(BIRTHDATE) : null,
       updated: Date.now(),
     };
@@ -2925,11 +3786,17 @@
     if (cloud.letters) letters = cloud.letters;
     if (cloud.places) places = cloud.places;
     if (cloud.milestones) milestones = cloud.milestones;
+    if (cloud.people) people = cloud.people;
+    if (cloud.books) books = cloud.books;
+    if (cloud.rituals) rituals = cloud.rituals;
     // Persist locally so the data is durable
     saveJournalToLS();
     writeLS('lifeStages.letters', JSON.stringify(letters));
     savePlaces();
     saveMilestones();
+    savePeople();
+    saveBooks();
+    saveRituals();
     // Persist all the other settings via writeLS
     if (cloud.theme) writeLS('lifeStages.theme', cloud.theme);
     if (cloud.sex) writeLS('lifeStages.sex', cloud.sex);
@@ -2969,6 +3836,9 @@
     renderRecentJournal();
     renderPlacesList();
     renderPlacesOnMap();
+    renderPeople(parseInt(slider.value, 10));
+    renderReading();
+    renderRituals();
     refreshLetterMeta();
     document.querySelectorAll('textarea[data-letter-age]').forEach(ta => {
       ta.value = letters[parseInt(ta.dataset.letterAge, 10)] || '';
@@ -3060,6 +3930,7 @@
   milestones = loadMilestones();
   loadJournal();
   loadPlaces();
+  loadModuleArrays();
   applyState({
     dob: initialDOB,
     sex: initialSex,
@@ -3082,6 +3953,9 @@
   renderMilestonePins();
   renderRecentJournal();
   renderPlacesList();
+  renderPeople(todayAge);
+  renderReading();
+  renderRituals();
 
   // ---- Wiring ----
   slider.addEventListener('input', update);
@@ -3375,9 +4249,59 @@
   document.querySelectorAll('.priority-chip').forEach(c => c.addEventListener('click', scheduleCloudSave));
   document.getElementById('milestoneForm').addEventListener('submit', () => setTimeout(scheduleCloudSave, 50));
 
-  // Slide-to-highlight matching places
+  // Slide-to-highlight matching places + repaint people "ages then"
   slider.addEventListener('input', () => {
-    renderPlacesList(parseInt(slider.value, 10));
+    const ageNow = parseInt(slider.value, 10);
+    renderPlacesList(ageNow);
+    renderPeople(ageNow);
+  });
+
+  // People form
+  document.getElementById('personDob').max = formatDOB(new Date());
+  document.getElementById('peopleForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('personName').value.trim();
+    const relation = document.getElementById('personRelation').value;
+    const dob = document.getElementById('personDob').value;
+    if (!name) return;
+    people.push({ name, relation, dob });
+    savePeople();
+    renderPeople(parseInt(slider.value, 10));
+    scheduleCloudSave();
+    document.getElementById('personName').value = '';
+    document.getElementById('personRelation').value = '';
+    document.getElementById('personDob').value = '';
+  });
+
+  // Reading form
+  document.getElementById('readingForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('bookTitle').value.trim();
+    const author = document.getElementById('bookAuthor').value.trim();
+    const ageVal = parseInt(document.getElementById('bookAge').value, 10);
+    const takeaway = document.getElementById('bookTakeaway').value.trim();
+    if (!title || isNaN(ageVal) || ageVal < 0 || ageVal > SLIDER_MAX) return;
+    books.push({ title, author, age: ageVal, takeaway });
+    saveBooks();
+    renderReading();
+    scheduleCloudSave();
+    document.getElementById('bookTitle').value = '';
+    document.getElementById('bookAuthor').value = '';
+    document.getElementById('bookAge').value = '';
+    document.getElementById('bookTakeaway').value = '';
+  });
+
+  // Rituals form
+  document.getElementById('ritualsForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('ritualName').value.trim();
+    const frequency = parseInt(document.getElementById('ritualFrequency').value, 10) || 1;
+    if (!name) return;
+    rituals.push({ name, frequency });
+    saveRituals();
+    renderRituals();
+    scheduleCloudSave();
+    document.getElementById('ritualName').value = '';
   });
 
   // Init Leaflet map + Firebase auth (after CDNs load)
@@ -3387,6 +4311,38 @@
   }
   startMapWhenReady();
   initFirebase();
+
+  // PWA: register service worker for offline + installable
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {/* ignore */});
+    });
+  }
+
+  // ---- Page routing ----
+  const PAGES = ['today', 'journal', 'people', 'places', 'reading', 'goals'];
+  function currentPage() {
+    const m = /^#\/(\w+)/.exec(window.location.hash);
+    const p = m && PAGES.includes(m[1]) ? m[1] : 'today';
+    return p;
+  }
+  function showPage(page) {
+    document.querySelectorAll('section.page').forEach(sec => {
+      sec.classList.toggle('active', sec.dataset.page === page);
+    });
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === page);
+    });
+    // Re-render lazy bits when switching to a page that needs current state
+    if (page === 'people') renderPeople(parseInt(slider.value, 10));
+    if (page === 'places' && leafletMap) {
+      // Leaflet needs a kick when its container becomes visible
+      setTimeout(() => leafletMap.invalidateSize(), 50);
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  window.addEventListener('hashchange', () => showPage(currentPage()));
+  showPage(currentPage());
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !journalModal.hidden) { closeJournalModal(); return; }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;

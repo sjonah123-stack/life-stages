@@ -1,0 +1,20 @@
+{
+  "name": "Your one extraordinary life",
+  "short_name": "Life",
+  "description": "Your interactive life dashboard — slide through every year, journal each week, see where you've been.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF7E8",
+  "theme_color": "#FF8C61",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "productivity"]
+}
