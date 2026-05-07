@@ -6,16 +6,16 @@
   import { personalHorizon } from '../../stores/derived';
   import { formatDOB } from '../../utils';
   import ThemePicker from '../shared/ThemePicker.svelte';
+  import PageHeader from '../shared/PageHeader.svelte';
 
   const today = formatDOB(new Date());
 </script>
 
 <section class="page">
-  <h1 class="page-title">Settings</h1>
-  <p class="page-subtitle">
-    Personalize the dashboard. Most fields drive the cards & math; the lifestyle inputs stay on
-    this device only.
-  </p>
+  <PageHeader
+    title="Settings"
+    subtitle="Personalize the dashboard. Most fields drive the cards & math; the lifestyle inputs stay on this device only."
+  />
 
   <div class="personalize">
     <div class="personalize-row">
@@ -141,23 +141,6 @@
 </section>
 
 <style>
-  .page { animation: fadeInPage 0.25s ease-out; }
-  @keyframes fadeInPage {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .page-title {
-    font-size: 28px;
-    font-weight: 800;
-    margin: 0 0 6px;
-    color: var(--ink);
-  }
-  .page-subtitle {
-    color: var(--ink-dim);
-    margin: 0 0 28px;
-    font-size: 15px;
-    line-height: 1.5;
-  }
   .personalize {
     margin-bottom: 32px;
     padding: 18px 22px 16px;

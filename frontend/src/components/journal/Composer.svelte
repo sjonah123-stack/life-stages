@@ -55,6 +55,9 @@
   $: readMin = Math.max(1, Math.round(words / 220));
   $: showPrompt = !textValue.trim();
   $: today = formatDOB(new Date());
+  // Clamp the earliest date you can pick to your birthdate. Without this,
+  // user could write a journal entry dated "before they were born".
+  $: earliestDate = $birthdate ? formatDOB($birthdate) : '1900-01-01';
 
   function loadFromDate() {
     if (weekIdx < 0) return;
@@ -68,19 +71,42 @@
 
   $: { dateInput; loadFromDate(); }
 
-  // ---- Auto-save (debounced 1.5s) ----
-  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  // ---- Auto-save ----
+  // 1.5s pause-debounce + 30s max-wait. Without the max-wait, a user typing
+  // continuously for minutes would never trigger a save until they paused —
+  // a real data-loss risk on unexpected reload.
+  const PAUSE_MS = 1500;
+  const MAX_WAIT_MS = 30000;
+  let pauseTimer: ReturnType<typeof setTimeout> | null = null;
+  let maxWaitTimer: ReturnType<typeof setTimeout> | null = null;
   function scheduleSave() {
-    if (saveTimer) clearTimeout(saveTimer);
-    if (!textValue.trim() && !photo && !mood) return;
-    saveTimer = setTimeout(() => {
-      saveTimer = null;
+    if (!textValue.trim() && !photo && !mood) {
+      // Empty entry — nothing to save, clear any pending timers.
+      if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+      if (maxWaitTimer) { clearTimeout(maxWaitTimer); maxWaitTimer = null; }
+      return;
+    }
+    // Reset pause timer on every keystroke.
+    if (pauseTimer) clearTimeout(pauseTimer);
+    pauseTimer = setTimeout(() => {
+      pauseTimer = null;
       doSave(true);
-    }, 1500);
+    }, PAUSE_MS);
+    // Start the max-wait clock if it isn't already running.
+    if (!maxWaitTimer) {
+      maxWaitTimer = setTimeout(() => {
+        maxWaitTimer = null;
+        doSave(true);
+      }, MAX_WAIT_MS);
+    }
+  }
+  function cancelSaveTimers() {
+    if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+    if (maxWaitTimer) { clearTimeout(maxWaitTimer); maxWaitTimer = null; }
   }
   function doSave(silent: boolean) {
     if (weekIdx < 0) return;
-    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    cancelSaveTimers();
     const key = weekKey(weekIdx);
     setEntry(key, { text: textValue.trim(), photo, mood });
     isExisting = !!(textValue.trim() || photo || mood);
@@ -137,14 +163,14 @@
   }
 
   onDestroy(() => {
-    if (saveTimer) clearTimeout(saveTimer);
+    cancelSaveTimers();
     window.removeEventListener('journal:load', handleLoadEvent);
   });
 </script>
 
 <div class="journal-composer" class:editing={isExisting}>
   <div class="composer-meta">
-    <input type="date" bind:value={dateInput} max={today} />
+    <input type="date" bind:value={dateInput} min={earliestDate} max={today} />
     <div class="week-info">
       <span class="age-tag">{ageStr}</span>
       <span>{weekRange}</span>
