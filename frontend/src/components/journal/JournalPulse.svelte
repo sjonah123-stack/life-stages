@@ -4,7 +4,8 @@
   import {
     getEntry, weekKey, currentWeekIndex, dateToWeekStart,
   } from '../../stores/journal-helpers';
-  import { ageInYears, escapeHtml } from '../../utils';
+  import { ageInYears } from '../../utils';
+  import MoodSparkline from './MoodSparkline.svelte';
 
   // Streak: consecutive weeks with entries, walking back from this week.
   // Grace rule: if this week is empty, we don't break the streak — just
@@ -69,6 +70,25 @@
   $: streak = (() => { void $journal; return computeStreak(); })();
   $: ann = (() => { void $journal; return findOldestAnniversary(); })();
 
+  // Total entries (text or photo present) and total words across all entries.
+  $: totals = (() => {
+    let entries = 0;
+    let words = 0;
+    for (const raw of Object.values($journal)) {
+      const text = typeof raw === 'string' ? raw : (raw as { text?: string }).text;
+      const photo = typeof raw === 'string' ? '' : (raw as { photo?: string }).photo;
+      const trimmed = (text || '').trim();
+      if (!trimmed && !photo) continue;
+      entries++;
+      if (trimmed) words += trimmed.split(/\s+/).filter(Boolean).length;
+    }
+    return { entries, words };
+  })();
+
+  function fmtNum(n: number): string {
+    return n.toLocaleString();
+  }
+
   function loadAnn() {
     if (!ann) return;
     window.dispatchEvent(new CustomEvent('journal:load', { detail: { key: ann.key } }));
@@ -105,6 +125,19 @@
     </div>
   {/if}
 
+  {#if totals.entries > 0}
+    <div class="totals-card">
+      <div class="total-stat">
+        <div class="total-num">{fmtNum(totals.entries)}</div>
+        <div class="total-label">{totals.entries === 1 ? 'entry' : 'entries'}</div>
+      </div>
+      <div class="total-stat">
+        <div class="total-num">{fmtNum(totals.words)}</div>
+        <div class="total-label">{totals.words === 1 ? 'word' : 'words'}</div>
+      </div>
+    </div>
+  {/if}
+
   {#if ann}
     <div
       class="anniversary-card"
@@ -128,14 +161,43 @@
   {/if}
 </div>
 
+<MoodSparkline />
+
 <style>
   .journal-pulse {
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) 2fr;
+    grid-template-columns: minmax(220px, 1fr) minmax(160px, auto) 2fr;
     gap: 12px;
     margin-bottom: 22px;
   }
   @media (max-width: 720px) { .journal-pulse { grid-template-columns: 1fr; } }
+  .totals-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    gap: 14px;
+  }
+  .total-stat { text-align: center; }
+  .total-num {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .total-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    font-weight: 700;
+    margin-top: 4px;
+  }
   .streak-card {
     background: linear-gradient(135deg, rgba(255, 201, 60, 0.18), rgba(255, 140, 97, 0.10));
     border: 1px solid rgba(255, 140, 97, 0.22);

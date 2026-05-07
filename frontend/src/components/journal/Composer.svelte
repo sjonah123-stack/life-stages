@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { birthdate } from '../../stores/personal';
   import {
     getEntry, setEntry, deleteEntry,
     weekKey, weekStartDate, weekRangeStr, ageAtWeek, dateToWeekStart,
   } from '../../stores/journal-helpers';
-  import { formatDOB, parseDOB, debounce } from '../../utils';
-  import { resizeImage } from '../../lib/image';
+  import { formatDOB, parseDOB } from '../../utils';
+  import { resizeImage, imageErrorMessage } from '../../lib/image';
   import { pickPrompt } from '../../data';
-  import { MOOD_OPTIONS, LIFESPAN } from '../../config';
+  import { MOOD_OPTIONS } from '../../config';
   import type { Mood } from '../../types';
+  import OnThisDayBanner from './OnThisDayBanner.svelte';
 
   // Editor state
   let dateInput: string = '';
@@ -18,21 +19,22 @@
   let mood: Mood = '';
   let promptText = pickPrompt();
   let status: string = '';
+  let photoError: string = '';
   let isExisting = false;
+  let textareaEl: HTMLTextAreaElement | null = null;
+  let composerEl: HTMLDivElement | null = null;
 
-  // Reactive: when birthdate is known, default the date input to today.
-  function handleLoadEvent(e: Event) {
+  async function handleLoadEvent(e: Event) {
     const ev = e as CustomEvent<{ key: string }>;
     if (!ev.detail?.key) return;
     dateInput = ev.detail.key;
     loadFromDate();
-    // Smooth scroll to the composer + focus the textarea.
-    const el = document.querySelector('.journal-composer');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => {
-      const ta = document.querySelector('.composer-textarea') as HTMLTextAreaElement | null;
-      if (ta) ta.focus();
-    }, 300);
+    // Wait for the textarea to repaint with the new content, then scroll +
+    // focus together. Avoids the brief "old text" flash the prior 300ms
+    // setTimeout caused.
+    await tick();
+    composerEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    textareaEl?.focus({ preventScroll: true });
   }
 
   onMount(() => {
@@ -111,7 +113,7 @@
     setEntry(key, { text: textValue.trim(), photo, mood });
     isExisting = !!(textValue.trim() || photo || mood);
     status = silent ? 'Auto-saved' : 'Saved ✓';
-    setTimeout(() => { status = ''; }, 1600);
+    setTimeout(() => { status = ''; }, 2400);
   }
   function doDelete() {
     if (!confirm('Delete this entry?')) return;
@@ -122,7 +124,7 @@
     mood = '';
     isExisting = false;
     status = 'Deleted';
-    setTimeout(() => { status = ''; }, 1600);
+    setTimeout(() => { status = ''; }, 2400);
   }
   function reset() {
     dateInput = formatDOB(new Date());
@@ -136,12 +138,13 @@
 
   async function onPhotoChange(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file) return;
+    photoError = '';
     try {
       photo = await resizeImage(file);
       scheduleSave();
     } catch (err) {
-      alert('Could not read that image.');
+      photoError = imageErrorMessage(err);
     }
     (e.target as HTMLInputElement).value = '';
   }
@@ -168,7 +171,7 @@
   });
 </script>
 
-<div class="journal-composer" class:editing={isExisting}>
+<div class="journal-composer" class:editing={isExisting} bind:this={composerEl}>
   <div class="composer-meta">
     <input type="date" bind:value={dateInput} min={earliestDate} max={today} />
     <div class="week-info">
@@ -183,6 +186,8 @@
     {#if isExisting}<span class="editing-tag">Editing</span>{/if}
   </div>
 
+  <OnThisDayBanner currentKey={weekIdx >= 0 ? weekKey(weekIdx) : ''} />
+
   {#if showPrompt}
     <div class="composer-prompt">
       <span>💡</span>
@@ -196,6 +201,7 @@
     placeholder="What's on your mind? What happened this week? Big things, small things — write what's true."
     maxlength={5000}
     bind:value={textValue}
+    bind:this={textareaEl}
     on:input={onTextInput}
     on:keydown={onKey}
   ></textarea>
@@ -210,6 +216,14 @@
       <button type="button" class="cancel-btn" on:click={removePhoto}>Remove photo</button>
     {/if}
   </div>
+
+  {#if photoError}
+    <div class="photo-error" role="alert">
+      <span>⚠️</span>
+      <span>{photoError}</span>
+      <button type="button" class="photo-error-dismiss" on:click={() => photoError = ''} aria-label="Dismiss">×</button>
+    </div>
+  {/if}
 
   <div class="composer-actions">
     <button type="button" class="save-btn" class:saved={isExisting && !status} on:click={() => doSave(false)}>
@@ -422,5 +436,31 @@
     color: var(--ink-faint);
     font-size: 12px;
     font-style: italic;
+    transition: opacity 0.4s;
   }
+  .photo-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: rgba(255, 107, 157, 0.08);
+    border: 1px solid rgba(255, 107, 157, 0.3);
+    border-radius: 10px;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .photo-error-dismiss {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0 4px;
+    line-height: 1;
+    font-family: inherit;
+  }
+  .photo-error-dismiss:hover { color: var(--love); }
 </style>

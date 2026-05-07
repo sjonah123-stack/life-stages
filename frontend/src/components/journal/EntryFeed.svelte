@@ -13,6 +13,7 @@
   let searchQuery = '';
   let searchInput = '';
   const updateSearch = debounce((v: string) => { searchQuery = v; }, 200);
+  $: searchPending = searchInput !== searchQuery;
 
   // Build the visible entries list reactively from the journal store + filters.
   $: allEntries = Object.entries($journal)
@@ -65,7 +66,7 @@
   }
 </script>
 
-<div class="entry-search-wrap">
+<div class="entry-search-wrap" class:pending={searchPending}>
   <input
     type="search"
     class="entry-search"
@@ -172,6 +173,15 @@
     font-size: 14px;
     opacity: 0.6;
     pointer-events: none;
+    transition: opacity 0.15s;
+  }
+  .entry-search-wrap.pending::before {
+    opacity: 0.25;
+    animation: search-pulse 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes search-pulse {
+    from { opacity: 0.25; }
+    to { opacity: 0.55; }
   }
   .entry-search-clear {
     position: absolute;
