@@ -1,6 +1,6 @@
 // Service worker for Life Stages PWA
 // Strategy: cache-first for same-origin assets, network-first for everything else.
-const CACHE = 'life-stages-v7';
+const CACHE = 'life-stages-v8';
 const PRECACHE = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
