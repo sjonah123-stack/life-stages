@@ -3,8 +3,9 @@
   import { submitAssessment } from '../../stores/assessment';
   import type { SurveyAnswer, WealthKey } from '../../types';
 
-  export let onCancel: () => void;
-  export let onComplete: (() => void) | undefined = undefined;
+  // Called whether the user cancels mid-survey or finishes — parent flips
+  // back to whatever non-survey state should follow (intro or results).
+  export let onClose: () => void;
 
   // One answer per question, indexed by question id.
   let answers: Record<string, 1 | 2 | 3 | 4 | 5> = {};
@@ -39,13 +40,13 @@
       answers: surveyAnswers,
       selfScores,
     });
-    onComplete?.();
+    onClose();
   }
 </script>
 
 <div class="survey-card">
   <div class="header">
-    <button class="cancel" on:click={onCancel}>✕ Cancel</button>
+    <button class="cancel" on:click={onClose}>✕ Cancel</button>
     <div class="progress">
       <div class="progress-fill" style="width: {progress}%"></div>
     </div>

@@ -149,7 +149,9 @@ export interface AssessmentResult {
   takenAt: number;           // Date.now() at submission
   answers: SurveyAnswer[];
   selfScores: Record<WealthKey, number>;  // 0-100, derived from answers
-  // recId (from Recommendation.id) → ISO date string when checked off
+  // recId (RecommendationId from data/assessment.ts) → ISO date when checked off.
+  // Typed as plain string here because importing data/ from types/ would
+  // create a circular dep; consumers tighten via assertions / the toggle helper.
   completedRecommendations: Record<string, string>;
 }
 

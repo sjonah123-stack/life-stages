@@ -1,55 +1,12 @@
 // Personalize panel state — birthdate, sex, theme, country, etc.
 // Each writable here auto-persists to localStorage under LS_PREFIX.
-import { writable, derived, type Writable } from 'svelte/store';
+import { derived } from 'svelte/store';
 import type {
   Sex, Theme, Country, Partnership, CareerField, Smoking, ExerciseLevel, DateString,
 } from '../types';
-import { DEFAULT_DOB, DEFAULT_SEX, DEFAULT_THEME, LS_PREFIX } from '../config';
-import { readLS, writeLS, parseDOB, ageInYears, daysBetween, formatDOB } from '../utils';
-
-// ---- Helper: a writable that mirrors itself to localStorage,
-//      and stays in sync across browser tabs.
-function persisted<T>(
-  key: string,
-  initial: T,
-  parse: (raw: string) => T,
-  serialize: (val: T) => string,
-): Writable<T> {
-  const stored = readLS(key);
-  let start = initial;
-  if (stored != null) {
-    try { start = parse(stored); } catch (e) { /* fall back to initial */ }
-  }
-  const store = writable<T>(start);
-
-  // Local writes flow through the subscription. The applyingExternal flag
-  // suppresses write-back when the value came from another tab — without
-  // this, two tabs ping-pong storage events forever.
-  let applyingExternal = false;
-  store.subscribe((val) => {
-    if (applyingExternal) return;
-    writeLS(key, serialize(val));
-  });
-
-  // Cross-tab sync: storage events fire in OTHER tabs when our tab writes
-  // to localStorage. When that happens, mirror the new value into this
-  // tab's store so the UI updates without a reload.
-  if (typeof window !== 'undefined') {
-    window.addEventListener('storage', (e) => {
-      if (e.key !== LS_PREFIX + key) return;
-      if (e.newValue == null) return;
-      try {
-        applyingExternal = true;
-        store.set(parse(e.newValue));
-      } catch (err) {
-        /* ignore unparseable values */
-      } finally {
-        applyingExternal = false;
-      }
-    });
-  }
-  return store;
-}
+import { DEFAULT_DOB, DEFAULT_SEX, DEFAULT_THEME } from '../config';
+import { parseDOB, ageInYears, daysBetween, formatDOB } from '../utils';
+import { persisted } from './persisted';
 
 const str = (v: string) => v;
 const num = (raw: string) => parseInt(raw, 10) || 0;

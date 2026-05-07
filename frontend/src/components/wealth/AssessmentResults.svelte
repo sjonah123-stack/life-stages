@@ -1,28 +1,26 @@
 <script lang="ts">
   import {
     assessmentResults,
+    latestAssessment,
     behavioralScores,
     deleteAssessment,
     toggleRecommendation,
   } from '../../stores/assessment';
   import { WEALTHS } from '../../data/assessment';
-  import type { WealthKey, WealthScores, AssessmentResult } from '../../types';
+  import type { WealthKey } from '../../types';
   import WealthRadar from './WealthRadar.svelte';
   import WealthCard from './WealthCard.svelte';
 
-  // Optional callback so the parent can swap to survey state on "Take again".
   export let onRetake: (() => void) | undefined = undefined;
 
-  // Currently-displayed result id. Defaults to the latest.
-  let selectedId: string | null = null;
+  // User-picked override; null means "show the latest". Reset to null when
+  // the picked result is deleted or otherwise leaves the list.
+  let pickedId: string | null = null;
 
-  // Keep selection valid as the list changes (e.g. after delete).
   $: list = $assessmentResults;
-  $: if (list.length > 0 && (selectedId === null || !list.some((r) => r.id === selectedId))) {
-    selectedId = list[0].id;
-  }
+  $: if (pickedId !== null && !list.some((r) => r.id === pickedId)) pickedId = null;
 
-  $: current = list.find((r) => r.id === selectedId) ?? list[0] ?? null;
+  $: current = pickedId ? list.find((r) => r.id === pickedId) ?? null : $latestAssessment;
   $: self = current?.selfScores ?? null;
   $: behavioral = $behavioralScores;
 
@@ -38,37 +36,18 @@
     const blended = (k: WealthKey): number => {
       const s = self?.[k];
       const b = behavioral[k];
-      if (s != null) return Math.round((s + b) / 2);
-      return b;
+      return s != null ? Math.round((s + b) / 2) : b;
     };
     return [...keys].sort((a, b) => blended(a) - blended(b)).slice(0, 2);
   })();
 
   $: focusWealths = focusKeys.map((k) => WEALTHS.find((w) => w.key === k)!);
 
-  function handleRetake() {
-    onRetake?.();
-  }
-
   function handleDelete() {
     if (!current) return;
-    const ok = confirm(
-      `Delete the result from ${fmtDate(current.takenAt)}? This won't affect your other saved results.`,
-    );
-    if (!ok) return;
+    if (!confirm(`Delete the result from ${fmtDate(current.takenAt)}? This won't affect your other saved results.`)) return;
     deleteAssessment(current.id);
   }
-
-  function handleToggleRec(recId: string) {
-    if (!current) return;
-    toggleRecommendation(current.id, recId);
-  }
-
-  // Cast to keep WealthCard's prop types happy without unwrapping in the template.
-  $: completedMap = (current?.completedRecommendations ?? {}) as Record<string, string>;
-
-  // Show count of saved results so the user knows history exists.
-  $: savedCount = list.length;
 </script>
 
 {#if current}
@@ -76,16 +55,16 @@
     <div class="results-head">
       <div class="head-left">
         <div class="meta-row">
-          {#if savedCount > 1}
+          {#if list.length > 1}
             <label class="picker">
               <span class="picker-label">Result</span>
-              <select bind:value={selectedId}>
-                {#each list as r}
+              <select bind:value={pickedId}>
+                {#each list as r (r.id)}
                   <option value={r.id}>{fmtDate(r.takenAt)}</option>
                 {/each}
               </select>
             </label>
-            <span class="saved-count">{savedCount} saved</span>
+            <span class="saved-count">{list.length} saved</span>
           {:else}
             <div class="meta">Assessment taken {fmtDate(current.takenAt)}</div>
           {/if}
@@ -94,13 +73,13 @@
       </div>
       <div class="head-actions">
         <button class="btn ghost" on:click={handleDelete}>Delete</button>
-        <button class="btn primary" on:click={handleRetake}>↻ Take again</button>
+        <button class="btn primary" on:click={() => onRetake?.()}>↻ Take again</button>
       </div>
     </div>
 
     <div class="radar-row">
       <div class="radar-cell">
-        <WealthRadar self={self as WealthScores | null} behavioral={behavioral} />
+        <WealthRadar self={self} behavioral={behavioral} />
       </div>
       <div class="focus">
         <div class="focus-label">Focus here this month</div>
@@ -125,8 +104,8 @@
           wealth={w}
           selfScore={self?.[w.key] ?? null}
           behavioralScore={behavioral[w.key]}
-          completedRecommendations={completedMap}
-          onToggleRec={handleToggleRec}
+          completedRecommendations={current.completedRecommendations}
+          onToggleRec={(recId) => toggleRecommendation(current.id, recId)}
         />
       {/each}
     </div>
@@ -214,26 +193,13 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink-dim);
     transition: all 0.15s;
   }
-  .btn.ghost {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--ink-dim);
-  }
-  .btn.ghost:hover {
-    border-color: var(--love);
-    color: var(--love);
-  }
-  .btn.primary {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--ink-dim);
-  }
-  .btn.primary:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+  .btn.ghost:hover { border-color: var(--love); color: var(--love); }
+  .btn.primary:hover { border-color: var(--accent); color: var(--accent); }
 
   .radar-row {
     display: grid;

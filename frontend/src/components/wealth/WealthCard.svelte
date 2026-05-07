@@ -1,23 +1,16 @@
 <script lang="ts">
-  import type { WealthMeta } from '../../data/assessment';
+  import type { WealthMeta, RecommendationId } from '../../data/assessment';
   import { RECOMMENDATIONS } from '../../data/assessment';
 
   export let wealth: WealthMeta;
   export let selfScore: number | null;
   export let behavioralScore: number;
-  // Map of recId → ISO date completed. Undefined when no result is selected.
   export let completedRecommendations: Record<string, string> = {};
-  // Caller toggles a rec by id. When omitted, checkboxes are hidden.
-  export let onToggleRec: ((recId: string) => void) | undefined = undefined;
+  // When omitted, recommendation rows render without checkboxes (read-only).
+  export let onToggleRec: ((recId: RecommendationId) => void) | undefined = undefined;
 
-  // Show recommendations if either score is below 60.
-  $: showRecs =
-    (selfScore != null && selfScore < 60) || behavioralScore < 60;
+  $: showRecs = (selfScore != null && selfScore < 60) || behavioralScore < 60;
   $: recs = RECOMMENDATIONS[wealth.key];
-  // Reactive copy of the prop so the template re-evaluates done-state on every
-  // change. Looking up `completedRecommendations[id]` directly inside template
-  // expressions doesn't always track the prop as a dependency reliably.
-  $: doneMap = completedRecommendations;
 
   function scoreClass(n: number): string {
     if (n >= 75) return 'high';
@@ -53,7 +46,7 @@
       <div class="recs-label">Try this:</div>
       <ul>
         {#each recs as r (r.id)}
-          {@const done = !!doneMap[r.id]}
+          {@const done = !!completedRecommendations[r.id]}
           <li class:done>
             {#if onToggleRec}
               <button

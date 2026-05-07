@@ -21,6 +21,12 @@ export interface Recommendation {
   href: string;        // hash route, e.g. '#/journal'
 }
 
+// Union of every concrete recommendation id, derived from RECOMMENDATIONS
+// below so adding/renaming an entry there propagates type errors to every
+// consumer (toggleRecommendation, completedRecommendations, etc.).
+export type RecommendationId =
+  (typeof RECOMMENDATIONS)[WealthKey][number]['id'];
+
 // ---- Wealth metadata (rendering order = order in this array) ----
 
 export const WEALTHS: WealthMeta[] = [
@@ -95,7 +101,7 @@ export const LIKERT_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
 
 // ---- Recommendation library — surfaced when score < 60 ----
 
-export const RECOMMENDATIONS: Record<WealthKey, Recommendation[]> = {
+export const RECOMMENDATIONS = {
   time: [
     { id: 'time-set-dob', text: 'Set your birthdate so the timeline can anchor to it.', href: '#/settings' },
     { id: 'time-add-milestones', text: 'Add 3 milestones you\'re looking forward to.', href: '#/goals' },
@@ -121,7 +127,7 @@ export const RECOMMENDATIONS: Record<WealthKey, Recommendation[]> = {
     { id: 'financial-career', text: 'Pick your career field.', href: '#/settings' },
     { id: 'financial-soon', text: 'Net-worth tracking and savings goals are coming soon.', href: '#/settings' },
   ],
-};
+} as const satisfies Record<WealthKey, readonly Recommendation[]>;
 
 // ---- Score computation from survey answers ----
 

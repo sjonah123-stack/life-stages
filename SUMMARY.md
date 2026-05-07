@@ -1,13 +1,13 @@
 # Session Summary — life-stages
 
-Last updated: 2026-05-07, after shipping the wealth-on-Today refactor to prod.
+Last updated: 2026-05-07, after shipping the codebase cleanup pass to prod.
 
 ## Where things stand right now
 
 | | URL | Status |
 |---|---|---|
-| **Production** | https://life-stages-90806.web.app | Wealth assessment now lives on the Today page; no top-level Wealth tab. Live as of 2026-05-07. |
-| **Latest preview** | https://life-stages-90806--wealth-on-today-j8thxrh3.web.app | Same code as prod; expires ~2026-05-14 |
+| **Production** | https://life-stages-90806.web.app | Wealth-on-Today refactor + cleanup pass. Live as of 2026-05-07. |
+| **Latest preview** | https://life-stages-90806--cleanup-pass-q45re9br.web.app | Same code as prod; expires ~2026-05-14 |
 | **Legacy archive** | https://life-stages-90806.web.app/legacy.html | Old single-file app, viewable but not maintained |
 
 **Open thread:** none committed. Three plausible next directions, in rough priority:
@@ -72,6 +72,26 @@ Scoring is **blended**:
 
 Recommendations surface when either score < 60. Each rec is a deep-link to an existing tool (`/people`, `/journal`, `/settings`, etc.).
 
+### 4. Codebase cleanup pass — shipped to prod 2026-05-07
+
+A no-feature-change refactor pass to set up groundwork for future buildout. Driven by a three-way parallel review (reuse / quality / efficiency agents) of the wealth refactor, scoped to the highest-leverage findings.
+
+**Foundation:**
+- New `frontend/src/stores/persisted.ts` — single source of truth for the LS-write + cross-tab-sync + ping-pong-guard pattern. Two helpers: `persisted<T>(key, initial, parse, serialize)` for string-encoded values and `persistedJSON<T>(key, initial, normalize?)` for JSON values. The optional `normalize` hook is what `assessmentResults` uses to migrate v1 single-result LS into the v2 list shape on first load.
+- Replaces 4 hand-rolled copies that previously lived in `personal.ts`, `collections.ts` (`persistedJSON` + `persistedNumber`), and `assessment.ts` (`persistedResults`). Adding new persisted state is now a one-liner.
+- `cloud-sync.ts` no longer knows the v1/v2 wealth schema. It calls `setAssessmentFromCloud(cloud)` and the store decides which key to read. Same `normalizeList` sanitizer feeds both LS-load and cloud-load paths — single funnel.
+
+**Type tightening:**
+- `RECOMMENDATIONS` is now `as const satisfies Record<WealthKey, readonly Recommendation[]>` and `RecommendationId = (typeof RECOMMENDATIONS)[WealthKey][number]['id']` is auto-derived. `toggleRecommendation` and `WealthCard.onToggleRec` now demand a real ID — typos caught at compile time. Adding/renaming a recommendation propagates type errors to every consumer.
+
+**Wealth-area smoothing:**
+- `AssessmentResults`: `selectedId` + the keep-it-valid reactive block + `current = list.find(...)` collapsed. Now uses `latestAssessment` derived store as the default, with a user-override `pickedId` only when the dropdown is touched. Two `as` casts removed.
+- `WealthCard`: confirmed via in-browser test that the keyed `{#each ... (r.id)}` + `{@const done = ...}` was the actual reactivity fix. The `$: doneMap = …` aliasing was redundant and is gone.
+- `AssessmentSurvey`: `onCancel` + `onComplete` collapsed to single `onClose` (both meant "leave survey").
+- `TodayWealth`: dropped duplicate h2/lede (intro and results each provide their own header), kept just the eyebrow as a section delimiter. State derivation flattened with `satisfies State`.
+
+**Verified:** svelte-check 0 errors, build clean, bundle 161.20 KB (-1 KB vs pre-cleanup), in-browser preview confirmed all 4 reactivity attributes flip together on rec toggle, wealth result migrated cleanly.
+
 ### 3. Wealth-on-Today refactor — shipped to prod 2026-05-07 (commit `03ba00e`)
 
 Three changes shipped together:
@@ -85,7 +105,7 @@ Three changes shipped together:
 - `stores/cloud-sync.ts → applyCloudState()` falls back to `cloud.assessmentResult` when `cloud.assessmentResults` is absent.
 - `normalizeResults()` in `assessment.ts` is the single funnel that fills in missing `id` / `completedRecommendations` and sorts newest-first. Keep using it for any inbound list.
 
-**Subtle Svelte 5 gotcha caught in verification:** template expressions like `aria-pressed={isDone(r.id)}` calling a plain function don't reliably re-evaluate when the function reads a prop — Svelte's dependency tracker doesn't see through the call. Symptom was `class:checked` updating mid-session while sibling `aria-pressed` stayed stale. Fix: introduce a `$:` reactive copy of the prop (`doneMap`) and read it directly via `{@const done = !!doneMap[r.id]}` inside a keyed `{#each}`. If you add new wealth-card UI that depends on `completedRecommendations`, follow the same pattern.
+**Subtle Svelte 5 gotcha caught in verification:** template expressions like `aria-pressed={isDone(r.id)}` calling a plain function don't reliably re-evaluate when the function reads a prop — Svelte's dependency tracker doesn't see through the call. Symptom was `class:checked` updating mid-session while sibling `aria-pressed` stayed stale. **Fix:** keyed `{#each recs as r (r.id)}` with `{@const done = !!completedRecommendations[r.id]}` inside the iteration scope. (Initial diagnosis added a `$: doneMap = completedRecommendations` aliasing line as part of the fix; the cleanup pass confirmed via direct test that the alias is unnecessary — the keyed-each + `@const` is sufficient.) If you add new wealth-card UI that depends on `completedRecommendations`, follow the same pattern.
 
 Files touched (see commit `03ba00e`): `types.ts`, `data/assessment.ts`, `stores/assessment.ts`, `stores/cloud-sync.ts`, `lib/router.ts`, `App.svelte`, `components/pages/Today.svelte`, `components/today/TodayWealth.svelte` (new), `components/wealth/AssessmentResults.svelte`, `AssessmentSurvey.svelte`, `WealthCard.svelte`. Deleted: `components/pages/Wealth.svelte`.
 
@@ -102,6 +122,9 @@ Verification done: svelte-check 0 errors, build success, in-browser preview conf
 - **Recommendation completion is per-result**, not global. The same rec can be checked off on result A and unchecked on result B — they're independent. Reasoning: each saved result is a snapshot of "where I was on date X and what I committed to doing about it"; completion belongs to that snapshot.
 - **No chart library** — the radar is hand-rolled SVG. Set the precedent.
 - **Cloud sync uses `users/{uid}` doc with `setDoc(merge: true)`**. Don't switch to per-collection.
+- **All persisted state flows through `stores/persisted.ts`.** New persisted writables use `persistedJSON()` (or `persisted()` for string-encoded values). Don't hand-roll the LS-write + cross-tab-sync + applyingExternal-guard pattern again — extending the helper is always cheaper than copying it.
+- **Migration logic lives in the store, not in cloud-sync.** `cloud-sync.ts` is a router; schema-version handling for any given store is the store's job (see `assessmentResults`'s `setFromCloud` for the pattern). When you bump a store's schema, add a `setFromCloud` and a `loadInitial` normalizer; don't add another branch in cloud-sync.
+- **Recommendation IDs are typed (`RecommendationId`).** Adding a new entry to `RECOMMENDATIONS` automatically widens the union. Don't pass plain `string` for rec IDs anywhere new — let the type catch typos.
 
 ## Known gaps / not done (real backlog)
 

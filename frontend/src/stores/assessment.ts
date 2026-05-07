@@ -1,10 +1,12 @@
 // Assessment state — persisted list of saved survey results + live-derived
 // behavioral score. v2 stores a list (newest first) so users can save, retake,
 // and delete individual results, and check off recommendations per result.
-import { writable, derived, type Writable } from 'svelte/store';
+import { derived } from 'svelte/store';
 import type { AssessmentResult, WealthScores } from '../types';
+import type { RecommendationId } from '../data/assessment';
 import { LS_PREFIX } from '../config';
-import { readJSON, writeJSON, parseDOB, daysBetween } from '../utils';
+import { parseDOB, daysBetween } from '../utils';
+import { persistedJSON } from './persisted';
 import {
   dob, partnership, careerField, retirementAge,
   smoker, exerciseLevel, sleepHours, familyLongevity,
@@ -17,48 +19,6 @@ import { getEntry, weekKey, currentWeekIndex } from './journal-helpers';
 const RESULTS_KEY = 'assessmentResults';
 const LEGACY_KEY = 'assessment'; // v1 single-result key
 
-// ---- Migration: lift v1 single-result LS into the v2 list shape ----
-// Only runs once: the legacy key is cleared after a successful migration.
-function migrateLegacyLocal(): AssessmentResult[] {
-  const legacy = readJSON<unknown>(LEGACY_KEY, null);
-  if (!legacy || typeof legacy !== 'object') return [];
-  const r = legacy as Partial<AssessmentResult> & { v?: number };
-  if (!r.takenAt || !r.answers || !r.selfScores) return [];
-  const migrated: AssessmentResult = {
-    v: 2,
-    id: r.id ?? makeId(),
-    takenAt: r.takenAt,
-    answers: r.answers as AssessmentResult['answers'],
-    selfScores: r.selfScores as AssessmentResult['selfScores'],
-    completedRecommendations: r.completedRecommendations ?? {},
-  };
-  // Clear legacy key so we don't keep re-migrating.
-  try { window.localStorage.removeItem(LS_PREFIX + LEGACY_KEY); } catch { /* noop */ }
-  return [migrated];
-}
-
-// Normalise any inbound list (from LS, cloud, or upgrade path) to v2 shape.
-export function normalizeResults(input: unknown): AssessmentResult[] {
-  if (!Array.isArray(input)) return [];
-  const out: AssessmentResult[] = [];
-  for (const raw of input) {
-    if (!raw || typeof raw !== 'object') continue;
-    const r = raw as Partial<AssessmentResult>;
-    if (!r.takenAt || !r.answers || !r.selfScores) continue;
-    out.push({
-      v: 2,
-      id: r.id ?? makeId(),
-      takenAt: r.takenAt,
-      answers: r.answers,
-      selfScores: r.selfScores,
-      completedRecommendations: r.completedRecommendations ?? {},
-    });
-  }
-  // Newest first.
-  out.sort((a, b) => b.takenAt - a.takenAt);
-  return out;
-}
-
 function makeId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -66,35 +26,57 @@ function makeId(): string {
   return `r-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function persistedResults(): Writable<AssessmentResult[]> {
-  let initial = normalizeResults(readJSON<unknown>(RESULTS_KEY, null));
-  if (initial.length === 0) {
-    // First load on the new shape — try lifting v1 single-result.
-    initial = migrateLegacyLocal();
-    if (initial.length > 0) writeJSON(RESULTS_KEY, initial);
-  }
-  const store = writable<AssessmentResult[]>(initial);
-  let applyingExternal = false;
-  store.subscribe((val) => {
-    if (applyingExternal) return;
-    writeJSON(RESULTS_KEY, val);
-  });
-  if (typeof window !== 'undefined') {
-    window.addEventListener('storage', (e) => {
-      if (e.key !== LS_PREFIX + RESULTS_KEY) return;
-      try {
-        applyingExternal = true;
-        store.set(normalizeResults(e.newValue ? JSON.parse(e.newValue) : []));
-      } catch { /* ignore */ }
-      finally { applyingExternal = false; }
-    });
-  }
-  return store;
+// Coerce a single value to a v2 entry, dropping malformed input.
+function coerceResult(raw: unknown): AssessmentResult | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Partial<AssessmentResult>;
+  if (!r.takenAt || !r.answers || !r.selfScores) return null;
+  return {
+    v: 2,
+    id: r.id ?? makeId(),
+    takenAt: r.takenAt,
+    answers: r.answers,
+    selfScores: r.selfScores,
+    completedRecommendations: r.completedRecommendations ?? {},
+  };
 }
 
-export const assessmentResults = persistedResults();
+// Sanitize any inbound array (LS, cloud, legacy) to v2-shaped, newest-first.
+function normalizeList(input: unknown): AssessmentResult[] {
+  if (!Array.isArray(input)) return [];
+  const out: AssessmentResult[] = [];
+  for (const r of input) {
+    const c = coerceResult(r);
+    if (c) out.push(c);
+  }
+  return out.sort((a, b) => b.takenAt - a.takenAt);
+}
 
-// Convenience: latest saved result, or null. Drives most of the UI.
+// Initial-load normalization. Lifts a v1 single-result LS entry into the v2
+// list shape on first run, then clears the legacy key.
+function loadInitial(raw: unknown): AssessmentResult[] {
+  const list = normalizeList(raw);
+  if (list.length > 0) return list;
+  // Try v1 legacy single-result.
+  let legacy: unknown = null;
+  try {
+    const stored = window.localStorage.getItem(LS_PREFIX + LEGACY_KEY);
+    if (stored) legacy = JSON.parse(stored);
+  } catch { /* ignore */ }
+  const lifted = normalizeList(legacy ? [legacy] : []);
+  if (lifted.length > 0) {
+    try { window.localStorage.removeItem(LS_PREFIX + LEGACY_KEY); } catch { /* noop */ }
+  }
+  return lifted;
+}
+
+export const assessmentResults = persistedJSON<AssessmentResult[]>(
+  RESULTS_KEY,
+  [],
+  loadInitial,
+);
+
+// Latest saved result (newest first), or null if none.
 export const latestAssessment = derived(assessmentResults, ($list) => $list[0] ?? null);
 
 // Have any results been saved yet?
@@ -102,7 +84,6 @@ export const hasAssessment = derived(assessmentResults, ($list) => $list.length 
 
 // ---- Mutations ----
 
-// Submit a freshly-completed survey: prepend to the list (newest first).
 export function submitAssessment(
   partial: Omit<AssessmentResult, 'v' | 'id' | 'completedRecommendations'>,
 ): AssessmentResult {
@@ -116,31 +97,36 @@ export function submitAssessment(
   return result;
 }
 
-// Delete a specific saved result by id.
 export function deleteAssessment(id: string): void {
   assessmentResults.update((list) => list.filter((r) => r.id !== id));
 }
 
-// Wipe all saved results — start over.
 export function clearAllAssessments(): void {
   assessmentResults.set([]);
 }
 
 // Toggle a recommendation as completed/uncompleted on a specific saved result.
 // Stamps the ISO date on completion; removes the entry on uncheck.
-export function toggleRecommendation(resultId: string, recId: string): void {
+export function toggleRecommendation(resultId: string, recId: RecommendationId): void {
   assessmentResults.update((list) =>
     list.map((r) => {
       if (r.id !== resultId) return r;
       const next = { ...r.completedRecommendations };
-      if (next[recId]) {
-        delete next[recId];
-      } else {
-        next[recId] = new Date().toISOString();
-      }
+      if (next[recId]) delete next[recId];
+      else next[recId] = new Date().toISOString();
       return { ...r, completedRecommendations: next };
     }),
   );
+}
+
+// Cloud-sync entry point. Accepts either a v2 list or a v1 single-result
+// fallback so the sync layer doesn't need to know the schema history.
+export function setFromCloud(cloud: { assessmentResults?: unknown; assessmentResult?: unknown }): void {
+  if (cloud.assessmentResults !== undefined) {
+    assessmentResults.set(normalizeList(cloud.assessmentResults));
+  } else if (cloud.assessmentResult) {
+    assessmentResults.set(normalizeList([cloud.assessmentResult]));
+  }
 }
 
 // ---- Behavioral scores — derived from existing app data ----
@@ -162,7 +148,6 @@ export const behavioralScores = derived(
     // ---- Time ----
     let time = 0;
     if ($dob) time += 20;
-    // Journaled in past 4 weeks?
     const todayWeekIdx = currentWeekIndex();
     const journaledRecent = (() => {
       if (!$dob) return false;
@@ -180,8 +165,7 @@ export const behavioralScores = derived(
 
     // ---- Social ----
     let social = 0;
-    social += Math.min(10, $people.length); // 1 pt per person, cap 10
-    // ≥1 chat in past 30 days (+30) AND ≥3 chats in past 90 days (+20) — stack.
+    social += Math.min(10, $people.length);
     const today = new Date(); today.setHours(0, 0, 0, 0);
     let any30 = false;
     let count90 = 0;
@@ -202,7 +186,6 @@ export const behavioralScores = derived(
 
     // ---- Mental ----
     let mental = 0;
-    // Journaled in past 7 days?
     const journaled7d = (() => {
       if (!$dob) return false;
       const e = getEntry(weekKey(todayWeekIdx));
@@ -227,7 +210,8 @@ export const behavioralScores = derived(
     physical = Math.min(100, physical);
 
     // ---- Financial ----
-    // Honestly thin; UI labels this clearly.
+    // Honestly thin; UI labels this clearly. See `data/assessment.ts`
+    // RECOMMENDATIONS.financial for the "coming soon" note shown to users.
     let financial = 0;
     if ($retirementAge && $retirementAge > 0) financial += 50;
     if ($careerField) financial += 50;
