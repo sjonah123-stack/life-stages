@@ -1,9 +1,10 @@
 <script lang="ts">
   import { SURVEY, LIKERT_LABELS, computeSelfScores, WEALTHS } from '../../data/assessment';
   import { submitAssessment } from '../../stores/assessment';
-  import type { SurveyAnswer, AssessmentResult, WealthKey } from '../../types';
+  import type { SurveyAnswer, WealthKey } from '../../types';
 
   export let onCancel: () => void;
+  export let onComplete: (() => void) | undefined = undefined;
 
   // One answer per question, indexed by question id.
   let answers: Record<string, 1 | 2 | 3 | 4 | 5> = {};
@@ -33,13 +34,12 @@
       value: answers[q.id]!,
     }));
     const selfScores = computeSelfScores(surveyAnswers) as Record<WealthKey, number>;
-    const result: AssessmentResult = {
-      v: 1,
+    submitAssessment({
       takenAt: Date.now(),
       answers: surveyAnswers,
       selfScores,
-    };
-    submitAssessment(result);
+    });
+    onComplete?.();
   }
 </script>
 

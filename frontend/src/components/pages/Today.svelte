@@ -6,6 +6,7 @@
   import TexturePanel from '../today/TexturePanel.svelte';
   import DimensionCards from '../today/DimensionCards.svelte';
   import GoodNews from '../today/GoodNews.svelte';
+  import TodayWealth from '../today/TodayWealth.svelte';
 
   $: subtitle = $birthdate
     ? `Slide through the years ahead. Anchored to ${prettyDOB($birthdate)} — every age is yours to walk through.`
@@ -23,6 +24,7 @@
   <TexturePanel />
   <DimensionCards />
   <GoodNews />
+  <TodayWealth />
 </section>
 
 <style>

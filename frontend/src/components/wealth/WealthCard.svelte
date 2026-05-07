@@ -1,15 +1,23 @@
 <script lang="ts">
-  import type { WealthMeta, Recommendation } from '../../data/assessment';
+  import type { WealthMeta } from '../../data/assessment';
   import { RECOMMENDATIONS } from '../../data/assessment';
 
   export let wealth: WealthMeta;
   export let selfScore: number | null;
   export let behavioralScore: number;
+  // Map of recId → ISO date completed. Undefined when no result is selected.
+  export let completedRecommendations: Record<string, string> = {};
+  // Caller toggles a rec by id. When omitted, checkboxes are hidden.
+  export let onToggleRec: ((recId: string) => void) | undefined = undefined;
 
   // Show recommendations if either score is below 60.
   $: showRecs =
     (selfScore != null && selfScore < 60) || behavioralScore < 60;
   $: recs = RECOMMENDATIONS[wealth.key];
+  // Reactive copy of the prop so the template re-evaluates done-state on every
+  // change. Looking up `completedRecommendations[id]` directly inside template
+  // expressions doesn't always track the prop as a dependency reliably.
+  $: doneMap = completedRecommendations;
 
   function scoreClass(n: number): string {
     if (n >= 75) return 'high';
@@ -44,8 +52,23 @@
     <div class="recs">
       <div class="recs-label">Try this:</div>
       <ul>
-        {#each recs as r}
-          <li><a href={r.href}>{r.text}</a></li>
+        {#each recs as r (r.id)}
+          {@const done = !!doneMap[r.id]}
+          <li class:done>
+            {#if onToggleRec}
+              <button
+                type="button"
+                class="check"
+                class:checked={done}
+                aria-label={done ? 'Mark as not done' : 'Mark as done'}
+                aria-pressed={done}
+                on:click={() => onToggleRec?.(r.id)}
+              >
+                {#if done}✓{/if}
+              </button>
+            {/if}
+            <a href={r.href}>{r.text}</a>
+          </li>
         {/each}
       </ul>
     </div>
@@ -98,7 +121,6 @@
   .score.self .score-num { color: var(--accent); }
   .score.behavioral .score-num { color: var(--ink-dim); font-size: 22px; }
   .score-num.low { color: var(--love) !important; }
-  .score-num.mid { /* keep default */ }
   .score-num.high { color: var(--health) !important; }
   .score-label {
     font-size: 10px;
@@ -122,12 +144,47 @@
   }
   .recs ul {
     margin: 0;
-    padding-left: 18px;
+    padding: 0;
+    list-style: none;
     color: var(--ink);
     font-size: 14px;
     line-height: 1.55;
   }
-  .recs ul li { margin-bottom: 4px; }
+  .recs ul li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .recs ul li.done a {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    border-bottom-color: transparent;
+  }
+  .check {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 2px;
+    color: white;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .check:hover { border-color: var(--accent); }
+  .check.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
   .recs a {
     color: var(--ink);
     text-decoration: none;

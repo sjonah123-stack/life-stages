@@ -140,11 +140,17 @@ export interface SurveyAnswer {
   value: 1 | 2 | 3 | 4 | 5;  // Likert
 }
 
+// v2 adds `id` and `completedRecommendations` so a saved result can have its
+// recommendations checked off. Older v1 entries (single-result era) are
+// migrated to v2 at read time — see stores/assessment.ts.
 export interface AssessmentResult {
-  v: 1;
+  v: 2;
+  id: string;                // stable id, set at submission
   takenAt: number;           // Date.now() at submission
   answers: SurveyAnswer[];
   selfScores: Record<WealthKey, number>;  // 0-100, derived from answers
+  // recId (from Recommendation.id) → ISO date string when checked off
+  completedRecommendations: Record<string, string>;
 }
 
 export type WealthScores = Record<WealthKey, number>;
@@ -159,6 +165,9 @@ export interface CloudPayload extends Partial<PersonalSettings> {
   people: Person[];
   books: Book[];
   rituals: Ritual[];
+  // New (v2): list of saved results, newest first.
+  assessmentResults?: AssessmentResult[];
+  // Legacy (v1): single result. Read on load for migration; not written anymore.
   assessmentResult?: AssessmentResult | null;
   updated: number;
 }

@@ -9,7 +9,6 @@
   import Places from './components/pages/Places.svelte';
   import Reading from './components/pages/Reading.svelte';
   import Goals from './components/pages/Goals.svelte';
-  import Wealth from './components/pages/Wealth.svelte';
   import Settings from './components/pages/Settings.svelte';
 </script>
 
@@ -31,8 +30,6 @@
       <Reading />
     {:else if $currentPage === 'goals'}
       <Goals />
-    {:else if $currentPage === 'wealth'}
-      <Wealth />
     {:else if $currentPage === 'settings'}
       <Settings />
     {/if}

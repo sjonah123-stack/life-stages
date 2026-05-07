@@ -1,4 +1,6 @@
-// Assessment state — persisted survey result + live-derived behavioral score.
+// Assessment state — persisted list of saved survey results + live-derived
+// behavioral score. v2 stores a list (newest first) so users can save, retake,
+// and delete individual results, and check off recommendations per result.
 import { writable, derived, type Writable } from 'svelte/store';
 import type { AssessmentResult, WealthScores } from '../types';
 import { LS_PREFIX } from '../config';
@@ -12,33 +14,134 @@ import {
 } from './collections';
 import { getEntry, weekKey, currentWeekIndex } from './journal-helpers';
 
-// ---- Persisted result store (latest only; v2 tracks history) ----
+const RESULTS_KEY = 'assessmentResults';
+const LEGACY_KEY = 'assessment'; // v1 single-result key
 
-function persistedAssessment(key: string): Writable<AssessmentResult | null> {
-  const start = readJSON<AssessmentResult | null>(key, null);
-  const store = writable<AssessmentResult | null>(start);
+// ---- Migration: lift v1 single-result LS into the v2 list shape ----
+// Only runs once: the legacy key is cleared after a successful migration.
+function migrateLegacyLocal(): AssessmentResult[] {
+  const legacy = readJSON<unknown>(LEGACY_KEY, null);
+  if (!legacy || typeof legacy !== 'object') return [];
+  const r = legacy as Partial<AssessmentResult> & { v?: number };
+  if (!r.takenAt || !r.answers || !r.selfScores) return [];
+  const migrated: AssessmentResult = {
+    v: 2,
+    id: r.id ?? makeId(),
+    takenAt: r.takenAt,
+    answers: r.answers as AssessmentResult['answers'],
+    selfScores: r.selfScores as AssessmentResult['selfScores'],
+    completedRecommendations: r.completedRecommendations ?? {},
+  };
+  // Clear legacy key so we don't keep re-migrating.
+  try { window.localStorage.removeItem(LS_PREFIX + LEGACY_KEY); } catch { /* noop */ }
+  return [migrated];
+}
+
+// Normalise any inbound list (from LS, cloud, or upgrade path) to v2 shape.
+export function normalizeResults(input: unknown): AssessmentResult[] {
+  if (!Array.isArray(input)) return [];
+  const out: AssessmentResult[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== 'object') continue;
+    const r = raw as Partial<AssessmentResult>;
+    if (!r.takenAt || !r.answers || !r.selfScores) continue;
+    out.push({
+      v: 2,
+      id: r.id ?? makeId(),
+      takenAt: r.takenAt,
+      answers: r.answers,
+      selfScores: r.selfScores,
+      completedRecommendations: r.completedRecommendations ?? {},
+    });
+  }
+  // Newest first.
+  out.sort((a, b) => b.takenAt - a.takenAt);
+  return out;
+}
+
+function makeId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `r-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function persistedResults(): Writable<AssessmentResult[]> {
+  let initial = normalizeResults(readJSON<unknown>(RESULTS_KEY, null));
+  if (initial.length === 0) {
+    // First load on the new shape — try lifting v1 single-result.
+    initial = migrateLegacyLocal();
+    if (initial.length > 0) writeJSON(RESULTS_KEY, initial);
+  }
+  const store = writable<AssessmentResult[]>(initial);
   let applyingExternal = false;
   store.subscribe((val) => {
     if (applyingExternal) return;
-    writeJSON(key, val);
+    writeJSON(RESULTS_KEY, val);
   });
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', (e) => {
-      if (e.key !== LS_PREFIX + key) return;
+      if (e.key !== LS_PREFIX + RESULTS_KEY) return;
       try {
         applyingExternal = true;
-        store.set(e.newValue ? JSON.parse(e.newValue) : null);
-      } catch (err) { /* ignore */ }
+        store.set(normalizeResults(e.newValue ? JSON.parse(e.newValue) : []));
+      } catch { /* ignore */ }
       finally { applyingExternal = false; }
     });
   }
   return store;
 }
 
-export const assessmentResult = persistedAssessment('assessment');
+export const assessmentResults = persistedResults();
 
-// Derived: have they taken it yet?
-export const hasAssessment = derived(assessmentResult, ($r) => !!$r);
+// Convenience: latest saved result, or null. Drives most of the UI.
+export const latestAssessment = derived(assessmentResults, ($list) => $list[0] ?? null);
+
+// Have any results been saved yet?
+export const hasAssessment = derived(assessmentResults, ($list) => $list.length > 0);
+
+// ---- Mutations ----
+
+// Submit a freshly-completed survey: prepend to the list (newest first).
+export function submitAssessment(
+  partial: Omit<AssessmentResult, 'v' | 'id' | 'completedRecommendations'>,
+): AssessmentResult {
+  const result: AssessmentResult = {
+    v: 2,
+    id: makeId(),
+    completedRecommendations: {},
+    ...partial,
+  };
+  assessmentResults.update((list) => [result, ...list]);
+  return result;
+}
+
+// Delete a specific saved result by id.
+export function deleteAssessment(id: string): void {
+  assessmentResults.update((list) => list.filter((r) => r.id !== id));
+}
+
+// Wipe all saved results — start over.
+export function clearAllAssessments(): void {
+  assessmentResults.set([]);
+}
+
+// Toggle a recommendation as completed/uncompleted on a specific saved result.
+// Stamps the ISO date on completion; removes the entry on uncheck.
+export function toggleRecommendation(resultId: string, recId: string): void {
+  assessmentResults.update((list) =>
+    list.map((r) => {
+      if (r.id !== resultId) return r;
+      const next = { ...r.completedRecommendations };
+      if (next[recId]) {
+        delete next[recId];
+      } else {
+        next[recId] = new Date().toISOString();
+      }
+      return { ...r, completedRecommendations: next };
+    }),
+  );
+}
 
 // ---- Behavioral scores — derived from existing app data ----
 // Each wealth scores 0-100. Read from every relevant store so the score
@@ -132,15 +235,5 @@ export const behavioralScores = derived(
 
     const out: WealthScores = { time, social, mental, physical, financial };
     return out;
-  }
+  },
 );
-
-// Submit a survey result — overwrites the latest.
-export function submitAssessment(result: AssessmentResult): void {
-  assessmentResult.set(result);
-}
-
-// Clear the result so the user is shown the intro/CTA again.
-export function clearAssessment(): void {
-  assessmentResult.set(null);
-}

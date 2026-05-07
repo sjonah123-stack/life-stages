@@ -16,6 +16,7 @@ export interface WealthMeta {
 }
 
 export interface Recommendation {
+  id: string;          // stable, e.g. 'time-set-dob' — used for completion tracking
   text: string;
   href: string;        // hash route, e.g. '#/journal'
 }
@@ -96,29 +97,29 @@ export const LIKERT_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
 
 export const RECOMMENDATIONS: Record<WealthKey, Recommendation[]> = {
   time: [
-    { text: 'Set your birthdate so the timeline can anchor to it.', href: '#/settings' },
-    { text: 'Add 3 milestones you\'re looking forward to.', href: '#/goals' },
-    { text: 'Start a 7-day journal streak.', href: '#/journal' },
+    { id: 'time-set-dob', text: 'Set your birthdate so the timeline can anchor to it.', href: '#/settings' },
+    { id: 'time-add-milestones', text: 'Add 3 milestones you\'re looking forward to.', href: '#/goals' },
+    { id: 'time-journal-streak', text: 'Start a 7-day journal streak.', href: '#/journal' },
   ],
   social: [
-    { text: 'Add the 5 most important people in your life.', href: '#/people' },
-    { text: 'Log a chat with one of them this week.', href: '#/people' },
-    { text: 'Add an annual ritual that matters to you.', href: '#/people' },
+    { id: 'social-add-people', text: 'Add the 5 most important people in your life.', href: '#/people' },
+    { id: 'social-log-chat', text: 'Log a chat with one of them this week.', href: '#/people' },
+    { id: 'social-add-ritual', text: 'Add an annual ritual that matters to you.', href: '#/people' },
   ],
   mental: [
-    { text: 'Write your first journal entry.', href: '#/journal' },
-    { text: 'Log 3 books you\'ve read recently.', href: '#/reading' },
-    { text: 'Write a letter from your 60-year-old self.', href: '#/journal' },
+    { id: 'mental-first-entry', text: 'Write your first journal entry.', href: '#/journal' },
+    { id: 'mental-log-books', text: 'Log 3 books you\'ve read recently.', href: '#/reading' },
+    { id: 'mental-future-letter', text: 'Write a letter from your 60-year-old self.', href: '#/journal' },
   ],
   physical: [
-    { text: 'Fill in your lifestyle inputs (sleep, exercise, smoking).', href: '#/settings' },
-    { text: 'Track your weekly mood for 4 weeks to spot patterns.', href: '#/journal' },
-    { text: 'Set your family longevity for a personalized horizon.', href: '#/settings' },
+    { id: 'physical-lifestyle', text: 'Fill in your lifestyle inputs (sleep, exercise, smoking).', href: '#/settings' },
+    { id: 'physical-mood-track', text: 'Track your weekly mood for 4 weeks to spot patterns.', href: '#/journal' },
+    { id: 'physical-longevity', text: 'Set your family longevity for a personalized horizon.', href: '#/settings' },
   ],
   financial: [
-    { text: 'Set a retirement target age.', href: '#/settings' },
-    { text: 'Pick your career field.', href: '#/settings' },
-    { text: 'Net-worth tracking and savings goals are coming soon.', href: '#/settings' },
+    { id: 'financial-retirement', text: 'Set a retirement target age.', href: '#/settings' },
+    { id: 'financial-career', text: 'Pick your career field.', href: '#/settings' },
+    { id: 'financial-soon', text: 'Net-worth tracking and savings goals are coming soon.', href: '#/settings' },
   ],
 };
 

@@ -10,7 +10,6 @@ export const PAGES = [
   'places',
   'reading',
   'goals',
-  'wealth',
   'settings',
 ] as const;
 export type Page = (typeof PAGES)[number];
@@ -22,13 +21,14 @@ export const PAGE_LABELS: Record<Page, string> = {
   places: 'Places',
   reading: 'Reading',
   goals: 'Goals',
-  wealth: 'Wealth',
   settings: 'Settings',
 };
 
 // Tabs visible in the top-nav. Settings is reached via the gear icon.
+// Wealth lives on the Today page now (see TodayWealth.svelte) — old #/wealth
+// URLs fall through to Today via pageFromHash's default below.
 export const TAB_PAGES: Page[] = [
-  'today', 'journal', 'people', 'places', 'reading', 'goals', 'wealth',
+  'today', 'journal', 'people', 'places', 'reading', 'goals',
 ];
 
 function pageFromHash(hash: string): Page {

@@ -11,7 +11,7 @@ import {
   milestones, journal, letters, places, people, books, rituals,
   priorities, bestYear, hardestYear,
 } from './collections';
-import { assessmentResult } from './assessment';
+import { assessmentResults, normalizeResults } from './assessment';
 import { currentUser, setSyncStatus, setOnSignedInCallback } from './auth';
 import type { CloudPayload } from '../types';
 
@@ -43,7 +43,7 @@ export function collectStateForCloud(): CloudPayload {
     people: get(people),
     books: get(books),
     rituals: get(rituals),
-    assessmentResult: get(assessmentResult),
+    assessmentResults: get(assessmentResults),
     updated: Date.now(),
   };
 }
@@ -74,7 +74,13 @@ export function applyCloudState(cloud: Partial<CloudPayload>): void {
     if (cloud.people !== undefined) people.set(cloud.people);
     if (cloud.books !== undefined) books.set(cloud.books);
     if (cloud.rituals !== undefined) rituals.set(cloud.rituals);
-    if (cloud.assessmentResult !== undefined) assessmentResult.set(cloud.assessmentResult);
+    // v2: prefer the list. Fall back to lifting the legacy single-result key
+    // so users who took the assessment under v1 don't lose their result.
+    if (cloud.assessmentResults !== undefined) {
+      assessmentResults.set(normalizeResults(cloud.assessmentResults));
+    } else if (cloud.assessmentResult) {
+      assessmentResults.set(normalizeResults([cloud.assessmentResult]));
+    }
   } finally {
     // Allow store subscriptions to finish before re-enabling cloud writes.
     setTimeout(() => { applyingCloud = false; }, 0);
@@ -141,7 +147,7 @@ function subscribeAll(): void {
     smoker, exerciseLevel, sleepHours, familyLongevity,
     priorities, bestYear, hardestYear,
     milestones, journal, letters, places, people, books, rituals,
-    assessmentResult,
+    assessmentResults,
   ];
   everyStore.forEach((s) => s.subscribe(() => scheduleCloudSave()));
 }
