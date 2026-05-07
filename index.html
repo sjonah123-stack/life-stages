@@ -2986,7 +2986,7 @@
 <script>
   const LIFESPAN = 90;
   const SLIDER_MAX = 100;
-  const DEFAULT_DOB = "2002-12-04";
+  const DEFAULT_DOB = "2000-01-01"; // Neutral placeholder for first-time visitors. Real DOB lives in localStorage / Firestore.
   const DEFAULT_SEX = "male";
   const DEFAULT_THEME = "sunrise";
 
@@ -4265,27 +4265,17 @@
     update();
     if (opts.syncURLOnApply !== false) syncURL();
   }
+  // Privacy: the URL never carries personal data. Real data lives in localStorage
+  // (per-device) and Firestore (per-account, isolated by security rules). Sharing
+  // the URL just sends someone the app — they start blank.
+  const PRIVATE_URL_PARAMS = ['dob','s','th','c','p','k','cf','r','pr','by','hy','m'];
   function syncURL() {
-    if (!BIRTHDATE) return;
     const u = new URL(window.location.href);
-    u.searchParams.set('dob', formatDOB(BIRTHDATE));
-    u.searchParams.set('s', sex === 'female' ? 'f' : 'm');
-    if (theme && theme !== DEFAULT_THEME) u.searchParams.set('th', theme);
-    else u.searchParams.delete('th');
-    if (country) u.searchParams.set('c', country); else u.searchParams.delete('c');
-    if (partnership) u.searchParams.set('p', partnership); else u.searchParams.delete('p');
-    if (kids > 0) u.searchParams.set('k', String(kids)); else u.searchParams.delete('k');
-    if (careerField) u.searchParams.set('cf', careerField); else u.searchParams.delete('cf');
-    if (retirementAge) u.searchParams.set('r', String(retirementAge)); else u.searchParams.delete('r');
-    if (priorities.length) u.searchParams.set('pr', priorities.join(',')); else u.searchParams.delete('pr');
-    if (bestYear) u.searchParams.set('by', String(bestYear)); else u.searchParams.delete('by');
-    if (hardestYear) u.searchParams.set('hy', String(hardestYear)); else u.searchParams.delete('hy');
-    if (milestones.length) {
-      u.searchParams.set('m', milestones.map(m => `${m.age}:${encodeURIComponent(m.label)}:${m.completed?1:0}`).join(','));
-    } else {
-      u.searchParams.delete('m');
-    }
-    window.history.replaceState(null, '', u);
+    let changed = false;
+    PRIVATE_URL_PARAMS.forEach(p => {
+      if (u.searchParams.has(p)) { u.searchParams.delete(p); changed = true; }
+    });
+    if (changed) window.history.replaceState(null, '', u);
   }
 
   // ---- Phase 2: Places + Map ----
