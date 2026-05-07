@@ -1670,6 +1670,35 @@
     color: var(--ink-faint);
     font-style: italic;
   }
+  .entry-card .actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+  .entry-card .actions button {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--ink-dim);
+    transition: all 0.15s;
+  }
+  .entry-card .actions .edit:hover {
+    background: rgba(255, 140, 97, 0.1);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .entry-card .actions .delete:hover {
+    background: rgba(255, 107, 157, 0.08);
+    color: var(--love);
+    border-color: var(--love);
+  }
   .entries-empty {
     color: var(--ink-faint);
     font-size: 14px;
@@ -3472,10 +3501,43 @@
           </div>
           <div class="preview${previewClass}">${previewText}</div>
         </div>
+        <div class="actions">
+          <button class="edit" data-key="${key}" title="Edit this entry">Edit</button>
+          <button class="delete" data-key="${key}" title="Delete this entry">Delete</button>
+        </div>
       </div>`;
     }).join('');
+    // Edit button → load into composer
+    feed.querySelectorAll('.entry-card .edit').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = btn.dataset.key;
+        const d = parseDOB(key);
+        if (d) composerLoadForDate(d, true);
+      });
+    });
+    // Delete button → confirm then remove
+    feed.querySelectorAll('.entry-card .delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = btn.dataset.key;
+        if (!confirm('Delete this entry permanently? This can\'t be undone.')) return;
+        delete journal[key];
+        saveJournalToLS();
+        paintJournalDots();
+        renderRecentJournal();
+        scheduleCloudSave();
+        // If composer was showing this entry, reset it
+        const composerDate = document.getElementById('composerDate');
+        if (composerDate && composerDate.value === key) {
+          composerLoadForDate(new Date(), false);
+        }
+      });
+    });
+    // Click anywhere on card body (not buttons) → also edit
     feed.querySelectorAll('.entry-card').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.actions')) return;
         const key = el.dataset.key;
         const d = parseDOB(key);
         if (d) composerLoadForDate(d, true);
@@ -4809,7 +4871,7 @@
   }
 
   // ---- Page routing ----
-  const PAGES = ['today', 'journal', 'people', 'places', 'reading', 'goals'];
+  const PAGES = ['today', 'journal', 'people', 'places', 'reading', 'goals', 'settings'];
   function currentPage() {
     const m = /^#\/(\w+)/.exec(window.location.hash);
     const p = m && PAGES.includes(m[1]) ? m[1] : 'today';
