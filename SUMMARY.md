@@ -1,27 +1,32 @@
 # Session Summary — life-stages
 
-Last updated: end of session containing the Svelte rewrite + 5 Wealths assessment build.
+Last updated: 2026-05-07, after shipping the Wealth tab to prod.
 
 ## Where things stand right now
 
 | | URL | Status |
 |---|---|---|
-| **Production** | https://life-stages-90806.web.app | Svelte v1 (no Wealth feature yet) |
-| **Wealth preview** | https://life-stages-90806--wealth-preview-t403dfvx.web.app | Has the new Wealth tab; expires ~2026-05-14 |
+| **Production** | https://life-stages-90806.web.app | Svelte v2 — Wealth tab live as of 2026-05-07 |
+| **Wealth preview** | https://life-stages-90806--wealth-preview-t403dfvx.web.app | Same code as prod now; can let it expire ~2026-05-14 |
 | **Legacy archive** | https://life-stages-90806.web.app/legacy.html | Old single-file app, viewable but not maintained |
 
-**Open thread:** the user needs to test the wealth preview URL and decide whether to ship to prod. The next session likely starts with either "ship the wealth tab" (run `firebase deploy --only hosting`) or "fix this thing in the wealth flow."
+**Open thread (user's stated direction for next session):** restructure how Wealth lives in the app. The user shipped the tab as-is but wants three changes before "wealth" becomes the larger feature:
 
-## Pending git state (read before doing anything)
+1. **Move the assessment off its own tab and into the dashboard (Today page).** The Wealth tab as a top-level destination is temporary; the assessment should be a card/section users can open from Today. Wealth-the-feature is going to grow into something bigger and the standalone tab is in the wrong place to be the front door.
+2. **Save / retake / delete controls on the assessment result.** Today only the latest result persists silently. The user wants explicit "save this result", "retake the assessment" (which currently exists but is implicit), and "delete and start fresh" actions. Likely also want named/dated saves so a user can see "I took this on March 2026" rather than overwriting.
+3. **Recommendation check-off.** Each result surfaces recommendations (deep-links to existing tools when a wealth score < 60). The user wants to mark each recommendation as fulfilled. Persist completion state, ideally with a date stamp, and reflect it in the wealth card UI (strikethrough + checkmark, or move completed recs to a separate list).
 
-15+ commits sit on local `main` that haven't been pushed to `origin/main`. **The terminal here cannot push to GitHub** (no auth). The user pushes via GitHub Desktop.
+These three ideas reshape the data model: a single `assessmentResult` writable becomes a list of saved results, each with completion state on its recommendations. Plan this carefully before coding — touches `stores/assessment.ts`, `cloud-sync.ts` (for the Firestore shape), and most components in `components/wealth/`.
+
+## Pending git state
+
+`origin/main` is up to date with local `main` as of this writing. Working tree was clean after the wealth-tab ship (no commits made this session — the deploy ran from existing HEAD). Confirm any time:
 
 ```bash
-# Confirm the gap any time:
-cd /Users/Jonahs/Code/life-stages && git rev-list --count origin/main..HEAD
+cd /Users/Jonahs/Code/life-stages && git status && git rev-list --count origin/main..HEAD
 ```
 
-The user has been doing one-click "Push origin" via Desktop after we commit via CLI. Tell them clearly each session how many commits are pending.
+**Reminder:** the terminal here cannot push to GitHub (no auth). When work resumes and we make commits, the user pushes via GitHub Desktop. Tell them clearly each session how many commits are pending.
 
 ## Recent work (chronological)
 
@@ -103,9 +108,10 @@ If the user opens with one of these, the path is roughly:
 
 | User says | Do this |
 |---|---|
-| "Ship the wealth tab to prod" | `firebase deploy --only hosting` from `life-stages/`, verify with curl, tell them to push via GitHub Desktop |
-| "Something's wrong with the wealth tab" | Open the preview URL via Claude Preview, reproduce, fix in `frontend/src/components/wealth/` or `stores/assessment.ts`, redeploy to preview |
-| "Build the net-worth tracker" | Plan it as Phase 1 of the financial follow-up, tied to the existing `assessment.ts` Financial scoring rules. New store + new section on Wealth (or new sub-page). |
+| "Move the wealth assessment onto the Today page" | Plan-mode this. Decide the hosting surface (new `<WealthCard />` on Today vs. a Today section that links to a sub-route). Keep the Wealth tab during transition or remove it entirely — ask the user. Touches `components/pages/Today.svelte`, `lib/router.ts` (PAGES + TAB_PAGES), and possibly `App.svelte` routing. |
+| "Add save/retake/delete to the assessment" | Refactor `stores/assessment.ts` from a single `assessmentResult` writable to a list of saved results (each with id + timestamp + scores + recommendations). Update `cloud-sync.ts` Firestore shape. Add UI controls in `AssessmentResults.svelte`. Migration: read existing single-result LS, wrap as a one-element list, write back. |
+| "Add recommendation check-off" | Extend the saved-result data shape with a `completedRecommendations: { recId: completedAt }` map. Wire a checkbox/toggle in the recommendations list inside `AssessmentResults.svelte` (or `WealthCard.svelte`). Persist + cloud-sync the completion state. |
+| "Build the net-worth tracker" | Plan it as the financial follow-up, tied to the existing `assessment.ts` Financial scoring rules. New store + new section on Wealth (or wherever Wealth lives by then). |
 | "Add tests" | Install vitest + @testing-library/svelte, write store round-trip tests first, then a Composer save-flow test |
 | "Mobile is bad" | Audit each page at 375px width via Claude Preview, fix layout/typography per page. Touch points: Today's hero header, composer-meta row, wealth radar size |
 
