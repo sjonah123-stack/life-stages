@@ -2,6 +2,7 @@
   import { currentPage, TAB_PAGES, PAGE_LABELS } from '../../lib/router';
   import { isBlankState } from '../../stores/personal';
   import ThemePicker from '../shared/ThemePicker.svelte';
+  import AuthPill from './AuthPill.svelte';
 </script>
 
 <nav class="top-nav">
@@ -22,7 +23,7 @@
       {#if !$isBlankState}
         <a href="#/settings" class="icon-btn" title="Settings" aria-label="Settings">⚙</a>
       {/if}
-      <span id="authSlot"><!-- sign-in slot, wired up in Phase 13 --></span>
+      <AuthPill />
     </div>
   </div>
 </nav>
