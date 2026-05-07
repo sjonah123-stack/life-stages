@@ -4696,11 +4696,41 @@
       }
     });
 
+    let authInitialized = false;
     window.fb.onAuthStateChanged(fbAuth, (user) => {
+      const previousUid = currentUser ? currentUser.uid : null;
+      const newUid = user ? user.uid : null;
       currentUser = user || null;
       renderAuthSlot(currentUser, false);
-      if (currentUser) loadFromCloud();
+
+      if (!authInitialized) {
+        // First fire of the auth observer: app just loaded.
+        authInitialized = true;
+        if (currentUser) loadFromCloud();
+        return;
+      }
+
+      // Auth state changed AFTER initial load — sign-in, sign-out, or account
+      // switch. Wipe local data on this device so no one's data leaks into
+      // another account's session, then reload to reset all in-memory state.
+      if (previousUid !== newUid) {
+        clearAllLocalData();
+        window.location.reload();
+      }
     });
+  }
+
+  // Wipe all life-stages localStorage entries. Used on sign-out and on auth
+  // user switches so that nothing one user added shows up for another.
+  function clearAllLocalData() {
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('lifeStages.')) keys.push(k);
+      }
+      keys.forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
   }
   function renderAuthSlot(user, notConfigured) {
     const slot = document.getElementById('authSlot');
@@ -4749,10 +4779,14 @@
   }
   async function signOut() {
     if (!fbAuth) return;
+    const ok = confirm(
+      'Sign out and clear data on this device?\n\n' +
+      'Your cloud-synced data is safe — it returns the next time you sign in. ' +
+      'Anything written on this device while signed out is also kept on this device.'
+    );
+    if (!ok) return;
+    // The auth observer will handle clearing localStorage and reloading.
     await window.fb.signOut(fbAuth);
-    currentUser = null;
-    renderAuthSlot(null, false);
-    setSyncStatus('', '');
   }
   function setSyncStatus(cls, text) {
     const el = document.getElementById('syncStatus');
@@ -4849,7 +4883,10 @@
         }
         setSyncStatus('synced', 'Synced ✓');
       } else {
-        // First sign-in: push current local state up
+        // First sign-in for this account. Push current local state up to the
+        // cloud — this is normal for users who started anonymous and just
+        // signed in. Cross-user leak protection comes from clearing LS on
+        // sign-out and on auth user-changes (see clearAllLocalData callers).
         setSyncStatus('synced', 'Synced ✓');
         saveToCloud();
       }
