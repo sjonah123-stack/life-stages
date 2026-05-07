@@ -1710,6 +1710,199 @@
     border: 1px dashed var(--border);
   }
 
+  /* Journal pulse — streak + anniversary banner */
+  .journal-pulse {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) 2fr;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 720px) { .journal-pulse { grid-template-columns: 1fr; } }
+  .streak-card {
+    background: linear-gradient(135deg, rgba(255, 201, 60, 0.18), rgba(255, 140, 97, 0.10));
+    border: 1px solid rgba(255, 140, 97, 0.22);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .streak-card .streak-icon { font-size: 28px; flex-shrink: 0; }
+  .streak-card .streak-label {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .streak-card .streak-meta {
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-top: 1px;
+  }
+  .anniversary-card {
+    background: linear-gradient(135deg, rgba(185, 131, 255, 0.12), rgba(122, 162, 255, 0.10));
+    border: 1px solid rgba(185, 131, 255, 0.24);
+    border-radius: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .anniversary-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .anniversary-card .years-ago {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--growth);
+    font-weight: 700;
+  }
+  .anniversary-card .anniversary-meta {
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin: 2px 0 6px;
+    font-weight: 600;
+  }
+  .anniversary-card .anniversary-preview {
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    font-style: italic;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Composer additions: prompt chip, word meter, mood picker */
+  .composer-prompt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 201, 60, 0.12);
+    border: 1px solid rgba(255, 201, 60, 0.3);
+    border-radius: 999px;
+    padding: 5px 10px 5px 14px;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 10px;
+    max-width: 100%;
+  }
+  .composer-prompt .prompt-icon { flex-shrink: 0; }
+  .composer-prompt #promptText {
+    color: var(--ink);
+    font-style: italic;
+    flex: 1;
+    min-width: 0;
+  }
+  .composer-prompt .reroll {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: transform 0.2s;
+    line-height: 1;
+  }
+  .composer-prompt .reroll:hover { transform: rotate(90deg); }
+  .composer-prompt[hidden] { display: none; }
+
+  .composer-meter {
+    color: var(--ink-faint);
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mood-picker {
+    display: inline-flex;
+    gap: 2px;
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+  }
+  .mood-picker button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 18px;
+    line-height: 1;
+    transition: transform 0.15s, background 0.15s;
+    opacity: 0.55;
+    font-family: inherit;
+  }
+  .mood-picker button:hover { opacity: 1; transform: scale(1.15); }
+  .mood-picker button.selected {
+    background: linear-gradient(135deg, var(--accent), var(--future-3));
+    opacity: 1;
+    box-shadow: 0 2px 6px rgba(255, 140, 97, 0.3);
+  }
+
+  /* Mood emoji on entry cards */
+  .entry-card .meta .mood-emoji {
+    font-size: 14px;
+    line-height: 1;
+    margin-left: auto;
+    opacity: 0.95;
+  }
+
+  /* Search */
+  .entry-search-wrap {
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .entry-search {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 38px 10px 38px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .entry-search:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255, 140, 97, 0.15);
+  }
+  .entry-search-wrap::before {
+    content: '🔍';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .entry-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    line-height: 1;
+  }
+  .entry-search-clear:hover { color: var(--love); }
+  .entry-search-clear[hidden] { display: none; }
+
+  /* Save button states */
+  .save-btn:disabled,
+  .save-btn.saved {
+    background: var(--health);
+    cursor: default;
+  }
+
   /* Calendar view toggle */
   .calendar-collapse {
     margin-top: 28px;
@@ -2439,6 +2632,8 @@
   <h1 class="page-title">Your journal</h1>
   <p class="page-subtitle">Write at the top, edit anything below, view the full timeline at the bottom. Pick any date — write about any week of your life.</p>
 
+  <div class="journal-pulse" id="journalPulse"></div>
+
   <div class="journal-composer" id="journalComposer">
     <div class="composer-meta">
       <input type="date" id="composerDate" max="" />
@@ -2446,7 +2641,19 @@
         <span class="age-tag" id="composerAge">—</span>
         <span id="composerWeekRange">—</span>
       </div>
+      <div class="mood-picker" id="composerMood" title="How was this week?">
+        <button type="button" data-mood="😞" title="Hard">😞</button>
+        <button type="button" data-mood="😕" title="Off">😕</button>
+        <button type="button" data-mood="😐" title="OK">😐</button>
+        <button type="button" data-mood="🙂" title="Good">🙂</button>
+        <button type="button" data-mood="😄" title="Great">😄</button>
+      </div>
       <span class="editing-tag" id="composerEditingTag" hidden>Editing</span>
+    </div>
+    <div class="composer-prompt" id="composerPromptChip">
+      <span class="prompt-icon">💡</span>
+      <span id="promptText">Who made you laugh this week?</span>
+      <button type="button" class="reroll" id="composerPromptReroll" title="New prompt">🎲</button>
     </div>
     <textarea class="composer-textarea" id="composerText" placeholder="What's on your mind? What happened this week? Big things, small things — write what's true." maxlength="5000"></textarea>
     <div class="composer-photo-strip">
@@ -2461,13 +2668,19 @@
       <button type="button" class="save-btn" id="composerSave">Save entry</button>
       <button type="button" class="cancel-btn" id="composerCancel">Reset</button>
       <button type="button" class="delete-btn" id="composerDelete" hidden>Delete</button>
+      <span class="composer-meter" id="composerMeter" style="display:none"></span>
       <span class="composer-status" id="composerStatus"></span>
     </div>
   </div>
 
+  <div class="entry-search-wrap">
+    <input type="search" class="entry-search" id="entrySearchInput" placeholder="Search your entries…" autocomplete="off" />
+    <button type="button" class="entry-search-clear" id="entrySearchClear" hidden>×</button>
+  </div>
   <div class="entries-feed-header">
     <span class="label"><span class="count" id="feedCount">0</span> entries</span>
     <div class="year-filter" id="yearFilter"></div>
+    <div class="year-filter" id="moodFilter"></div>
   </div>
   <div class="entries-feed" id="entriesFeed"></div>
 
@@ -3432,13 +3645,17 @@
       el.classList.toggle('has-photo', !!e.photo);
     });
   }
-  // Year filter state for the entries feed
+  // Filter state for the entries feed
   let feedYearFilter = 'all';
+  let feedMoodFilter = 'all';
+  let feedSearchQuery = '';
+  const MOOD_OPTIONS = ['😞', '😕', '😐', '🙂', '😄'];
   function renderRecentJournal() {
     const feed = document.getElementById('entriesFeed');
     const countLabel = document.getElementById('journalCount');
     const feedCount = document.getElementById('feedCount');
     const yearFilterEl = document.getElementById('yearFilter');
+    const moodFilterEl = document.getElementById('moodFilter');
     if (!feed || !BIRTHDATE) return;
     const allEntries = Object.entries(journal)
       .map(([k, v]) => [k, getEntry(k)])
@@ -3466,18 +3683,47 @@
         });
       });
     }
-    // Filter entries
-    const visibleEntries = feedYearFilter === 'all'
-      ? allEntries
-      : allEntries.filter(([k]) => {
-          const d = parseDOB(k);
-          return d && d.getFullYear() === feedYearFilter;
+    // Mood filter chips — only show if at least 2 entries have moods
+    const moodsPresent = new Set();
+    allEntries.forEach(([k, e]) => { if (e.mood) moodsPresent.add(e.mood); });
+    if (moodFilterEl) {
+      if (moodsPresent.size >= 2 || (feedMoodFilter !== 'all')) {
+        const moodsToShow = MOOD_OPTIONS.filter(m => moodsPresent.has(m));
+        moodFilterEl.innerHTML = [`<button class="year-chip${feedMoodFilter==='all'?' active':''}" data-mood="all">Any mood</button>`]
+          .concat(moodsToShow.map(m => `<button class="year-chip${feedMoodFilter===m?' active':''}" data-mood="${m}">${m}</button>`))
+          .join('');
+        moodFilterEl.querySelectorAll('.year-chip').forEach(btn => {
+          btn.addEventListener('click', () => {
+            feedMoodFilter = btn.dataset.mood === 'all' ? 'all' : btn.dataset.mood;
+            renderRecentJournal();
+          });
         });
+      } else {
+        moodFilterEl.innerHTML = '';
+      }
+    }
+    // Apply filters
+    const q = feedSearchQuery.trim().toLowerCase();
+    const visibleEntries = allEntries.filter(([k, e]) => {
+      if (feedYearFilter !== 'all') {
+        const d = parseDOB(k);
+        if (!d || d.getFullYear() !== feedYearFilter) return false;
+      }
+      if (feedMoodFilter !== 'all' && e.mood !== feedMoodFilter) return false;
+      if (q && !(e.text || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
     if (feedCount) feedCount.textContent = visibleEntries.length;
     if (visibleEntries.length === 0) {
-      feed.innerHTML = total === 0
-        ? '<div class="entries-empty">No entries yet. Write your first one above — even a single sentence becomes precious in 10 years.</div>'
-        : '<div class="entries-empty">No entries from that year. Try another filter.</div>';
+      let msg;
+      if (total === 0) {
+        msg = 'No entries yet. Write your first one above — even a single sentence becomes precious in 10 years.';
+      } else if (q) {
+        msg = `No entries match "${escapeHtml(q)}". Try another search.`;
+      } else {
+        msg = 'No entries match those filters. Try resetting them.';
+      }
+      feed.innerHTML = `<div class="entries-empty">${msg}</div>`;
       return;
     }
     feed.innerHTML = visibleEntries.map(([key, e]) => {
@@ -3492,12 +3738,14 @@
         ? escapeHtml(e.text)
         : '(photo only)';
       const previewClass = (e.text && e.text.trim()) ? '' : ' italic';
+      const moodHTML = e.mood ? `<span class="mood-emoji" title="Mood">${e.mood}</span>` : '';
       return `<div class="entry-card" data-key="${key}">
         ${photoHTML}
         <div class="body">
           <div class="meta">
             <span class="date">${dateStr}</span>
             <span class="age-pill">Age ${age}</span>
+            ${moodHTML}
           </div>
           <div class="preview${previewClass}">${previewText}</div>
         </div>
@@ -3526,6 +3774,7 @@
         saveJournalToLS();
         paintJournalDots();
         renderRecentJournal();
+        renderJournalPulse();
         scheduleCloudSave();
         // If composer was showing this entry, reset it
         const composerDate = document.getElementById('composerDate');
@@ -3545,8 +3794,210 @@
     });
   }
 
+  // ---- Writing prompts ----
+  const PROMPTS = [
+    "Who made you laugh this week?",
+    "What surprised you?",
+    "Something small that mattered?",
+    "What did you learn?",
+    "Who do you want to thank?",
+    "What's been on your mind lately?",
+    "A moment you wish you could keep?",
+    "What did you avoid?",
+    "When did you feel most yourself?",
+    "What are you reading or thinking about?",
+    "What's one thing you're proud of?",
+    "Who reached out to you recently?",
+    "What did you eat that was good?",
+    "What music has been with you?",
+    "A photo you wish you'd taken?",
+    "What was hard?",
+    "What was easy that wasn't always?",
+    "Where did you go that felt new?",
+    "What did your body need this week?",
+    "Something you said no to?",
+    "Something you said yes to?",
+    "What do you hope for next week?",
+    "Who do you miss?",
+    "What's making you nervous?",
+    "What's making you grateful?",
+    "Did you make anyone's day?",
+    "Did anyone make yours?",
+    "What would your future self thank you for?",
+    "What did you notice in a stranger?",
+    "What do you want to remember about right now?"
+  ];
+  let lastPromptIdx = -1;
+  function pickPrompt() {
+    if (PROMPTS.length === 0) return '';
+    let idx;
+    do { idx = Math.floor(Math.random() * PROMPTS.length); }
+    while (PROMPTS.length > 1 && idx === lastPromptIdx);
+    lastPromptIdx = idx;
+    return PROMPTS[idx];
+  }
+  function refreshPrompt() {
+    const span = document.getElementById('promptText');
+    if (span) span.textContent = pickPrompt();
+  }
+  function updatePromptVisibility() {
+    const chip = document.getElementById('composerPromptChip');
+    const text = document.getElementById('composerText');
+    if (!chip || !text) return;
+    chip.hidden = !!text.value.trim();
+  }
+
+  // ---- Word count + read time ----
+  function updateWordCount() {
+    const text = document.getElementById('composerText');
+    const meter = document.getElementById('composerMeter');
+    if (!text || !meter) return;
+    const value = text.value.trim();
+    if (!value) {
+      meter.style.display = 'none';
+      meter.textContent = '';
+      return;
+    }
+    const words = value.split(/\s+/).filter(Boolean).length;
+    const minutes = Math.max(1, Math.round(words / 220));
+    meter.style.display = '';
+    meter.textContent = `${words} ${words === 1 ? 'word' : 'words'} · ${minutes} min read`;
+  }
+
+  // ---- Streak ----
+  function computeStreak() {
+    if (!BIRTHDATE) return { current: 0, best: 0 };
+    const todayWeekIdx = currentWeekIndex();
+    const hasEntry = (i) => {
+      if (i < 0) return false;
+      const e = getEntry(weekKey(i));
+      return !!(e.text && e.text.trim());
+    };
+    // Current streak: count back from current week, but give grace if current week empty
+    let current = 0;
+    let i = todayWeekIdx;
+    if (!hasEntry(i)) i--; // grace: skip the current week if blank
+    while (hasEntry(i)) { current++; i--; }
+    // Best: scan all weeks
+    let best = 0, run = 0;
+    for (let j = 0; j <= todayWeekIdx; j++) {
+      if (hasEntry(j)) {
+        run++;
+        if (run > best) best = run;
+      } else {
+        run = 0;
+      }
+    }
+    return { current, best };
+  }
+
+  // ---- Anniversary lookup ----
+  function findOldestAnniversary() {
+    if (!BIRTHDATE) return null;
+    const todayWeekStart = dateToWeekStart(new Date());
+    const yearsToCheck = [10, 5, 2, 1];
+    for (const y of yearsToCheck) {
+      const target = new Date(todayWeekStart);
+      target.setFullYear(target.getFullYear() - y);
+      const ws = dateToWeekStart(target);
+      const days = Math.floor((ws - BIRTHDATE) / 86400000);
+      const weekIdx = Math.floor(days / 7);
+      if (weekIdx < 0) continue;
+      const key = weekKey(weekIdx);
+      const e = getEntry(key);
+      if ((e.text && e.text.trim()) || e.photo) {
+        return { yearsAgo: y, key, entry: e, weekIdx, date: ws };
+      }
+    }
+    return null;
+  }
+
+  // ---- Pulse banner: streak + anniversary ----
+  function renderJournalPulse() {
+    const pulse = document.getElementById('journalPulse');
+    if (!pulse || !BIRTHDATE) return;
+    const { current, best } = computeStreak();
+    const ann = findOldestAnniversary();
+    let html = '';
+    if (current === 0) {
+      html += `<div class="streak-card">
+        <span class="streak-icon">✨</span>
+        <div>
+          <div class="streak-label">Start a streak</div>
+          <div class="streak-meta">Any entry this week begins it.</div>
+        </div>
+      </div>`;
+    } else {
+      const bestLine = best > current ? `Best: ${best} ${best === 1 ? 'week' : 'weeks'}` : `New best!`;
+      html += `<div class="streak-card">
+        <span class="streak-icon">🔥</span>
+        <div>
+          <div class="streak-label">${current} week streak</div>
+          <div class="streak-meta">${bestLine}</div>
+        </div>
+      </div>`;
+    }
+    if (ann) {
+      const age = ageInYears(ann.date, BIRTHDATE);
+      const dateStr = ann.date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+      const raw = (ann.entry.text && ann.entry.text.trim()) ? ann.entry.text : '(photo entry)';
+      const cap = 160;
+      const preview = raw.length > cap ? raw.slice(0, cap) + '…' : raw;
+      const yLabel = ann.yearsAgo === 1 ? '1 year ago this week' : `${ann.yearsAgo} years ago this week`;
+      html += `<div class="anniversary-card" data-key="${ann.key}">
+        <div class="years-ago">${yLabel}</div>
+        <div class="anniversary-meta">${dateStr} · Age ${age}</div>
+        <div class="anniversary-preview">"${escapeHtml(preview)}"</div>
+      </div>`;
+    } else {
+      html += `<div class="anniversary-card" style="cursor:default;opacity:0.7">
+        <div class="years-ago">No anniversaries yet</div>
+        <div class="anniversary-meta">In a year, an entry from this week will surface here.</div>
+        <div class="anniversary-preview">Keep writing — the magic compounds.</div>
+      </div>`;
+    }
+    pulse.innerHTML = html;
+    const annEl = pulse.querySelector('.anniversary-card[data-key]');
+    if (annEl) {
+      annEl.addEventListener('click', () => {
+        const d = parseDOB(annEl.dataset.key);
+        if (d) composerLoadForDate(d, true);
+      });
+    }
+  }
+
+  // ---- Mood selector UI ----
+  function updateMoodUI() {
+    document.querySelectorAll('#composerMood button').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.mood === composerMood);
+    });
+  }
+
+  // ---- Auto-save (debounced) ----
+  let composerAutoSaveTimer = null;
+  let composerDirty = false;
+  function markComposerDirty() {
+    composerDirty = true;
+    const saveBtn = document.getElementById('composerSave');
+    if (saveBtn) {
+      saveBtn.textContent = 'Save now';
+      saveBtn.classList.remove('saved');
+    }
+  }
+  function scheduleAutoSave() {
+    if (composerAutoSaveTimer) clearTimeout(composerAutoSaveTimer);
+    const text = document.getElementById('composerText').value.trim();
+    if (!text && !composerPhoto && !composerMood) return; // don't save empty
+    markComposerDirty();
+    composerAutoSaveTimer = setTimeout(() => {
+      composerAutoSaveTimer = null;
+      composerSave({ silent: true });
+    }, 1500);
+  }
+
   // ---- Composer ----
   let composerPhoto = '';
+  let composerMood = '';
   function dateToWeekStart(d) {
     if (!BIRTHDATE) return d;
     // Snap any date to the start-of-week date relative to user's BIRTHDATE
@@ -3555,6 +4006,9 @@
   }
   function composerLoadForDate(d, scrollIntoView) {
     if (!d) d = new Date();
+    // cancel any pending auto-save before swapping entries
+    if (composerAutoSaveTimer) { clearTimeout(composerAutoSaveTimer); composerAutoSaveTimer = null; }
+    composerDirty = false;
     const weekStart = dateToWeekStart(d);
     const dateInput = document.getElementById('composerDate');
     if (!dateInput) return;
@@ -3568,13 +4022,21 @@
     const entry = getEntry(key);
     document.getElementById('composerText').value = entry.text || '';
     composerPhoto = entry.photo || '';
+    composerMood = entry.mood || '';
     setComposerPhotoUI(composerPhoto);
-    const isExisting = !!(entry.text || entry.photo);
+    updateMoodUI();
+    updatePromptVisibility();
+    updateWordCount();
+    const isExisting = !!(entry.text || entry.photo || entry.mood);
     document.getElementById('composerEditingTag').hidden = !isExisting;
     document.getElementById('composerDelete').hidden = !isExisting;
-    document.getElementById('composerSave').textContent = isExisting ? 'Update entry' : 'Save entry';
+    const saveBtn = document.getElementById('composerSave');
+    saveBtn.textContent = isExisting ? 'Saved ✓' : 'Save entry';
+    saveBtn.classList.toggle('saved', isExisting);
     const composer = document.getElementById('journalComposer');
     composer.classList.toggle('editing', isExisting);
+    // If chip is visible (text empty), refresh prompt for a new nudge
+    if (!entry.text) refreshPrompt();
     if (scrollIntoView) {
       composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => document.getElementById('composerText').focus(), 300);
@@ -3596,8 +4058,10 @@
       remove.hidden = true;
     }
   }
-  function composerSave() {
+  function composerSave(opts) {
+    opts = opts || {};
     if (!BIRTHDATE) return;
+    if (composerAutoSaveTimer) { clearTimeout(composerAutoSaveTimer); composerAutoSaveTimer = null; }
     const dateStr = document.getElementById('composerDate').value;
     const d = parseDOB(dateStr);
     if (!d) return;
@@ -3605,15 +4069,28 @@
     const weekIdx = Math.floor(days / 7);
     const key = weekKey(weekIdx);
     const text = document.getElementById('composerText').value.trim();
-    setEntry(key, { text, photo: composerPhoto });
+    setEntry(key, { text, photo: composerPhoto, mood: composerMood });
     saveJournalToLS();
     paintJournalDots();
     renderRecentJournal();
+    renderJournalPulse();
     scheduleCloudSave();
+    composerDirty = false;
+    const saveBtn = document.getElementById('composerSave');
+    if (saveBtn) {
+      saveBtn.textContent = 'Saved ✓';
+      saveBtn.classList.add('saved');
+    }
     const status = document.getElementById('composerStatus');
-    status.textContent = 'Saved ✓';
-    setTimeout(() => { status.textContent = ''; }, 1600);
-    composerLoadForDate(d, false); // refresh editing state
+    if (status) {
+      status.textContent = opts.silent ? 'Auto-saved' : 'Saved ✓';
+      setTimeout(() => { if (status) status.textContent = ''; }, 1600);
+    }
+    // Update editing-tag / delete visibility without resetting form contents
+    const isExisting = !!(text || composerPhoto || composerMood);
+    document.getElementById('composerEditingTag').hidden = !isExisting;
+    document.getElementById('composerDelete').hidden = !isExisting;
+    document.getElementById('journalComposer').classList.toggle('editing', isExisting);
   }
   function composerDelete() {
     if (!BIRTHDATE) return;
@@ -3777,6 +4254,7 @@
       paintJournalDots();
       setNowMarker();
       refreshThisWeekPanel();
+      renderJournalPulse();
     }
     setRetirementMarker();
     renderMilestonePins();
@@ -4150,19 +4628,22 @@
   }
 
   // ---- Phase 3: Photo per week ----
-  // Journal entries upgraded from string to {text, photo} object.
-  // Backward compat: existing string entries treated as {text}.
+  // Journal entries: { text, photo, mood }. Backward compat for string and {text,photo} entries.
   function getEntry(key) {
     const raw = journal[key];
-    if (raw == null) return { text: '', photo: '' };
-    if (typeof raw === 'string') return { text: raw, photo: '' };
-    return { text: raw.text || '', photo: raw.photo || '' };
+    if (raw == null) return { text: '', photo: '', mood: '' };
+    if (typeof raw === 'string') return { text: raw, photo: '', mood: '' };
+    return { text: raw.text || '', photo: raw.photo || '', mood: raw.mood || '' };
   }
   function setEntry(key, entry) {
-    if (!entry.text && !entry.photo) {
+    if (!entry.text && !entry.photo && !entry.mood) {
       delete journal[key];
     } else {
-      journal[key] = { text: entry.text || '', photo: entry.photo || '' };
+      journal[key] = {
+        text: entry.text || '',
+        photo: entry.photo || '',
+        mood: entry.mood || ''
+      };
     }
   }
   function entryHasText(key) {
@@ -4563,6 +5044,7 @@
       try {
         composerPhoto = await resizeImage(file);
         setComposerPhotoUI(composerPhoto);
+        scheduleAutoSave();
       } catch (err) {
         alert('Could not read that image.');
       }
@@ -4574,24 +5056,83 @@
     composerPhotoRemove.addEventListener('click', () => {
       composerPhoto = '';
       setComposerPhotoUI('');
+      scheduleAutoSave();
     });
   }
   const composerSaveBtn = document.getElementById('composerSave');
-  if (composerSaveBtn) composerSaveBtn.addEventListener('click', composerSave);
+  if (composerSaveBtn) composerSaveBtn.addEventListener('click', () => composerSave({ silent: false }));
   const composerCancelBtn = document.getElementById('composerCancel');
   if (composerCancelBtn) composerCancelBtn.addEventListener('click', composerReset);
   const composerDeleteBtn = document.getElementById('composerDelete');
   if (composerDeleteBtn) composerDeleteBtn.addEventListener('click', composerDelete);
-  // Cmd+Enter to save
+
+  // Composer textarea: input → word count, prompt visibility, auto-save
   const composerTextEl = document.getElementById('composerText');
   if (composerTextEl) {
+    composerTextEl.addEventListener('input', () => {
+      updateWordCount();
+      updatePromptVisibility();
+      // If user just emptied the textarea, refresh the prompt for a new nudge
+      if (!composerTextEl.value.trim()) refreshPrompt();
+      scheduleAutoSave();
+    });
     composerTextEl.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
-        composerSave();
+        composerSave({ silent: false });
       }
     });
+    // Save on blur if dirty (covers tab away / page hide)
+    composerTextEl.addEventListener('blur', () => {
+      if (composerDirty) composerSave({ silent: true });
+    });
   }
+
+  // Mood picker
+  document.querySelectorAll('#composerMood button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = btn.dataset.mood;
+      composerMood = (composerMood === m) ? '' : m;
+      updateMoodUI();
+      scheduleAutoSave();
+    });
+  });
+
+  // Prompt reroll
+  const rerollBtn = document.getElementById('composerPromptReroll');
+  if (rerollBtn) rerollBtn.addEventListener('click', refreshPrompt);
+
+  // Search input
+  const searchInput = document.getElementById('entrySearchInput');
+  const searchClear = document.getElementById('entrySearchClear');
+  if (searchInput) {
+    let searchTimer = null;
+    searchInput.addEventListener('input', () => {
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        feedSearchQuery = searchInput.value;
+        if (searchClear) searchClear.hidden = !searchInput.value;
+        renderRecentJournal();
+      }, 200);
+    });
+    if (searchClear) {
+      searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        feedSearchQuery = '';
+        searchClear.hidden = true;
+        renderRecentJournal();
+        searchInput.focus();
+      });
+    }
+  }
+
+  // Save before page unload (just in case)
+  window.addEventListener('beforeunload', () => {
+    if (composerDirty && composerAutoSaveTimer) {
+      clearTimeout(composerAutoSaveTimer);
+      composerSave({ silent: true });
+    }
+  });
 
   // Journal modal handlers
   const journalModal = document.getElementById('journalModal');
@@ -4886,6 +5427,11 @@
     });
     // Re-render lazy bits when switching to a page that needs current state
     if (page === 'people') renderPeople(parseInt(slider.value, 10));
+    if (page === 'journal') {
+      renderJournalPulse();
+      updatePromptVisibility();
+      updateWordCount();
+    }
     if (page === 'places' && leafletMap) {
       // Leaflet needs a kick when its container becomes visible
       setTimeout(() => leafletMap.invalidateSize(), 50);
