@@ -1117,10 +1117,22 @@
     font-weight: 600;
     color: var(--ink-dim);
   }
-  .auth-pill img {
+  .auth-pill img,
+  .auth-pill .avatar-fallback {
     width: 28px; height: 28px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0;
+  }
+  .auth-pill .avatar-fallback {
+    background: linear-gradient(135deg, var(--accent), var(--future-3));
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
   }
   .auth-pill .signout {
     background: transparent;
@@ -2853,9 +2865,13 @@
       const avatar = user.photoURL || '';
       const fullName = user.displayName || user.email || 'You';
       const firstName = fullName.includes('@') ? fullName.split('@')[0] : fullName.split(' ')[0];
+      const initial = (firstName[0] || 'Y').toUpperCase();
+      const avatarHTML = avatar
+        ? `<img src="${escapeHtml(avatar)}" alt="" referrerpolicy="no-referrer" />`
+        : `<span class="avatar-fallback">${escapeHtml(initial)}</span>`;
       slot.innerHTML = `
         <span class="auth-pill">
-          ${avatar ? `<img src="${escapeHtml(avatar)}" alt="" />` : ''}
+          ${avatarHTML}
           <span>${escapeHtml(firstName)}</span>
           <button class="signout" id="signOutBtn" title="Sign out">×</button>
         </span>`;
@@ -2865,6 +2881,9 @@
   async function signInWithGoogle() {
     if (!fbAuth) return;
     const provider = new window.fb.GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
       await window.fb.signInWithPopup(fbAuth, provider);
     } catch (err) {
