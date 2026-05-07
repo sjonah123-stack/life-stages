@@ -2849,12 +2849,14 @@
       slot.innerHTML = `<button class="signin-btn" id="signInBtn"><span class="g-icon"></span>Sign in with Google</button>`;
       document.getElementById('signInBtn').addEventListener('click', signInWithGoogle);
     } else {
-      const avatar = user.user_metadata?.avatar_url || '';
-      const name = user.user_metadata?.name || user.email || 'You';
+      // Firebase user fields: displayName, email, photoURL
+      const avatar = user.photoURL || '';
+      const fullName = user.displayName || user.email || 'You';
+      const firstName = fullName.includes('@') ? fullName.split('@')[0] : fullName.split(' ')[0];
       slot.innerHTML = `
         <span class="auth-pill">
           ${avatar ? `<img src="${escapeHtml(avatar)}" alt="" />` : ''}
-          <span>${escapeHtml(name.split(' ')[0])}</span>
+          <span>${escapeHtml(firstName)}</span>
           <button class="signout" id="signOutBtn" title="Sign out">×</button>
         </span>`;
       document.getElementById('signOutBtn').addEventListener('click', signOut);
