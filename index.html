@@ -4213,7 +4213,10 @@
   // ---- Apply state ----
   function applyState(opts) {
     opts = opts || {};
-    if (opts.dob) recomputePersonal(opts.dob);
+    if (opts.dob) {
+      recomputePersonal(opts.dob);
+      writeLS('lifeStages.dob', formatDOB(opts.dob));
+    }
     if (opts.sex) sex = opts.sex;
     if ('country' in opts) country = opts.country;
     if ('partnership' in opts) partnership = opts.partnership;
@@ -4878,28 +4881,29 @@
   function readLS(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
   function writeLS(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
 
-  const params = new URL(window.location.href).searchParams;
-  const urlDOB = params.get('dob');
-  const urlSex = params.get('s');
-  const initialDOB = (urlDOB && parseDOB(urlDOB)) || parseDOB(DEFAULT_DOB);
-  const initialSex = (urlSex === 'f') ? 'female' : (urlSex === 'm' ? 'male' : (readLS('lifeStages.sex') || DEFAULT_SEX));
-  const initialTheme = params.get('th') || readLS('lifeStages.theme') || DEFAULT_THEME;
-  const initialCountry = params.get('c') || readLS('lifeStages.country') || '';
-  const initialPartnership = params.get('p') || readLS('lifeStages.partnership') || '';
-  const initialKids = parseInt(params.get('k') || readLS('lifeStages.kids') || '0', 10) || 0;
-  const initialCareer = params.get('cf') || readLS('lifeStages.career') || '';
-  const initialRetire = parseInt(params.get('r') || readLS('lifeStages.retirementAge') || '0', 10) || 0;
+  // Personal data loads from localStorage only. URL params are ignored (and
+  // stripped on first save) so old shared links can't leak data.
+  const initialDOB = parseDOB(readLS('lifeStages.dob') || DEFAULT_DOB) || parseDOB(DEFAULT_DOB);
+  const initialSex = readLS('lifeStages.sex') || DEFAULT_SEX;
+  const initialTheme = readLS('lifeStages.theme') || DEFAULT_THEME;
+  const initialCountry = readLS('lifeStages.country') || '';
+  const initialPartnership = readLS('lifeStages.partnership') || '';
+  const initialKids = parseInt(readLS('lifeStages.kids') || '0', 10) || 0;
+  const initialCareer = readLS('lifeStages.career') || '';
+  const initialRetire = parseInt(readLS('lifeStages.retirementAge') || '0', 10) || 0;
   // Private (localStorage only — never URL)
   const initialSmoker = readLS('lifeStages.smoker') || '';
   const initialExercise = readLS('lifeStages.exercise') || '';
   const initialSleep = parseFloat(readLS('lifeStages.sleep') || '0') || 0;
   const initialLongevity = parseInt(readLS('lifeStages.familyLongevity') || '0', 10) || 0;
-  // Wave 3
-  const urlPriorities = (params.get('pr') || '').split(',').filter(Boolean);
-  const initialPriorities = urlPriorities.length ? urlPriorities :
-    (() => { try { return JSON.parse(readLS('lifeStages.priorities') || '[]') || []; } catch (e) { return []; }})();
-  const initialBestYear = parseInt(params.get('by') || readLS('lifeStages.bestYear') || '0', 10) || 0;
-  const initialHardestYear = parseInt(params.get('hy') || readLS('lifeStages.hardestYear') || '0', 10) || 0;
+  const initialPriorities = (() => {
+    try { return JSON.parse(readLS('lifeStages.priorities') || '[]') || []; }
+    catch (e) { return []; }
+  })();
+  const initialBestYear = parseInt(readLS('lifeStages.bestYear') || '0', 10) || 0;
+  const initialHardestYear = parseInt(readLS('lifeStages.hardestYear') || '0', 10) || 0;
+  // Strip any pre-existing URL params on load (cleans up old shared links)
+  syncURL();
   // Letters: localStorage only (could be long, sensitive)
   try { letters = JSON.parse(readLS('lifeStages.letters') || '{}') || {}; } catch (e) { letters = {}; }
   // Hydrate letter textareas + meta
@@ -5178,15 +5182,17 @@
     reader.readAsText(file);
   });
   copyBtn.addEventListener('click', async () => {
-    syncURL();
+    syncURL(); // strips any leftover params
+    // Always copy the bare app URL — never any personal params
+    const cleanUrl = window.location.origin + window.location.pathname;
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(cleanUrl);
       const original = copyBtn.textContent;
-      copyBtn.textContent = 'Copied! ✨';
+      copyBtn.textContent = 'Copied — friends see a blank app';
       copyBtn.classList.add('copied');
-      setTimeout(() => { copyBtn.textContent = original; copyBtn.classList.remove('copied'); }, 1400);
+      setTimeout(() => { copyBtn.textContent = original; copyBtn.classList.remove('copied'); }, 2200);
     } catch (e) {
-      window.prompt('Copy this link:', window.location.href);
+      window.prompt('Copy this link:', cleanUrl);
     }
   });
   document.getElementById('milestoneForm').addEventListener('submit', (e) => {
