@@ -1,5 +1,7 @@
 <script lang="ts">
   import { currentPage, TAB_PAGES, PAGE_LABELS } from '../../lib/router';
+  import { isBlankState } from '../../stores/personal';
+  import ThemePicker from '../shared/ThemePicker.svelte';
 </script>
 
 <nav class="top-nav">
@@ -8,13 +10,18 @@
       <span class="brand-mark"></span>
       Your Life
     </a>
-    <div class="nav-tabs" role="tablist">
-      {#each TAB_PAGES as p}
-        <a href={`#/${p}`} class="nav-tab" class:active={$currentPage === p}>{PAGE_LABELS[p]}</a>
-      {/each}
-    </div>
+    {#if !$isBlankState}
+      <div class="nav-tabs" role="tablist">
+        {#each TAB_PAGES as p}
+          <a href={`#/${p}`} class="nav-tab" class:active={$currentPage === p}>{PAGE_LABELS[p]}</a>
+        {/each}
+      </div>
+    {/if}
     <div class="nav-right">
-      <a href="#/settings" class="icon-btn" title="Settings" aria-label="Settings">⚙</a>
+      <ThemePicker />
+      {#if !$isBlankState}
+        <a href="#/settings" class="icon-btn" title="Settings" aria-label="Settings">⚙</a>
+      {/if}
       <span id="authSlot"><!-- sign-in slot, wired up in Phase 13 --></span>
     </div>
   </div>
