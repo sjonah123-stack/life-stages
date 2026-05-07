@@ -11,6 +11,7 @@ import {
   milestones, journal, letters, places, people, books, rituals,
   priorities, bestYear, hardestYear,
 } from './collections';
+import { assessmentResult } from './assessment';
 import { currentUser, setSyncStatus, setOnSignedInCallback } from './auth';
 import type { CloudPayload } from '../types';
 
@@ -42,6 +43,7 @@ export function collectStateForCloud(): CloudPayload {
     people: get(people),
     books: get(books),
     rituals: get(rituals),
+    assessmentResult: get(assessmentResult),
     updated: Date.now(),
   };
 }
@@ -72,6 +74,7 @@ export function applyCloudState(cloud: Partial<CloudPayload>): void {
     if (cloud.people !== undefined) people.set(cloud.people);
     if (cloud.books !== undefined) books.set(cloud.books);
     if (cloud.rituals !== undefined) rituals.set(cloud.rituals);
+    if (cloud.assessmentResult !== undefined) assessmentResult.set(cloud.assessmentResult);
   } finally {
     // Allow store subscriptions to finish before re-enabling cloud writes.
     setTimeout(() => { applyingCloud = false; }, 0);
@@ -138,6 +141,7 @@ function subscribeAll(): void {
     smoker, exerciseLevel, sleepHours, familyLongevity,
     priorities, bestYear, hardestYear,
     milestones, journal, letters, places, people, books, rituals,
+    assessmentResult,
   ];
   everyStore.forEach((s) => s.subscribe(() => scheduleCloudSave()));
 }

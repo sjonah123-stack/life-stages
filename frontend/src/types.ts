@@ -132,6 +132,23 @@ export interface Stage {
   goodNews: string;
 }
 
+// ---- 5 Types of Wealth assessment ----
+export type WealthKey = 'time' | 'social' | 'mental' | 'physical' | 'financial';
+
+export interface SurveyAnswer {
+  questionId: string;        // e.g. 'time-1', 'social-2'
+  value: 1 | 2 | 3 | 4 | 5;  // Likert
+}
+
+export interface AssessmentResult {
+  v: 1;
+  takenAt: number;           // Date.now() at submission
+  answers: SurveyAnswer[];
+  selfScores: Record<WealthKey, number>;  // 0-100, derived from answers
+}
+
+export type WealthScores = Record<WealthKey, number>;
+
 // ---- Cloud sync payload (what we write to Firestore) ----
 export interface CloudPayload extends Partial<PersonalSettings> {
   v: number;
@@ -142,6 +159,7 @@ export interface CloudPayload extends Partial<PersonalSettings> {
   people: Person[];
   books: Book[];
   rituals: Ritual[];
+  assessmentResult?: AssessmentResult | null;
   updated: number;
 }
 
