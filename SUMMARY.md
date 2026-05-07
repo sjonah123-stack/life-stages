@@ -95,25 +95,25 @@ Verification done: svelte-check 0 errors, build success, in-browser preview conf
 
 - **Path 1 (vanilla JS modules) failed** earlier in the session and was reverted. Going to Path 3 (full Svelte rewrite) was the right call.
 - **Blended scoring** for the Wealth assessment: survey + behavioral, side-by-side.
-- **Layered nav**, not restructured: keep 7 visible tabs, the 5-Wealths framework colors recommendations and the radar but doesn't reorganize the page hierarchy.
+- **Wealth lives on Today, not its own tab.** The 5-Wealths assessment is a Today section; "wealth-the-bigger-feature" (when it ships) gets reorganised then, not sooner.
 - **Financial gap launches as-is**, with a "Net-worth tracking coming soon" note. Don't block the assessment on building net-worth features.
 - **Survey length: 15 questions, 3 per wealth**, ~3 min.
-- **Result history NOT in v1** — only the latest result is stored. v2 if it earns its way.
+- **Result history IS in v2** — list shape, newest first. Per-result delete + retake. Date-picker switches between saved results.
+- **Recommendation completion is per-result**, not global. The same rec can be checked off on result A and unchecked on result B — they're independent. Reasoning: each saved result is a snapshot of "where I was on date X and what I committed to doing about it"; completion belongs to that snapshot.
 - **No chart library** — the radar is hand-rolled SVG. Set the precedent.
 - **Cloud sync uses `users/{uid}` doc with `setDoc(merge: true)`**. Don't switch to per-collection.
 
 ## Known gaps / not done (real backlog)
 
-- **Net-worth tracker** — Financial Wealth's behavioral score is thin (only retirement age + career field). Adding monthly check-ins, savings rate, financial goals would make Financial real.
-- **Result history** — currently only the latest assessment is kept. v2 stores an array, shows trajectory.
-- **Mobile responsiveness** — narrow viewports show some text wrapping awkwardly (we saw it in Claude Preview screenshots). Polish pass deferred to whenever you commit to mobile-first.
-- **Tests** — zero coverage. Adding Vitest + Svelte Testing Library would be valuable; smoke tests for store load/save round-trips and one composer test would cover the high-risk paths.
-- **Bundle size** — 632 KB total / 199 KB gzip. Code-split into firebase + leaflet + main; could lazy-load via dynamic import for further wins.
+- **Net-worth tracker** — Financial Wealth's behavioral score is thin (only retirement age + career field). Adding monthly check-ins, savings rate, financial goals would make Financial real. Highest-leverage next feature.
+- **Mobile responsiveness** — at 375px the Today hero h1 (48px) and the new Wealth section's h2 collide; composer-meta wraps awkwardly; the wealth radar grid is tight.
+- **Tests** — zero coverage. The wealth migration path (v1 → v2) and `toggleRecommendation` semantics are now non-trivial and would benefit from Vitest store round-trip tests.
+- **Bundle size** — 663 KB total / ~210 KB gzip with the wealth refactor. Code-split into firebase + leaflet + main; could lazy-load via dynamic import for further wins.
 - **A few `any` casts** in `DimensionCards.svelte` (partnership narrowing). Would benefit from refactor.
-- **TopNav 7 tabs may overflow on narrow screens** — already has `overflow-x: auto` but could use a more graceful collapse.
 - **Periodic nudges** ("It's been 30 days since your assessment") — would need email/push delivery channel.
 - **Public/comparison views** — comparing scores with friends or population averages.
 - **Auth user-change reload-and-wipe path** — coded in `stores/auth.ts` but never tested with two real Google accounts on one device.
+- **TodayWealth UX polish** — the section currently renders the full intro/survey/results inline. If a user has a saved result, they see the full results view immediately on Today (radar + 5 cards + checklist). For a multi-result world this might want a collapsed "summary card" state with an "expand" affordance.
 
 ## Likely next conversations
 
@@ -121,12 +121,11 @@ If the user opens with one of these, the path is roughly:
 
 | User says | Do this |
 |---|---|
-| "Move the wealth assessment onto the Today page" | Plan-mode this. Decide the hosting surface (new `<WealthCard />` on Today vs. a Today section that links to a sub-route). Keep the Wealth tab during transition or remove it entirely — ask the user. Touches `components/pages/Today.svelte`, `lib/router.ts` (PAGES + TAB_PAGES), and possibly `App.svelte` routing. |
-| "Add save/retake/delete to the assessment" | Refactor `stores/assessment.ts` from a single `assessmentResult` writable to a list of saved results (each with id + timestamp + scores + recommendations). Update `cloud-sync.ts` Firestore shape. Add UI controls in `AssessmentResults.svelte`. Migration: read existing single-result LS, wrap as a one-element list, write back. |
-| "Add recommendation check-off" | Extend the saved-result data shape with a `completedRecommendations: { recId: completedAt }` map. Wire a checkbox/toggle in the recommendations list inside `AssessmentResults.svelte` (or `WealthCard.svelte`). Persist + cloud-sync the completion state. |
-| "Build the net-worth tracker" | Plan it as the financial follow-up, tied to the existing `assessment.ts` Financial scoring rules. New store + new section on Wealth (or wherever Wealth lives by then). |
-| "Add tests" | Install vitest + @testing-library/svelte, write store round-trip tests first, then a Composer save-flow test |
-| "Mobile is bad" | Audit each page at 375px width via Claude Preview, fix layout/typography per page. Touch points: Today's hero header, composer-meta row, wealth radar size |
+| "Build the net-worth tracker" | Plan-mode this. New store (`stores/financial.ts`) for monthly net-worth check-ins + savings rate + at least one savings goal. Extend Financial behavioral scoring in `stores/assessment.ts` to read these. New UI: probably a sub-section of TodayWealth or a small `Financial.svelte` page reachable from the Financial wealth card's CTA. |
+| "Add tests" | Install vitest + @testing-library/svelte. First test: `stores/assessment.ts` round-trip — write list, read back, run `toggleRecommendation`, verify state. Second: `normalizeResults()` migration paths (v1 single-result, malformed entries, empty input). Third: composer save-flow. |
+| "Mobile is bad" | Audit each page at 375px width via Claude Preview, fix layout/typography per page. Known touchpoints: Today's hero h1 (48px is too big at 375), composer-meta row wrap, wealth radar grid `minmax(280px, 1fr)` is tight. |
+| "Polish the wealth section on Today" | Probably means: collapsed/summary state when a result exists (don't render the whole radar+cards inline), with an "expand" affordance. New: a `TodayWealthSummary.svelte` companion. |
+| "Something's wrong with the wealth flow" | Open the live URL via Claude Preview, reproduce, fix in `frontend/src/components/wealth/`, `components/today/TodayWealth.svelte`, or `stores/assessment.ts`. Redeploy preview channel for verification before flipping prod. |
 
 ## Where to start each new session
 
