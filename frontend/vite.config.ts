@@ -34,6 +34,15 @@ export default defineConfig({
         // Don't cache cross-origin Firebase / OSM tiles. Same-origin only.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: 'index.html',
+        // Make new SW take over immediately on deploy — no need for users to
+        // close all tabs or hard-reload to pick up new code. Pairs with
+        // `registerType: 'autoUpdate'` above to give invisible auto-updates.
+        // Trade-off: if a user is actively interacting when a deploy lands,
+        // the new chunks load on next navigation, which may briefly show a
+        // mismatched shell. Acceptable for a single-user personal app where
+        // auto-save commits in-progress edits within 1.5s.
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],
