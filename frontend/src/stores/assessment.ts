@@ -8,12 +8,15 @@ import { LS_PREFIX } from '../config';
 import { parseDOB, daysBetween } from '../utils';
 import { persistedJSON } from './persisted';
 import {
-  dob, partnership, careerField, retirementAge,
+  dob, partnership, careerField,
   smoker, exerciseLevel, sleepHours, familyLongevity,
 } from './personal';
 import {
   milestones, journal, letters, people, books, rituals,
 } from './collections';
+import {
+  netWorthEntries, savingsGoals, savingsRate, givingEntries,
+} from './financial';
 import { getEntry, weekKey, currentWeekIndex } from './journal-helpers';
 
 const RESULTS_KEY = 'assessmentResults';
@@ -136,14 +139,16 @@ export function setFromCloud(cloud: { assessmentResults?: unknown; assessmentRes
 
 export const behavioralScores = derived(
   [
-    dob, partnership, careerField, retirementAge,
+    dob, partnership, careerField,
     smoker, exerciseLevel, sleepHours, familyLongevity,
     milestones, journal, letters, people, books, rituals,
+    netWorthEntries, savingsGoals, savingsRate, givingEntries,
   ],
   ([
-    $dob, $partnership, $careerField, $retirementAge,
+    $dob, $partnership, $careerField,
     $smoker, $exerciseLevel, $sleepHours, $familyLongevity,
     $milestones, $journal, $letters, $people, $books, $rituals,
+    $netWorthEntries, $savingsGoals, $savingsRate, $givingEntries,
   ]) => {
     // ---- Time ----
     // Rebalanced 4 signals × 25 (was 5 × 20) after removing the Places signal.
@@ -210,11 +215,28 @@ export const behavioralScores = derived(
     physical = Math.min(100, physical);
 
     // ---- Financial ----
-    // Honestly thin; UI labels this clearly. See `data/assessment.ts`
-    // RECOMMENDATIONS.financial for the "coming soon" note shown to users.
+    // 5 signals × 20pt. Replaces the thin retirementAge + careerField
+    // pair after the Finance page launched. Reflects actual financial
+    // behavior: tracking, saving, giving — not retirement targeting.
     let financial = 0;
-    if ($retirementAge && $retirementAge > 0) financial += 50;
-    if ($careerField) financial += 50;
+    if ($careerField) financial += 20;
+    if ($netWorthEntries.length >= 1) financial += 20;
+    // Recent net-worth check-in (within 60 days). Today is anchored to
+    // 00:00 local — daysBetween is DST-safe.
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
+    const recentCheckIn = $netWorthEntries.some((e) => {
+      const d = parseDOB(e.date);
+      return d ? daysBetween(d, todayMidnight) <= 60 : false;
+    });
+    if (recentCheckIn) financial += 20;
+    if ($savingsGoals.length >= 1 || $savingsRate > 0) financial += 20;
+    // Charitable giving in the past 365 days.
+    const recentGiving = $givingEntries.some((e) => {
+      const d = parseDOB(e.date);
+      return d ? daysBetween(d, todayMidnight) <= 365 : false;
+    });
+    if (recentGiving) financial += 20;
     financial = Math.min(100, financial);
 
     const out: WealthScores = { time, social, mental, physical, financial };

@@ -80,7 +80,41 @@ export interface Ritual {
   frequency: 1 | 2 | 4 | 12; // per year (yearly / twice / quarterly / monthly)
 }
 
+// ---- Net worth ----
+// Periodic snapshots the user logs to track Financial Wealth. Stored as a
+// list, newest first. Amounts are in the user's display currency (USD for
+// now; future i18n can extend the type with a currency field).
+export interface NetWorthEntry {
+  date: DateString;     // 'YYYY-MM-DD' — when the snapshot was as-of
+  amount: number;       // total net worth in dollars (can be negative)
+  note?: string;        // optional free-text annotation
+}
+
+// One savings goal with a target amount and optional deadline. v1 supports
+// any number of goals but the UI surfaces the first/primary one.
+export interface SavingsGoal {
+  id: string;           // stable id, set at creation
+  label: string;        // e.g. "Emergency fund" or "House down payment"
+  target: number;       // target dollar amount
+  deadline?: DateString; // optional 'YYYY-MM-DD'
+  createdAt: number;    // Date.now() at creation
+}
+
+// ---- Charitable giving ----
+// Each gift logged with a date and amount. The app's worldview includes
+// a 10%-of-net-worth annual baseline target — see GivingSection for how
+// the target is computed and surfaced.
+export interface GivingEntry {
+  date: DateString;     // when given
+  amount: number;       // dollars
+  recipient?: string;   // optional org/cause
+}
+
 // ---- Personal settings (the personalize panel) ----
+// `retirementAge` is intentionally absent — the app's worldview doesn't
+// treat retirement as a goal to plan toward. Old user docs may still
+// have a `retirementAge` field; CloudPayload below tolerates that on
+// read but nothing writes it after the Finance-page refactor.
 export interface PersonalSettings {
   dob: DateString;
   sex: Sex;
@@ -89,7 +123,6 @@ export interface PersonalSettings {
   partnership: Partnership;
   kids: number;
   careerField: CareerField;
-  retirementAge: number;
   // Private (localStorage only, never URL)
   smoker: Smoking;
   exerciseLevel: ExerciseLevel;
@@ -163,6 +196,15 @@ export interface CloudPayload extends Partial<PersonalSettings> {
   assessmentResults?: AssessmentResult[];
   // Legacy (v1): single result. Read on load for migration; not written anymore.
   assessmentResult?: AssessmentResult | null;
+  // Finance page (v1).
+  netWorthEntries?: NetWorthEntry[];
+  savingsGoals?: SavingsGoal[];
+  savingsRate?: number;
+  givingEntries?: GivingEntry[];
+  // Legacy: `retirementAge` was a PersonalSettings field before the Finance
+  // refactor. Old user docs may still carry it; we accept it on read so they
+  // don't break, but never write it back. Drop entirely after a few months.
+  retirementAge?: number;
   updated: number;
 }
 

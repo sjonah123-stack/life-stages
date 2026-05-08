@@ -123,9 +123,10 @@ export const RECOMMENDATIONS = {
     { id: 'physical-longevity', text: 'Set your family longevity for a personalized horizon.', href: '#/settings' },
   ],
   financial: [
-    { id: 'financial-retirement', text: 'Set a retirement target age.', href: '#/settings' },
     { id: 'financial-career', text: 'Pick your career field.', href: '#/settings' },
-    { id: 'financial-soon', text: 'Net-worth tracking and savings goals are coming soon.', href: '#/settings' },
+    { id: 'financial-track', text: 'Add a monthly net-worth check-in.', href: '#/finance' },
+    { id: 'financial-goal', text: 'Set a savings goal you\'re working toward.', href: '#/finance' },
+    { id: 'financial-give', text: 'Log a charitable gift this year.', href: '#/finance' },
   ],
 } as const satisfies Record<WealthKey, readonly Recommendation[]>;
 

@@ -31,8 +31,6 @@ export const kids = persisted<number>('kids', 0, num, numStr);
 
 export const careerField = persisted<CareerField>('career', '', (raw) => raw as CareerField, str);
 
-export const retirementAge = persisted<number>('retirementAge', 0, num, numStr);
-
 // Private (localStorage only — never URL or cloud-shareable share-link)
 export const smoker = persisted<Smoking>('smoker', '', (raw) => raw as Smoking, str);
 export const exerciseLevel = persisted<ExerciseLevel>('exercise', '', (raw) => raw as ExerciseLevel, str);

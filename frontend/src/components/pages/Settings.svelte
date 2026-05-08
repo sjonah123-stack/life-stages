@@ -1,6 +1,6 @@
 <script lang="ts">
   import {
-    dob, sex, country, partnership, kids, careerField, retirementAge,
+    dob, sex, country, partnership, kids, careerField,
     smoker, exerciseLevel, sleepHours, familyLongevity,
   } from '../../stores/personal';
   import { personalHorizon } from '../../stores/derived';
@@ -89,10 +89,6 @@
             <option value="entrepreneurship">Entrepreneurship</option>
             <option value="other">Other</option>
           </select>
-        </div>
-        <div class="field">
-          <span class="field-label">Retire @</span>
-          <input type="number" bind:value={$retirementAge} min="40" max="100" placeholder="65" />
         </div>
       </div>
     </details>

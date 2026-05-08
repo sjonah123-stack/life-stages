@@ -5,13 +5,17 @@ import { get } from 'svelte/store';
 import { getFirebase, doc, setDoc, getDoc, serverTimestamp } from '../lib/firebase';
 import {
   dob, sex, theme, country, partnership, kids, careerField,
-  retirementAge, smoker, exerciseLevel, sleepHours, familyLongevity,
+  smoker, exerciseLevel, sleepHours, familyLongevity,
 } from './personal';
 import {
   milestones, journal, letters, people, books, rituals,
   priorities, bestYear, hardestYear,
 } from './collections';
 import { assessmentResults, setFromCloud as setAssessmentFromCloud } from './assessment';
+import {
+  netWorthEntries, savingsGoals, savingsRate, givingEntries,
+  setFromCloud as setFinancialFromCloud,
+} from './financial';
 import { currentUser, setSyncStatus, setOnSignedInCallback } from './auth';
 import type { CloudPayload } from '../types';
 
@@ -28,7 +32,6 @@ export function collectStateForCloud(): CloudPayload {
     partnership: get(partnership),
     kids: get(kids),
     careerField: get(careerField),
-    retirementAge: get(retirementAge),
     smoker: get(smoker),
     exerciseLevel: get(exerciseLevel),
     sleepHours: get(sleepHours),
@@ -43,6 +46,10 @@ export function collectStateForCloud(): CloudPayload {
     books: get(books),
     rituals: get(rituals),
     assessmentResults: get(assessmentResults),
+    netWorthEntries: get(netWorthEntries),
+    savingsGoals: get(savingsGoals),
+    savingsRate: get(savingsRate),
+    givingEntries: get(givingEntries),
     updated: Date.now(),
   };
 }
@@ -58,7 +65,8 @@ export function applyCloudState(cloud: Partial<CloudPayload>): void {
     if (cloud.partnership !== undefined) partnership.set(cloud.partnership);
     if (cloud.kids !== undefined) kids.set(cloud.kids);
     if (cloud.careerField !== undefined) careerField.set(cloud.careerField);
-    if (cloud.retirementAge !== undefined) retirementAge.set(cloud.retirementAge);
+    // `cloud.retirementAge` may be present in legacy docs; we accept it on
+    // read (no error) but no longer mirror it to a store. See types.ts.
     if (cloud.smoker !== undefined) smoker.set(cloud.smoker);
     if (cloud.exerciseLevel !== undefined) exerciseLevel.set(cloud.exerciseLevel);
     if (cloud.sleepHours !== undefined) sleepHours.set(cloud.sleepHours);
@@ -73,6 +81,7 @@ export function applyCloudState(cloud: Partial<CloudPayload>): void {
     if (cloud.books !== undefined) books.set(cloud.books);
     if (cloud.rituals !== undefined) rituals.set(cloud.rituals);
     setAssessmentFromCloud(cloud);
+    setFinancialFromCloud(cloud);
   } finally {
     // Allow store subscriptions to finish before re-enabling cloud writes.
     setTimeout(() => { applyingCloud = false; }, 0);
@@ -135,11 +144,12 @@ export function scheduleCloudSave(): void {
 // Subscribe every persisted store; any change schedules a cloud upload.
 function subscribeAll(): void {
   const everyStore = [
-    dob, sex, theme, country, partnership, kids, careerField, retirementAge,
+    dob, sex, theme, country, partnership, kids, careerField,
     smoker, exerciseLevel, sleepHours, familyLongevity,
     priorities, bestYear, hardestYear,
     milestones, journal, letters, people, books, rituals,
     assessmentResults,
+    netWorthEntries, savingsGoals, savingsRate, givingEntries,
   ];
   everyStore.forEach((s) => s.subscribe(() => scheduleCloudSave()));
 }
