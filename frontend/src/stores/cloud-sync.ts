@@ -8,7 +8,7 @@ import {
   retirementAge, smoker, exerciseLevel, sleepHours, familyLongevity,
 } from './personal';
 import {
-  milestones, journal, letters, places, people, books, rituals,
+  milestones, journal, letters, people, books, rituals,
   priorities, bestYear, hardestYear,
 } from './collections';
 import { assessmentResults, setFromCloud as setAssessmentFromCloud } from './assessment';
@@ -39,7 +39,6 @@ export function collectStateForCloud(): CloudPayload {
     milestones: get(milestones),
     journal: get(journal),
     letters: get(letters),
-    places: get(places),
     people: get(people),
     books: get(books),
     rituals: get(rituals),
@@ -70,7 +69,6 @@ export function applyCloudState(cloud: Partial<CloudPayload>): void {
     if (cloud.milestones !== undefined) milestones.set(cloud.milestones);
     if (cloud.journal !== undefined) journal.set(cloud.journal);
     if (cloud.letters !== undefined) letters.set(cloud.letters);
-    if (cloud.places !== undefined) places.set(cloud.places);
     if (cloud.people !== undefined) people.set(cloud.people);
     if (cloud.books !== undefined) books.set(cloud.books);
     if (cloud.rituals !== undefined) rituals.set(cloud.rituals);
@@ -140,7 +138,7 @@ function subscribeAll(): void {
     dob, sex, theme, country, partnership, kids, careerField, retirementAge,
     smoker, exerciseLevel, sleepHours, familyLongevity,
     priorities, bestYear, hardestYear,
-    milestones, journal, letters, places, people, books, rituals,
+    milestones, journal, letters, people, books, rituals,
     assessmentResults,
   ];
   everyStore.forEach((s) => s.subscribe(() => scheduleCloudSave()));

@@ -4,6 +4,7 @@
   import {
     getEntry, setEntry, deleteEntry,
     weekKey, weekStartDate, weekRangeStr, ageAtWeek, dateToWeekStart,
+    currentWeekIndex, TOTAL_WEEKS,
   } from '../../stores/journal-helpers';
   import { formatDOB, parseDOB } from '../../utils';
   import { resizeImage, imageErrorMessage } from '../../lib/image';
@@ -115,6 +116,32 @@
     status = silent ? 'Auto-saved' : 'Saved ✓';
     setTimeout(() => { status = ''; }, 2400);
   }
+
+  // "Log entry" — explicit user action: flush save, then point the composer at
+  // the next week without an entry (today onwards). The reactive
+  // `$: { dateInput; loadFromDate(); }` block clears the visible textarea/
+  // photo/mood for the new week so the user can immediately start writing
+  // again. Critically, by moving dateInput to a different week, future typing
+  // can't overwrite the entry we just logged.
+  function logAndStartNew() {
+    if (weekIdx < 0) return;
+    const hadContent = !!(textValue.trim() || photo || mood);
+    if (hadContent) doSave(false);
+    const todayIdx = currentWeekIndex();
+    if (todayIdx < 0) return;
+    let nextIdx = todayIdx;
+    while (nextIdx < TOTAL_WEEKS) {
+      const e = getEntry(weekKey(nextIdx));
+      if (!e.text && !e.photo && !e.mood) break;
+      nextIdx++;
+    }
+    if (nextIdx >= TOTAL_WEEKS) nextIdx = todayIdx;
+    dateInput = formatDOB(weekStartDate(nextIdx));
+    if (hadContent) {
+      status = 'Logged ✓';
+      setTimeout(() => { status = ''; }, 2400);
+    }
+  }
   function doDelete() {
     if (!confirm('Delete this entry?')) return;
     if (weekIdx < 0) return;
@@ -161,7 +188,7 @@
   function onKey(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
-      doSave(false);
+      logAndStartNew();
     }
   }
 
@@ -226,8 +253,8 @@
   {/if}
 
   <div class="composer-actions">
-    <button type="button" class="save-btn" class:saved={isExisting && !status} on:click={() => doSave(false)}>
-      {isExisting ? 'Saved ✓' : 'Save entry'}
+    <button type="button" class="save-btn" on:click={logAndStartNew}>
+      Log entry
     </button>
     <button type="button" class="cancel-btn" on:click={reset}>Reset</button>
     {#if isExisting}
@@ -402,7 +429,6 @@
     cursor: pointer;
   }
   .save-btn:hover { opacity: 0.92; }
-  .save-btn.saved { background: var(--health); cursor: default; }
   .cancel-btn {
     background: transparent;
     border: none;

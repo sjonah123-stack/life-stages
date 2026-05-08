@@ -14,8 +14,6 @@ Firebase project: `life-stages-90806`
 
 - **Svelte 5 + TypeScript + Vite** (the `frontend/` dir is the real app)
 - **Firebase Auth + Firestore** for cross-device sync (Google sign-in)
-- **Leaflet + OpenStreetMap** for the Places map (no API key)
-- **Nominatim** for geocoding (low-volume polite use)
 - **vite-plugin-pwa** for service worker + manifest + offline cache
 - **No tests yet** (zero coverage; documented as known gap)
 - **No backend** other than Firebase — pure static SPA
@@ -50,12 +48,11 @@ life-stages/
         ├── utils.ts           ← parseDOB, formatDOB, escapeHtml, readLS/writeLS, debounce, clearAllLocalData
         ├── lib/
         │   ├── firebase.ts    ← lazy-init singleton, exposes auth + db
-        │   ├── geocode.ts     ← Nominatim wrapper
         │   ├── image.ts       ← canvas resize → JPEG 0.82 base64
         │   └── router.ts      ← PAGES, TAB_PAGES, currentPage store
         ├── stores/
         │   ├── personal.ts    ← dob, sex, theme, country, etc. (persisted, cross-tab synced)
-        │   ├── collections.ts ← milestones, journal, letters, places, people, books, rituals
+        │   ├── collections.ts ← milestones, journal, letters, people, books, rituals
         │   ├── journal-helpers.ts  ← getEntry/setEntry, weekKey, weekStartDate, ageAtWeek
         │   ├── derived.ts     ← currentStage, personalHorizon
         │   ├── slider.ts      ← selectedAge for the Today page
@@ -64,11 +61,11 @@ life-stages/
         │   └── cloud-sync.ts  ← Firestore upload/download, debounced
         └── components/
             ├── nav/           ← TopNav.svelte, AuthPill.svelte
-            ├── pages/         ← Today, Journal, People, Places, Reading, Goals, Wealth, Settings
-            ├── today/         ← AgeSlider, DimensionCards, GoodNews, StatRow, TexturePanel
-            ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid, FutureLetters
+            ├── pages/         ← Today, Journal, People, Reading, Goals, Settings
+            ├── today/         ← AgeSlider, DimensionCards, GoodNews, StatRow, TexturePanel, TodayWealth
+            ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid, FutureLetters,
+            │                     OnThisDayBanner, MoodSparkline
             ├── people/        ← PeopleSection, PersonRow, RitualsSection
-            ├── places/        ← PlacesSection, PlacesMap
             ├── wealth/        ← AssessmentIntro, AssessmentSurvey, AssessmentResults, WealthRadar, WealthCard
             └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen, ThemePicker
 ```

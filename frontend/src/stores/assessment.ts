@@ -12,7 +12,7 @@ import {
   smoker, exerciseLevel, sleepHours, familyLongevity,
 } from './personal';
 import {
-  milestones, journal, letters, places, people, books, rituals,
+  milestones, journal, letters, people, books, rituals,
 } from './collections';
 import { getEntry, weekKey, currentWeekIndex } from './journal-helpers';
 
@@ -138,16 +138,17 @@ export const behavioralScores = derived(
   [
     dob, partnership, careerField, retirementAge,
     smoker, exerciseLevel, sleepHours, familyLongevity,
-    milestones, journal, letters, places, people, books, rituals,
+    milestones, journal, letters, people, books, rituals,
   ],
   ([
     $dob, $partnership, $careerField, $retirementAge,
     $smoker, $exerciseLevel, $sleepHours, $familyLongevity,
-    $milestones, $journal, $letters, $places, $people, $books, $rituals,
+    $milestones, $journal, $letters, $people, $books, $rituals,
   ]) => {
     // ---- Time ----
+    // Rebalanced 4 signals × 25 (was 5 × 20) after removing the Places signal.
     let time = 0;
-    if ($dob) time += 20;
+    if ($dob) time += 25;
     const todayWeekIdx = currentWeekIndex();
     const journaledRecent = (() => {
       if (!$dob) return false;
@@ -157,10 +158,9 @@ export const behavioralScores = derived(
       }
       return false;
     })();
-    if (journaledRecent) time += 20;
-    if ($milestones.some((m) => m.completed)) time += 20;
-    if ($milestones.some((m) => !m.completed)) time += 20;
-    if ($places.length >= 1) time += 20;
+    if (journaledRecent) time += 25;
+    if ($milestones.some((m) => m.completed)) time += 25;
+    if ($milestones.some((m) => !m.completed)) time += 25;
     time = Math.min(100, time);
 
     // ---- Social ----

@@ -6,7 +6,6 @@
   import Today from './components/pages/Today.svelte';
   import Journal from './components/pages/Journal.svelte';
   import People from './components/pages/People.svelte';
-  import Places from './components/pages/Places.svelte';
   import Reading from './components/pages/Reading.svelte';
   import Goals from './components/pages/Goals.svelte';
   import Settings from './components/pages/Settings.svelte';
@@ -24,8 +23,6 @@
       <Journal />
     {:else if $currentPage === 'people'}
       <People />
-    {:else if $currentPage === 'places'}
-      <Places />
     {:else if $currentPage === 'reading'}
       <Reading />
     {:else if $currentPage === 'goals'}

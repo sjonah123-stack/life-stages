@@ -1,5 +1,6 @@
-// Hash-based router for the 7 main pages. Reads/writes the URL fragment
-// (#/today, #/journal, etc.) and exposes the active page as a Svelte store.
+// Hash-based router. Reads/writes the URL fragment (#/today, #/journal, etc.)
+// and exposes the active page as a Svelte store. Old hashes for retired pages
+// (#/wealth, #/places) fall through to Today via pageFromHash's default below.
 
 import { writable } from 'svelte/store';
 
@@ -7,7 +8,6 @@ export const PAGES = [
   'today',
   'journal',
   'people',
-  'places',
   'reading',
   'goals',
   'settings',
@@ -18,17 +18,14 @@ export const PAGE_LABELS: Record<Page, string> = {
   today: 'Today',
   journal: 'Journal',
   people: 'People',
-  places: 'Places',
   reading: 'Reading',
   goals: 'Goals',
   settings: 'Settings',
 };
 
 // Tabs visible in the top-nav. Settings is reached via the gear icon.
-// Wealth lives on the Today page now (see TodayWealth.svelte) — old #/wealth
-// URLs fall through to Today via pageFromHash's default below.
 export const TAB_PAGES: Page[] = [
-  'today', 'journal', 'people', 'places', 'reading', 'goals',
+  'today', 'journal', 'people', 'reading', 'goals',
 ];
 
 function pageFromHash(hash: string): Page {

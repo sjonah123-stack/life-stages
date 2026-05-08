@@ -59,16 +59,6 @@ export interface Person {
   interactions?: Interaction[];
 }
 
-// ---- Places ----
-export interface Place {
-  name: string;
-  displayName: string;
-  lat: number;
-  lng: number;
-  year: number; // user's age when they were there
-  note: string;
-}
-
 // ---- Milestones ----
 export interface Milestone {
   age: number;
@@ -166,7 +156,6 @@ export interface CloudPayload extends Partial<PersonalSettings> {
   milestones: Milestone[];
   journal: Journal;
   letters: LetterMap;
-  places: Place[];
   people: Person[];
   books: Book[];
   rituals: Ritual[];

@@ -1,8 +1,8 @@
 // Array/object collections backed by localStorage as JSON:
-// milestones, journal, letters, places, people, books, rituals, plus
+// milestones, journal, letters, people, books, rituals, plus
 // goal-style scalars (priorities, bestYear, hardestYear).
 import type {
-  Milestone, Journal, LetterMap, Place, Person, Book, Ritual, DimensionKey,
+  Milestone, Journal, LetterMap, Person, Book, Ritual, DimensionKey,
 } from '../types';
 import { persisted, persistedJSON } from './persisted';
 
@@ -26,7 +26,6 @@ function normalizeLetters(raw: unknown): LetterMap {
 export const milestones = persistedJSON<Milestone[]>('milestones', []);
 export const journal = persistedJSON<Journal>('journal', {});
 export const letters = persistedJSON<LetterMap>('letters', {}, normalizeLetters);
-export const places = persistedJSON<Place[]>('places', []);
 export const people = persistedJSON<Person[]>('people', []);
 export const books = persistedJSON<Book[]>('books', []);
 export const rituals = persistedJSON<Ritual[]>('rituals', []);
