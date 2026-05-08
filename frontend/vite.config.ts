@@ -8,7 +8,7 @@ export default defineConfig({
     svelte(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon.svg'],
+      includeAssets: ['icon.svg'],
       manifest: {
         name: 'Your one extraordinary life',
         short_name: 'Life',
