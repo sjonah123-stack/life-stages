@@ -117,6 +117,11 @@ cd frontend && npm run dev
 # Type check + Svelte check
 cd frontend && npx svelte-check --workspace .
 
+# Tests (Vitest + jsdom; setup in frontend/test/setup.ts wipes LS per test)
+cd frontend && npm test          # one-shot, CI-friendly
+cd frontend && npm run test:watch # watch mode
+cd frontend && npm run test:ui   # browser UI
+
 # Production build (output to frontend/dist/)
 cd frontend && npm run build
 
@@ -126,6 +131,26 @@ firebase hosting:channel:deploy <channel-name> --expires 7d
 # Deploy to production
 firebase deploy --only hosting
 ```
+
+## Testing conventions
+
+- **Tests are co-located with source as `*.test.ts`.** `src/utils.test.ts`,
+  `src/stores/assessment.test.ts`, etc. Vitest's include glob is
+  `src/**/*.test.ts` and `test/**/*.test.ts`.
+- **Each test starts with a clean `localStorage`** (wiped by
+  `test/setup.ts`'s global `beforeEach`). Persisted-store tests don't
+  bleed into each other.
+- **Initial-load migration paths** (where module-import-time logic runs
+  once) are tested by `vi.resetModules()` + dynamic `import()` after
+  seeding LS. See `src/stores/assessment.test.ts` "initial-load
+  migration from legacy LS key" for the pattern.
+- **DST regressions are pinned** in `src/utils.test.ts` and
+  `src/stores/journal-helpers.test.ts`. The Standard→Daylight off-by-one
+  bug shipped to prod once; the test for `daysBetween(Dec 4 2002, May 6
+  2026) === 8554` exists to keep it from coming back.
+- **Keep the suite fast.** Currently runs in ~1s. Component tests using
+  `@testing-library/svelte` are deferred for now — store and util
+  coverage gives the highest signal-to-cost ratio for this codebase.
 
 ## Things NOT to do
 
