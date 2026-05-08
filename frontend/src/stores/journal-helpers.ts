@@ -47,7 +47,12 @@ function bd(): Date | null { return get(birthdate); }
 export function weekStartDate(weekIndex: number): Date {
   const b = bd();
   if (!b) return new Date();
-  return new Date(b.getTime() + weekIndex * 7 * 86400000);
+  // Use setDate (calendar-day arithmetic) instead of `+ N * 86400000`
+  // (millisecond arithmetic). The ms version drifts an hour over each DST
+  // transition; over decades that compounds into wrong week-start dates.
+  const out = new Date(b);
+  out.setDate(b.getDate() + weekIndex * 7);
+  return out;
 }
 
 export function weekKey(weekIndex: number): DateString {
@@ -56,7 +61,10 @@ export function weekKey(weekIndex: number): DateString {
 
 export function weekRangeStr(weekIndex: number): string {
   const start = weekStartDate(weekIndex);
-  const end = new Date(start.getTime() + 6 * 86400000);
+  // setDate (calendar-day add) is DST-safe; `+ 6 * 86400000` ms can land on
+  // 23:00 of the prior day if a DST transition falls inside the 6-day window.
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
   const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
   const optsWithYear: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
   return `${start.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, optsWithYear)}`;
@@ -77,8 +85,13 @@ export function currentWeekIndex(): number {
 export function dateToWeekStart(d: Date): Date {
   const b = bd();
   if (!b) return d;
-  const days = Math.floor((d.getTime() - b.getTime()) / 86400000);
-  return new Date(b.getTime() + Math.floor(days / 7) * 7 * 86400000);
+  // Calendar-day diff via daysBetween (DST-safe). Then advance the birthdate
+  // by N*7 days using setDate (also DST-safe). See weekStartDate above for
+  // the same pattern and reasoning.
+  const days = daysBetween(b, d);
+  const out = new Date(b);
+  out.setDate(b.getDate() + Math.floor(days / 7) * 7);
+  return out;
 }
 
 // ---- Total weeks in the LIFESPAN window ----

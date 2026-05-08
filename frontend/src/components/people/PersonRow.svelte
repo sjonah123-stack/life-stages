@@ -4,7 +4,7 @@
   import { selectedAge } from '../../stores/slider';
   import { people } from '../../stores/collections';
   import { RELATION_LABEL } from '../../data';
-  import { parseDOB, ageOnDate, formatDOB } from '../../utils';
+  import { parseDOB, ageOnDate, formatDOB, daysBetween } from '../../utils';
   import type { Person, Interaction, Relation } from '../../types';
 
   export let person: Person;
@@ -35,9 +35,9 @@
     if (!dateStr) return null;
     const d = parseDOB(dateStr);
     if (!d) return null;
-    const t = new Date();
-    t.setHours(0, 0, 0, 0);
-    return Math.max(0, Math.floor((t.getTime() - d.getTime()) / 86400000));
+    // daysBetween is DST-safe; raw `(t1 - t2) / 86400000` drifts an hour
+    // across DST and can floor to off-by-one.
+    return Math.max(0, daysBetween(d, new Date()));
   }
   function freshnessLabel(dateStr: string | null | undefined): { text: string; cls: string } {
     const days = daysAgo(dateStr);

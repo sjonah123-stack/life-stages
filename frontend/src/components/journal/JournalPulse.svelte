@@ -4,7 +4,7 @@
   import {
     getEntry, weekKey, currentWeekIndex, dateToWeekStart,
   } from '../../stores/journal-helpers';
-  import { ageInYears } from '../../utils';
+  import { ageInYears, daysBetween } from '../../utils';
   import MoodSparkline from './MoodSparkline.svelte';
 
   // Streak: consecutive weeks with entries, walking back from this week.
@@ -47,8 +47,8 @@
       const target = new Date(todayWeekStart);
       target.setFullYear(target.getFullYear() - y);
       const ws = dateToWeekStart(target);
-      const days = Math.floor((ws.getTime() - $birthdate.getTime()) / 86400000);
-      const weekIdx = Math.floor(days / 7);
+      // DST-safe day diff (raw ms drifts an hour across DST → off-by-one).
+      const weekIdx = Math.floor(daysBetween($birthdate, ws) / 7);
       if (weekIdx < 0) continue;
       const key = weekKey(weekIdx);
       const e = getEntry(key);

@@ -5,7 +5,13 @@ import { LS_PREFIX } from './config';
 // ---- Date math ----
 
 export function daysBetween(a: Date, b: Date): number {
-  return Math.floor((b.getTime() - a.getTime()) / 86400000);
+  // Calendar-day count, DST-safe. Without this, comparing a Standard-time
+  // date (e.g. winter birthdate) against a Daylight-time date (summer)
+  // drifts by ~1 hour and floors to an off-by-one at week boundaries.
+  // Visible symptom: dateInput "2026-05-06" mapping to the wrong week.
+  const aDay = Math.floor(Date.UTC(a.getFullYear(), a.getMonth(), a.getDate()) / 86400000);
+  const bDay = Math.floor(Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) / 86400000);
+  return bDay - aDay;
 }
 
 export function ageInYears(now: Date, dob: Date): number {
@@ -24,12 +30,15 @@ export function ageOnDate(dob: Date, atDate: Date): number {
 
 // ---- Date string parsing / formatting ----
 
-export function parseDOB(str: string): Date | null {
+// Pass `allowFuture: true` for journal dates (the Log Entry flow advances
+// dateInput to the next week, which can be in the future). Default is the
+// strict birthdate-style validation that rejects unborn-future dates.
+export function parseDOB(str: string, allowFuture = false): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str);
   if (!m) return null;
   const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
   if (isNaN(d.getTime())) return null;
-  if (d > new Date()) return null;
+  if (!allowFuture && d > new Date()) return null;
   if (d.getFullYear() < 1900) return null;
   return d;
 }

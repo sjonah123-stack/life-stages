@@ -6,10 +6,10 @@
     weekKey, weekStartDate, weekRangeStr, ageAtWeek, dateToWeekStart,
     currentWeekIndex, TOTAL_WEEKS,
   } from '../../stores/journal-helpers';
-  import { formatDOB, parseDOB } from '../../utils';
+  import { formatDOB, parseDOB, daysBetween } from '../../utils';
   import { resizeImage, imageErrorMessage } from '../../lib/image';
   import { pickPrompt } from '../../data';
-  import { MOOD_OPTIONS } from '../../config';
+  import { MOOD_OPTIONS, LIFESPAN } from '../../config';
   import type { Mood } from '../../types';
   import OnThisDayBanner from './OnThisDayBanner.svelte';
 
@@ -47,9 +47,14 @@
   $: weekIdx = (() => {
     const b = $birthdate;
     if (!b || !dateInput) return -1;
-    const d = parseDOB(dateInput);
+    // allowFuture: the Log Entry flow advances to the next empty week, which
+    // may be in the future. We still want to render that week's blank slate.
+    const d = parseDOB(dateInput, true);
     if (!d) return -1;
-    return Math.floor((dateToWeekStart(d).getTime() - b.getTime()) / 86400000 / 7);
+    // Use daysBetween (DST-safe) instead of raw `(t1 - t2) / 86400000`. The
+    // ms version drifts an hour across DST and floors to off-by-one at week
+    // boundaries — visible as dateInput "2026-05-06" mapping to the wrong week.
+    return Math.floor(daysBetween(b, dateToWeekStart(d)) / 7);
   })();
   $: weekRange = weekIdx >= 0 ? weekRangeStr(weekIdx) : '—';
   $: ageThis  = weekIdx >= 0 ? ageAtWeek(weekIdx)  : -1;
@@ -57,10 +62,17 @@
   $: words = textValue.trim() ? textValue.trim().split(/\s+/).filter(Boolean).length : 0;
   $: readMin = Math.max(1, Math.round(words / 220));
   $: showPrompt = !textValue.trim();
-  $: today = formatDOB(new Date());
-  // Clamp the earliest date you can pick to your birthdate. Without this,
-  // user could write a journal entry dated "before they were born".
+  // Earliest date is birthdate (no entries from before you were born). The
+  // far-future cap is birthdate + LIFESPAN — Log Entry can advance the
+  // composer past today so users can pre-write for upcoming weeks.
   $: earliestDate = $birthdate ? formatDOB($birthdate) : '1900-01-01';
+  $: latestDate = (() => {
+    const b = $birthdate;
+    if (!b) return '9999-12-31';
+    const cap = new Date(b);
+    cap.setFullYear(b.getFullYear() + LIFESPAN);
+    return formatDOB(cap);
+  })();
 
   function loadFromDate() {
     if (weekIdx < 0) return;
@@ -200,7 +212,7 @@
 
 <div class="journal-composer" class:editing={isExisting} bind:this={composerEl}>
   <div class="composer-meta">
-    <input type="date" bind:value={dateInput} min={earliestDate} max={today} />
+    <input type="date" bind:value={dateInput} min={earliestDate} max={latestDate} />
     <div class="week-info">
       <span class="age-tag">{ageStr}</span>
       <span>{weekRange}</span>
