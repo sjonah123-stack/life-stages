@@ -143,3 +143,104 @@ a {
 button {
   font-family: inherit;
 }
+
+/* === Glass + gradient atmosphere ===
+   Used by the Today page revamp. Scoped utilities so other pages aren't affected
+   unless they opt in. Keep these here (not in a component) so backdrop-filter and
+   the gradient orbs share one budget and don't get duplicated per-component. */
+
+/* Soft drifting gradient orbs behind everything on a .with-atmosphere page.
+   Two orbs at low opacity, slowly drifting — gives the glass surfaces something
+   colorful to refract without stealing focus. */
+.with-atmosphere { position: relative; isolation: isolate; }
+.with-atmosphere::before,
+.with-atmosphere::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+  pointer-events: none;
+  will-change: transform;
+}
+.with-atmosphere::before {
+  top: -80px;
+  left: -40px;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 65%);
+  animation: orb-drift-a 22s ease-in-out infinite alternate;
+}
+.with-atmosphere::after {
+  top: 220px;
+  right: -60px;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, var(--future-3) 0%, transparent 65%);
+  animation: orb-drift-b 28s ease-in-out infinite alternate;
+}
+@keyframes orb-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(40px, 60px, 0) scale(1.1); }
+}
+@keyframes orb-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(-50px, 80px, 0) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .with-atmosphere::before,
+  .with-atmosphere::after { animation: none; }
+}
+
+/* Glass surface utility. Components combine this with their own padding/radius.
+   The double background (translucent panel + gradient sheen) gives a layered
+   feel that pure backdrop-filter alone doesn't. */
+.glass {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.25) 100%),
+    var(--panel);
+  background-blend-mode: overlay, normal;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 12px 32px -8px rgba(44, 24, 16, 0.12),
+    0 4px 12px -4px rgba(44, 24, 16, 0.06);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+}
+
+/* Variant: gradient-tinted glass for hero / feature surfaces. */
+.glass-tinted {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.30) 100%),
+    radial-gradient(ellipse at top right, var(--tint, var(--accent)) 0%, transparent 55%),
+    var(--panel);
+  background-blend-mode: overlay, soft-light, normal;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 16px 40px -10px rgba(44, 24, 16, 0.16),
+    0 4px 12px -4px rgba(44, 24, 16, 0.06);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+}
+
+/* Eyebrow label, reused across the revamped Today components. */
+.eyebrow-modern {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: var(--ink-faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.eyebrow-modern::before {
+  content: '';
+  width: 18px;
+  height: 1.5px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 1px;
+}

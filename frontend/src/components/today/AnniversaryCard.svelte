@@ -41,7 +41,7 @@
 </script>
 
 {#if $isAnniversaryWindow && $celebrationAge > 0}
-  <section class="anniversary-card">
+  <section class="anniversary-card glass-tinted" style="--tint: var(--now);">
     <div class="header">
       <div class="confetti">🎉</div>
       <div>
@@ -126,12 +126,21 @@
 
 <style>
   .anniversary-card {
-    background: linear-gradient(135deg, rgba(255, 201, 60, 0.10), rgba(255, 140, 97, 0.06));
-    border: 1px solid rgba(255, 140, 97, 0.3);
-    border-radius: 18px;
-    padding: 24px 26px;
+    border-radius: 22px;
+    padding: 26px 28px;
     margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .anniversary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--now), var(--accent), var(--love));
+    border-radius: 22px 22px 0 0;
   }
   .header {
     display: flex;

@@ -10,55 +10,118 @@
   import AnniversaryCard from '../today/AnniversaryCard.svelte';
   import DailyCheckInCard from '../today/DailyCheckInCard.svelte';
 
-  $: subtitle = $birthdate
-    ? `Slide through the years ahead. Anchored to ${prettyDOB($birthdate)} — every age is yours to walk through.`
-    : 'Slide through the years ahead. Each one is yours to shape.';
+  $: greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 5) return 'Late night';
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    if (h < 21) return 'Good evening';
+    return 'Tonight';
+  })();
+
+  $: dobLine = $birthdate ? `Anchored to ${prettyDOB($birthdate)}` : 'One extraordinary life';
 </script>
 
-<section class="page">
-  <header>
-    <h1>Your one extraordinary life</h1>
-    <p class="subtitle">{subtitle}</p>
+<section class="page with-atmosphere">
+  <header class="hero-header">
+    <div class="eyebrow-modern">{dobLine}</div>
+    <h1>
+      <span class="greeting">{greeting}.</span>
+      <span class="headline">Walk the years.</span>
+    </h1>
+    <p class="subtitle">
+      Every age is a chapter you can step into. Slide forward to see what's coming —
+      backward to feel what's already yours.
+    </p>
   </header>
 
   <AnniversaryCard />
+
+  <div class="hero-stack">
+    <AgeSlider />
+    <StatRow />
+  </div>
+
   <DailyCheckInCard />
-  <AgeSlider />
-  <StatRow />
-  <TexturePanel />
+
+  <div class="texture-row">
+    <TexturePanel />
+    <GoodNews />
+  </div>
+
   <DimensionCards />
-  <GoodNews />
+
   <TodayWealth />
 </section>
 
 <style>
-  .page { animation: fadeInPage 0.25s ease-out; }
-  @keyframes fadeInPage {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+  /* Page-level rhythm. The hero header gets the most breathing room, then
+     gradually tightens. The atmosphere class on .page produces the drifting
+     orbs in the background. */
+  .hero-header {
+    margin-bottom: 32px;
   }
-  header { margin-bottom: 8px; }
-  header h1 {
-    /* clamp keeps the hero responsive: small phones get 28px,
-       desktops cap at the original 48px. */
-    font-size: clamp(28px, 7vw, 48px);
+  .hero-header h1 {
+    font-size: clamp(34px, 8vw, 64px);
     font-weight: 800;
-    letter-spacing: -0.035em;
-    line-height: 1.05;
-    margin: 0 0 12px;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--future-3) 100%);
+    letter-spacing: -0.04em;
+    line-height: 1.0;
+    margin: 14px 0 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hero-header .greeting {
+    color: var(--ink);
+    opacity: 0.92;
+  }
+  .hero-header .headline {
+    background: linear-gradient(120deg, var(--accent) 0%, var(--future-3) 60%, var(--growth) 100%);
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    animation: shimmer 8s ease-in-out infinite alternate;
   }
+  @keyframes shimmer {
+    from { background-position: 0% 50%; }
+    to   { background-position: 100% 50%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-header .headline { animation: none; }
+  }
+
   .subtitle {
     color: var(--ink-dim);
-    margin: 0 0 24px;
-    font-size: clamp(14px, 3vw, 17px);
+    margin: 0;
+    font-size: clamp(15px, 2.6vw, 18px);
     line-height: 1.55;
-    max-width: 640px;
+    max-width: 580px;
   }
+
+  /* The slider + numbers belong together visually — wrap them in a stack
+     with a small gap so they read as one feature. */
+  .hero-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  /* Two-up below the hero: texture and good-news side-by-side on wide
+     viewports, stacked on narrow. */
+  .texture-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 820px) {
+    .texture-row { grid-template-columns: 1fr; }
+  }
+
   @media (max-width: 480px) {
-    .subtitle { margin: 0 0 16px; }
+    .hero-header { margin-bottom: 22px; }
+    .hero-header h1 { margin: 10px 0 14px; }
   }
 </style>
