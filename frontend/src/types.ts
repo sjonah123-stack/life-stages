@@ -63,10 +63,15 @@ export interface Person {
 // SMART = Specific, Measurable, Achievable, Relevant, Time-bound.
 //   - `label` covers Specific (what)
 //   - `measure` covers Measurable (how you'll know it's done)
-//   - `age` covers Time-bound (by when)
+//   - `age` covers Time-bound (default; "by age N")
+//   - `targetDate` overrides age for users who want a calendar-specific
+//     deadline instead of an age horizon (e.g. "by July 4 2027")
 //   - `why` covers Relevant (why it matters to you)
+//   - `wealthKey` tags the goal to a wealth dimension for at-a-glance balance
+//   - `checkInIntervalDays` opts the goal into recurring calendar check-ins
+//     in the .ics export (30 → monthly, 90 → quarterly)
 //   - Achievable is a self-check, not a stored field
-// `measure` and `why` are optional so old entries with just label+age+completed
+// All extra fields are optional so old entries with just label+age+completed
 // still load and render cleanly.
 export interface Milestone {
   age: number;
@@ -74,6 +79,9 @@ export interface Milestone {
   completed: boolean;
   measure?: string;
   why?: string;
+  targetDate?: DateString;
+  wealthKey?: WealthKey;
+  checkInIntervalDays?: number;
 }
 
 // ---- Reading ----

@@ -124,17 +124,22 @@ function eventLines(e: IcsEvent, stamp: string): string[] {
 
 // ---- Public: build per-domain events ----
 
+// Build the single target-date event for a milestone. The caller may then
+// also build a separate sequence of check-in events (see
+// milestoneCheckInEvents). Returns null for completed milestones.
 export function milestoneEvent(
   m: Milestone,
   birthdate: Date,
   index: number,
 ): IcsEvent | null {
   if (m.completed) return null; // past + done; no calendar value
-  const start = ageDate(birthdate, m.age);
-  // Description = "How: <measure>\nWhy: <why>" omitting absent fields.
+  // targetDate (when set) wins over age — lets users pin a specific
+  // calendar date instead of an age horizon.
+  const start = m.targetDate ? (parseYmd(m.targetDate) ?? ageDate(birthdate, m.age)) : ageDate(birthdate, m.age);
   const descParts: string[] = [];
   if (m.measure) descParts.push(`How: ${m.measure}`);
   if (m.why) descParts.push(`Why: ${m.why}`);
+  if (m.wealthKey) descParts.push(`Dimension: ${m.wealthKey}`);
   // Stable UID: tie to (age, label) so re-export doesn't create dupes.
   const slug = m.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
   return {
@@ -144,6 +149,40 @@ export function milestoneEvent(
     startDate: start,
     status: 'CONFIRMED',
   };
+}
+
+// Build the check-in event series for a milestone with
+// `checkInIntervalDays` set. Emits a single recurring event from
+// today + interval until (target - 1 day), so the user gets periodic
+// reminders without bumping into the deadline event itself.
+export function milestoneCheckInEvents(
+  m: Milestone,
+  birthdate: Date,
+  index: number,
+  now: Date,
+): IcsEvent[] {
+  if (m.completed) return [];
+  if (!m.checkInIntervalDays || m.checkInIntervalDays <= 0) return [];
+  const target = m.targetDate ? (parseYmd(m.targetDate) ?? ageDate(birthdate, m.age)) : ageDate(birthdate, m.age);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  if (target <= today) return [];
+
+  const first = addDays(today, m.checkInIntervalDays);
+  if (first >= target) return []; // not enough room for even one check-in
+
+  const slug = m.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+  // RRULE UNTIL must be a calendar date (no Z; we use DATE form here).
+  const untilDate = addDays(target, -1);
+  const untilYmd = fmtAllDay(untilDate);
+  return [{
+    uid: `milestone-checkin-${m.age}-${slug || index}@life-stages`,
+    summary: `📋 Check-in: ${m.label}`,
+    description: `Progress review for "${m.label}".`,
+    startDate: first,
+    rrule: `FREQ=DAILY;INTERVAL=${m.checkInIntervalDays};UNTIL=${untilYmd}`,
+    status: 'CONFIRMED',
+  }];
 }
 
 export function ritualEvent(r: Ritual, index: number): IcsEvent | null {
@@ -195,9 +234,13 @@ export function buildIcs(input: BuildIcsInput): string {
   const events: IcsEvent[] = [];
 
   if (input.birthdate) {
+    const nowDate = input.now ?? new Date();
     input.milestones.forEach((m, i) => {
       const ev = milestoneEvent(m, input.birthdate!, i);
       if (ev) events.push(ev);
+      // Recurring check-ins, if configured.
+      const checkIns = milestoneCheckInEvents(m, input.birthdate!, i, nowDate);
+      events.push(...checkIns);
     });
   }
   input.rituals.forEach((r, i) => {
@@ -232,8 +275,13 @@ export function buildIcs(input: BuildIcsInput): string {
 export function countExportable(input: BuildIcsInput): number {
   let n = 0;
   if (input.birthdate) {
-    for (const m of input.milestones) {
-      if (milestoneEvent(m, input.birthdate, 0)) n++;
+    const nowDate = input.now ?? new Date();
+    for (let i = 0; i < input.milestones.length; i++) {
+      const m = input.milestones[i];
+      if (milestoneEvent(m, input.birthdate, i)) n++;
+      // Each milestone with check-ins counts as ONE recurring event from
+      // the calendar app's perspective (RRULE expands client-side), not N.
+      if (milestoneCheckInEvents(m, input.birthdate, i, nowDate).length) n++;
     }
   }
   for (let i = 0; i < input.rituals.length; i++) {

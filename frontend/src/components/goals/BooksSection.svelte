@@ -4,12 +4,10 @@
   // by title auto-fills author + cover thumbnail.
   import { books } from '../../stores/collections';
   import { todayAge } from '../../stores/personal';
-  import { SLIDER_MAX } from '../../config';
   import { searchBooks, type OpenLibraryResult } from '../../lib/openLibrary';
 
   let titleInput = '';
   let authorInput = '';
-  let ageInput: number | undefined;
   let takeawayInput = '';
   let coverUrl = '';
 
@@ -37,20 +35,22 @@
 
   function add(e: SubmitEvent) {
     e.preventDefault();
-    if (!titleInput.trim() || ageInput == null || ageInput < 0 || ageInput > SLIDER_MAX) return;
+    if (!titleInput.trim()) return;
+    // Age is auto-set from `$todayAge`. The grouped-by-age display still
+    // works for older entries; new entries land under today's age year.
+    const age = $todayAge >= 0 ? $todayAge : 0;
     books.update((arr) => [
       ...arr,
       {
         title: titleInput.trim(),
         author: authorInput.trim(),
-        age: ageInput!,
+        age,
         takeaway: takeawayInput.trim(),
         ...(coverUrl ? { coverUrl } : {}),
       },
     ]);
     titleInput = '';
     authorInput = '';
-    ageInput = undefined;
     takeawayInput = '';
     coverUrl = '';
     lookupResults = [];
@@ -177,13 +177,6 @@
         bind:value={authorInput}
         placeholder="Author (optional)"
         maxlength={60}
-      />
-      <input
-        type="number"
-        bind:value={ageInput}
-        placeholder="Age"
-        min="0"
-        max={SLIDER_MAX}
       />
       <input
         type="text"
