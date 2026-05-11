@@ -6,6 +6,7 @@
   import BooksSection from '../goals/BooksSection.svelte';
   import RitualsSection from '../goals/RitualsSection.svelte';
   import HabitsSection from '../goals/HabitsSection.svelte';
+  import CalendarExportButton from '../goals/CalendarExportButton.svelte';
 
   // SMART milestone form — Specific (label), Measurable (measure),
   // Time-bound (age), Relevant (why), Achievable is a self-check.
@@ -133,6 +134,8 @@
         <input type="number" bind:value={$hardestYear} min="0" max={SLIDER_MAX} placeholder="—" />
       </div>
     </div>
+
+    <CalendarExportButton />
   </div>
 
   <HabitsSection />

@@ -77,11 +77,15 @@ export interface Milestone {
 }
 
 // ---- Reading ----
+// `coverUrl` is optional — populated when the user uses the Open Library
+// lookup. Direct URL to the cover image (not a CDN-routed proxy) so the
+// app doesn't have to host or auth anything.
 export interface Book {
   title: string;
   author: string;
   age: number;
   takeaway: string;
+  coverUrl?: string;
 }
 
 // ---- Rituals ----

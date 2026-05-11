@@ -1,24 +1,35 @@
 <script lang="ts">
-  // Books log — moved from the standalone Reading page (deleted) into the
-  // Goals page as a section. Same data model and store; only the UI moved.
+  // Books log. Moved from the standalone Reading page (deleted) into the
+  // Goals page as a section. Gained Open Library lookup so logging a book
+  // by title auto-fills author + cover thumbnail.
   import { books } from '../../stores/collections';
   import { todayAge } from '../../stores/personal';
   import { SLIDER_MAX } from '../../config';
+  import { searchBooks, type OpenLibraryResult } from '../../lib/openLibrary';
 
   let titleInput = '';
   let authorInput = '';
   let ageInput: number | undefined;
   let takeawayInput = '';
+  let coverUrl = '';
+
+  // Lookup state
+  let looking = false;
+  let lookupResults: OpenLibraryResult[] = [];
+  let lookupError = '';
 
   $: total = $books.length;
   $: thisYear = $todayAge >= 0 ? $books.filter((b) => b.age === $todayAge).length : 0;
 
   // Group entries by age desc for the list view.
   $: grouped = (() => {
-    const map = new Map<number, { idx: number; title: string; author: string; takeaway: string }[]>();
+    const map = new Map<number, { idx: number; title: string; author: string; takeaway: string; coverUrl?: string }[]>();
     $books.forEach((b, idx) => {
       const arr = map.get(b.age) ?? [];
-      arr.push({ idx, title: b.title, author: b.author, takeaway: b.takeaway });
+      arr.push({
+        idx, title: b.title, author: b.author, takeaway: b.takeaway,
+        ...(b.coverUrl ? { coverUrl: b.coverUrl } : {}),
+      });
       map.set(b.age, arr);
     });
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
@@ -34,16 +45,50 @@
         author: authorInput.trim(),
         age: ageInput!,
         takeaway: takeawayInput.trim(),
+        ...(coverUrl ? { coverUrl } : {}),
       },
     ]);
     titleInput = '';
     authorInput = '';
     ageInput = undefined;
     takeawayInput = '';
+    coverUrl = '';
+    lookupResults = [];
+    lookupError = '';
   }
 
   function remove(idx: number) {
     books.update((arr) => arr.filter((_, i) => i !== idx));
+  }
+
+  async function runLookup() {
+    if (!titleInput.trim()) {
+      lookupError = 'Type a title first.';
+      return;
+    }
+    looking = true;
+    lookupError = '';
+    const results = await searchBooks(titleInput.trim(), 5);
+    looking = false;
+    if (results.length === 0) {
+      lookupError = 'No matches — fill in author manually.';
+      lookupResults = [];
+      return;
+    }
+    lookupResults = results;
+  }
+
+  function pickResult(r: OpenLibraryResult) {
+    titleInput = r.title;
+    authorInput = r.author;
+    coverUrl = r.coverUrl ?? '';
+    lookupResults = [];
+    lookupError = '';
+  }
+
+  function cancelLookup() {
+    lookupResults = [];
+    lookupError = '';
   }
 </script>
 
@@ -51,6 +96,7 @@
   <h2>What you've been reading</h2>
   <p class="sub">
     A line per book. Logged with the age you read it, with optional one-sentence takeaway.
+    Type a title and hit Look up — author and cover auto-fill from Open Library.
   </p>
   <div class="module-stats">
     <span><span class="stat-num">{total}</span>{total === 1 ? 'book' : 'books'} read</span>
@@ -69,6 +115,11 @@
           </div>
           {#each group as b}
             <div class="book-row">
+              {#if b.coverUrl}
+                <img class="book-cover" src={b.coverUrl} alt="" loading="lazy" />
+              {:else}
+                <div class="book-cover placeholder">📖</div>
+              {/if}
               <div class="book-info">
                 <div class="book-title">{b.title}</div>
                 {#if b.author}<div class="book-author">{b.author}</div>{/if}
@@ -83,11 +134,65 @@
   </div>
 
   <form class="entry-form" on:submit={add}>
-    <input type="text" bind:value={titleInput} placeholder="Book title" maxlength={80} />
-    <input type="text" bind:value={authorInput} placeholder="Author (optional)" maxlength={60} />
-    <input type="number" bind:value={ageInput} placeholder="Age" min="0" max={SLIDER_MAX} />
-    <input type="text" bind:value={takeawayInput} placeholder="One-line takeaway (optional)" maxlength={120} />
-    <button type="submit">Add</button>
+    <div class="title-row">
+      <input
+        type="text"
+        bind:value={titleInput}
+        placeholder="Book title"
+        maxlength={80}
+      />
+      <button type="button" class="lookup-btn" on:click={runLookup} disabled={looking}>
+        {looking ? '…' : '🔍 Look up'}
+      </button>
+    </div>
+
+    {#if lookupResults.length > 0}
+      <div class="lookup-results">
+        <div class="lookup-head">
+          <span>Pick one to auto-fill:</span>
+          <button type="button" class="link-btn" on:click={cancelLookup}>cancel</button>
+        </div>
+        {#each lookupResults as r (r.workKey)}
+          <button type="button" class="lookup-result" on:click={() => pickResult(r)}>
+            {#if r.coverUrl}
+              <img class="result-cover" src={r.coverUrl} alt="" loading="lazy" />
+            {:else}
+              <div class="result-cover placeholder">📖</div>
+            {/if}
+            <div class="result-info">
+              <div class="result-title">{r.title}</div>
+              <div class="result-author">{r.author || 'Unknown author'}{r.firstPublishedYear ? ` · ${r.firstPublishedYear}` : ''}</div>
+            </div>
+          </button>
+        {/each}
+      </div>
+    {/if}
+    {#if lookupError}
+      <div class="lookup-error">{lookupError}</div>
+    {/if}
+
+    <div class="rest-row">
+      <input
+        type="text"
+        bind:value={authorInput}
+        placeholder="Author (optional)"
+        maxlength={60}
+      />
+      <input
+        type="number"
+        bind:value={ageInput}
+        placeholder="Age"
+        min="0"
+        max={SLIDER_MAX}
+      />
+      <input
+        type="text"
+        bind:value={takeawayInput}
+        placeholder="One-line takeaway (optional)"
+        maxlength={120}
+      />
+      <button type="submit">Add</button>
+    </div>
   </form>
 </section>
 
@@ -133,11 +238,27 @@
   .book-row {
     display: flex;
     gap: 12px;
-    padding: 8px 0;
+    padding: 10px 0;
     border-top: 1px solid var(--border);
     align-items: flex-start;
   }
   .book-row:first-of-type { border-top: none; }
+  .book-cover {
+    width: 36px;
+    height: 54px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--panel-warm);
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .book-cover.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--ink-faint);
+  }
   .book-info { flex: 1; min-width: 0; }
   .book-title { font-weight: 600; color: var(--ink); font-size: 14px; }
   .book-author { color: var(--ink-dim); font-size: 13px; }
@@ -162,12 +283,18 @@
 
   .entry-form {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .title-row {
+    display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
   }
-  .entry-form input[type='text'],
-  .entry-form input[type='number'] {
+  .title-row input {
+    flex: 1;
+    min-width: 200px;
     background: var(--panel-warm);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -177,9 +304,118 @@
     color: var(--ink);
     min-height: 38px;
   }
-  .entry-form input[type='text'] { flex: 1; min-width: 140px; }
-  .entry-form input[type='number'] { width: 80px; }
-  .entry-form button {
+  .lookup-btn {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-dim);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .lookup-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .lookup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .lookup-results {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .lookup-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .link-btn:hover { color: var(--love); }
+  .lookup-result {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s;
+  }
+  .lookup-result:hover { border-color: var(--accent); }
+  .result-cover {
+    width: 32px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 3px;
+    background: var(--panel-warm);
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .result-cover.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--ink-faint);
+  }
+  .result-info { flex: 1; min-width: 0; }
+  .result-title {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .result-author { color: var(--ink-dim); font-size: 12px; margin-top: 2px; }
+  .lookup-error {
+    color: var(--love);
+    font-size: 12px;
+    padding: 4px 0;
+  }
+
+  .rest-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .rest-row input[type='text'],
+  .rest-row input[type='number'] {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    min-height: 38px;
+  }
+  .rest-row input[type='text'] { flex: 1; min-width: 140px; }
+  .rest-row input[type='number'] { width: 80px; }
+  .rest-row button {
     background: var(--accent);
     color: white;
     border: none;
