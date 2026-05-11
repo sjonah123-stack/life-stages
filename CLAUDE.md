@@ -163,6 +163,8 @@ firebase deploy --only hosting
 - **Don't bypass `LS_PREFIX`** when reading/writing localStorage.
 - **Don't introduce `--no-verify` or `--force` git flags** without explicit user permission.
 - **Don't commit secrets or rotate Firebase keys** unless asked. The current `FIREBASE_CONFIG` in `config.ts` is the live project; treat it as user-managed.
+- **Don't reintroduce a retirement-age input.** The user's worldview rejects retirement-as-a-goal; the app doesn't track it. `retirementAge` was removed from `PersonalSettings`, the personal store, the Settings UI, and Financial Wealth's behavioral scoring. The field stays in `CloudPayload` as optional/read-tolerant only so old user docs load without error — never read or write it. If a future feature seems to want a "target age," it almost certainly belongs on a savings goal's `deadline` instead.
+- **Don't make charitable giving's 10% target user-configurable in v1.** The 10%-of-net-worth annual baseline is built into `givingTargetAnnual` on purpose — it's a worldview anchor, not a preference. If the user explicitly asks to override, that's fine; otherwise leave it as a default.
 
 ## Deploy flow recap
 
