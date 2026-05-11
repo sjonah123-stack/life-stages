@@ -61,11 +61,12 @@ life-stages/
         │   ├── habits.ts      ← daily-cadence habits + check log (powers HabitsSection)
         │   ├── body.ts        ← daily body log: weight/sleep/workoutMinutes (DailyCheckInCard)
         │   ├── anniversary.ts ← birthday-window detection + year-in-review derived
+        │   ├── achievements.ts← derived badge state + personalBests rollups
         │   ├── auth.ts        ← Firebase auth wiring, sign-in/sign-out, syncStatus
         │   └── cloud-sync.ts  ← Firestore upload/download, debounced
         └── components/
             ├── nav/           ← TopNav.svelte, AuthPill.svelte
-            ├── pages/         ← Today, Journal, People, Goals, Finance, Settings
+            ├── pages/         ← Today, Journal, People, Goals, Finance, Progress, Settings
             ├── today/         ← AgeSlider, DimensionCards, GoodNews, StatRow, TexturePanel, TodayWealth,
             │                     AnniversaryCard, DailyCheckInCard
             ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid, FutureLetters,
@@ -74,6 +75,7 @@ life-stages/
             ├── goals/         ← BooksSection, RitualsSection, HabitsSection
             ├── wealth/        ← AssessmentIntro, AssessmentSurvey, AssessmentResults, WealthRadar, WealthCard
             ├── finance/       ← NetWorthSection, SavingsSection, GivingSection, NetWorthSparkline
+            ├── progress/      ← BodyTrendsSection, AchievementsSection, PersonalBestsSection, Sparkline
             └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen, ThemePicker
 ```
 

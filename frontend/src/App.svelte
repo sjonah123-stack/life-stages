@@ -8,6 +8,7 @@
   import People from './components/pages/People.svelte';
   import Goals from './components/pages/Goals.svelte';
   import Finance from './components/pages/Finance.svelte';
+  import Progress from './components/pages/Progress.svelte';
   import Settings from './components/pages/Settings.svelte';
 </script>
 
@@ -27,6 +28,8 @@
       <Goals />
     {:else if $currentPage === 'finance'}
       <Finance />
+    {:else if $currentPage === 'progress'}
+      <Progress />
     {:else if $currentPage === 'settings'}
       <Settings />
     {/if}
