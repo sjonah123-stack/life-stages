@@ -5,6 +5,7 @@
   import PageHeader from '../shared/PageHeader.svelte';
   import BooksSection from '../goals/BooksSection.svelte';
   import RitualsSection from '../goals/RitualsSection.svelte';
+  import HabitsSection from '../goals/HabitsSection.svelte';
 
   // SMART milestone form — Specific (label), Measurable (measure),
   // Time-bound (age), Relevant (why), Achievable is a self-check.
@@ -133,6 +134,8 @@
       </div>
     </div>
   </div>
+
+  <HabitsSection />
 
   <RitualsSection />
 

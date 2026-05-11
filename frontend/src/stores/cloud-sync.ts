@@ -16,6 +16,14 @@ import {
   netWorthEntries, savingsGoals, savingsRate, givingEntries,
   setFromCloud as setFinancialFromCloud,
 } from './financial';
+import {
+  habits, habitChecks,
+  setFromCloud as setHabitsFromCloud,
+} from './habits';
+import {
+  bodyEntries,
+  setFromCloud as setBodyFromCloud,
+} from './body';
 import { currentUser, setSyncStatus, setOnSignedInCallback } from './auth';
 import type { CloudPayload } from '../types';
 
@@ -50,6 +58,9 @@ export function collectStateForCloud(): CloudPayload {
     savingsGoals: get(savingsGoals),
     savingsRate: get(savingsRate),
     givingEntries: get(givingEntries),
+    habits: get(habits),
+    habitChecks: get(habitChecks),
+    bodyEntries: get(bodyEntries),
     updated: Date.now(),
   };
 }
@@ -82,6 +93,8 @@ export function applyCloudState(cloud: Partial<CloudPayload>): void {
     if (cloud.rituals !== undefined) rituals.set(cloud.rituals);
     setAssessmentFromCloud(cloud);
     setFinancialFromCloud(cloud);
+    setHabitsFromCloud(cloud);
+    setBodyFromCloud(cloud);
   } finally {
     // Allow store subscriptions to finish before re-enabling cloud writes.
     setTimeout(() => { applyingCloud = false; }, 0);
@@ -150,6 +163,7 @@ function subscribeAll(): void {
     milestones, journal, letters, people, books, rituals,
     assessmentResults,
     netWorthEntries, savingsGoals, savingsRate, givingEntries,
+    habits, habitChecks, bodyEntries,
   ];
   everyStore.forEach((s) => s.subscribe(() => scheduleCloudSave()));
 }

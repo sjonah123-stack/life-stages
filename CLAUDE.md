@@ -58,16 +58,20 @@ life-stages/
         │   ├── slider.ts      ← selectedAge for the Today page
         │   ├── assessment.ts  ← 5-Wealths persisted result + behavioralScores derived
         │   ├── financial.ts   ← net-worth, savings, giving (powers the Finance page)
+        │   ├── habits.ts      ← daily-cadence habits + check log (powers HabitsSection)
+        │   ├── body.ts        ← daily body log: weight/sleep/workoutMinutes (DailyCheckInCard)
+        │   ├── anniversary.ts ← birthday-window detection + year-in-review derived
         │   ├── auth.ts        ← Firebase auth wiring, sign-in/sign-out, syncStatus
         │   └── cloud-sync.ts  ← Firestore upload/download, debounced
         └── components/
             ├── nav/           ← TopNav.svelte, AuthPill.svelte
             ├── pages/         ← Today, Journal, People, Goals, Finance, Settings
-            ├── today/         ← AgeSlider, DimensionCards, GoodNews, StatRow, TexturePanel, TodayWealth
+            ├── today/         ← AgeSlider, DimensionCards, GoodNews, StatRow, TexturePanel, TodayWealth,
+            │                     AnniversaryCard, DailyCheckInCard
             ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid, FutureLetters,
             │                     OnThisDayBanner, MoodSparkline
             ├── people/        ← PeopleSection, PersonRow
-            ├── goals/         ← BooksSection, RitualsSection (consolidated from retired Reading + People-rituals)
+            ├── goals/         ← BooksSection, RitualsSection, HabitsSection
             ├── wealth/        ← AssessmentIntro, AssessmentSurvey, AssessmentResults, WealthRadar, WealthCard
             ├── finance/       ← NetWorthSection, SavingsSection, GivingSection, NetWorthSparkline
             └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen, ThemePicker

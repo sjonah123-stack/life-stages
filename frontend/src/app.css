@@ -110,6 +110,14 @@ body {
   margin: 0 auto;
   padding: 64px 32px 96px;
 }
+/* Tighten outer padding on narrow viewports so module-sections (which carry
+   their own internal padding) don't get crushed against the edges. */
+@media (max-width: 640px) {
+  .container { padding: 32px 14px 64px; }
+}
+@media (max-width: 380px) {
+  .container { padding: 24px 10px 56px; }
+}
 
 /* Shared page transition. Each page component just sets class="page". */
 .page {

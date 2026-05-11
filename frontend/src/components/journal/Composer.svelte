@@ -300,6 +300,13 @@
     flex-wrap: wrap;
     margin-bottom: 12px;
   }
+  /* On narrow viewports the meta row's children (date input + week info +
+     mood picker + editing tag) wrap awkwardly. Tighten gaps and let the
+     date input span its own line so the mood picker stays clickable. */
+  @media (max-width: 480px) {
+    .composer-meta { gap: 10px; }
+    .composer-meta input[type='date'] { flex: 1 1 100%; }
+  }
   .composer-meta input[type='date'] {
     background: var(--panel-warm);
     border: 1px solid var(--border);
