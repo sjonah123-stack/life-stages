@@ -1,34 +1,66 @@
 <script lang="ts">
   import { milestones, bestYear, hardestYear } from '../../stores/collections';
-  import { todayAge } from '../../stores/personal';
+  import { todayAge, birthdate } from '../../stores/personal';
   import { SLIDER_MAX } from '../../config';
+  import { formatDOB, parseDOB } from '../../utils';
   import PageHeader from '../shared/PageHeader.svelte';
   import BooksSection from '../goals/BooksSection.svelte';
   import RitualsSection from '../goals/RitualsSection.svelte';
   import HabitsSection from '../goals/HabitsSection.svelte';
   import CalendarExportButton from '../goals/CalendarExportButton.svelte';
+  import type { WealthKey } from '../../types';
 
   // SMART milestone form — Specific (label), Measurable (measure),
-  // Time-bound (age), Relevant (why), Achievable is a self-check.
+  // Time-bound (age OR specific date), Relevant (why),
+  // Achievable is a self-check.
   let labelInput = '';
   let ageInput: number | undefined;
+  let targetDateInput = '';
   let measureInput = '';
   let whyInput = '';
+  let wealthInput: WealthKey | '' = '';
+  let checkInInput: '' | '30' | '90' = '';
   let completedInput = false;
+
+  // Earliest target date = today (no backdating goals; old goals get
+  // "Already done" instead). Latest = birthdate + LIFESPAN years if known.
+  $: today = formatDOB(new Date());
 
   function add(e: SubmitEvent) {
     e.preventDefault();
-    if (!labelInput.trim() || ageInput == null || ageInput < 0 || ageInput > SLIDER_MAX) return;
-    const completed = completedInput || ($todayAge >= 0 && ageInput <= $todayAge);
+    // Either age OR targetDate is required.
+    const hasAge = ageInput != null && ageInput >= 0 && ageInput <= SLIDER_MAX;
+    const hasTargetDate = !!targetDateInput;
+    if (!labelInput.trim() || (!hasAge && !hasTargetDate)) return;
+
+    // Derive `age` from targetDate if only the date was provided — keeps
+    // the existing chronological sort + display semantics working for the
+    // back-compat code paths that haven't been migrated.
+    let resolvedAge = ageInput ?? 0;
+    if (!hasAge && hasTargetDate && $birthdate) {
+      const td = parseDOB(targetDateInput, true);
+      if (td) {
+        resolvedAge = Math.max(
+          0,
+          td.getFullYear() - $birthdate.getFullYear() -
+            (td < new Date($birthdate.getFullYear() + (td.getFullYear() - $birthdate.getFullYear()), $birthdate.getMonth(), $birthdate.getDate()) ? 1 : 0),
+        );
+      }
+    }
+
+    const completed = completedInput || ($todayAge >= 0 && resolvedAge <= $todayAge);
     milestones.update((arr) => {
       const next = [
         ...arr,
         {
-          age: ageInput!,
+          age: resolvedAge,
           label: labelInput.trim(),
           completed,
           ...(measureInput.trim() ? { measure: measureInput.trim() } : {}),
           ...(whyInput.trim() ? { why: whyInput.trim() } : {}),
+          ...(hasTargetDate ? { targetDate: targetDateInput } : {}),
+          ...(wealthInput ? { wealthKey: wealthInput as WealthKey } : {}),
+          ...(checkInInput ? { checkInIntervalDays: parseInt(checkInInput, 10) } : {}),
         },
       ];
       next.sort((a, b) => a.age - b.age);
@@ -36,8 +68,11 @@
     });
     labelInput = '';
     ageInput = undefined;
+    targetDateInput = '';
     measureInput = '';
     whyInput = '';
+    wealthInput = '';
+    checkInInput = '';
     completedInput = false;
   }
 
@@ -50,6 +85,12 @@
       arr.map((m, i) => (i === idx ? { ...m, completed: !m.completed } : m)),
     );
   }
+
+  function fmtNice(dateStr: string): string {
+    const d = parseDOB(dateStr, true);
+    if (!d) return dateStr;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
 </script>
 
 <section class="page">
@@ -61,8 +102,9 @@
   <div class="module-section">
     <h2>Things you're looking forward to</h2>
     <p class="sub">
-      Written in SMART format: Specific (what), Measurable (how you'll know), by-when (age),
-      and Relevant (why it matters). They show up as pins on your timeline.
+      Written in SMART format: Specific (what), Measurable (how you'll know), by-when (age
+      or a specific date), and Relevant (why it matters). Tag each one to a wealth dimension
+      so the balance is visible at a glance. They show up as pins on your timeline.
     </p>
 
     <div class="milestone-list">
@@ -84,7 +126,19 @@
             <div class="milestone-body">
               <div class="milestone-head">
                 <span class="milestone-label">{m.label}</span>
-                <span class="milestone-age">by age {m.age}</span>
+                {#if m.wealthKey}
+                  <span class="wealth-tag wealth-{m.wealthKey}">{m.wealthKey}</span>
+                {/if}
+                {#if m.targetDate}
+                  <span class="milestone-when">by {fmtNice(m.targetDate)}</span>
+                {:else}
+                  <span class="milestone-when">by age {m.age}</span>
+                {/if}
+                {#if m.checkInIntervalDays}
+                  <span class="checkin-tag" title="Calendar check-ins included in .ics export">
+                    📋 {m.checkInIntervalDays === 30 ? 'monthly' : m.checkInIntervalDays === 90 ? 'quarterly' : `every ${m.checkInIntervalDays}d`} check-ins
+                  </span>
+                {/if}
               </div>
               {#if m.measure}
                 <div class="milestone-line"><span class="line-tag">How</span> {m.measure}</div>
@@ -111,12 +165,37 @@
         </label>
         <label class="field">
           <span>By age</span>
-          <input type="number" bind:value={ageInput} placeholder="—" min="0" max={SLIDER_MAX} required />
+          <input type="number" bind:value={ageInput} placeholder="—" min="0" max={SLIDER_MAX} />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="field">
+          <span>Or specific date</span>
+          <input type="date" bind:value={targetDateInput} min={today} />
+        </label>
+        <label class="field">
+          <span>Wealth dimension</span>
+          <select bind:value={wealthInput}>
+            <option value="">— none —</option>
+            <option value="time">⏳ Time</option>
+            <option value="social">🤝 Social</option>
+            <option value="mental">🧠 Mental</option>
+            <option value="physical">💪 Physical</option>
+            <option value="financial">💰 Financial</option>
+          </select>
         </label>
       </div>
       <label class="field full">
         <span>Relevant — why does it matter?</span>
         <input type="text" bind:value={whyInput} placeholder="e.g. proof I rebuilt my health after the injury" maxlength={140} />
+      </label>
+      <label class="field full">
+        <span>Calendar check-ins (optional)</span>
+        <select bind:value={checkInInput}>
+          <option value="">No check-ins — just the deadline</option>
+          <option value="30">Monthly</option>
+          <option value="90">Quarterly</option>
+        </select>
       </label>
       <div class="form-foot">
         <label class="check"><input type="checkbox" bind:checked={completedInput} /> Already done</label>
@@ -217,12 +296,34 @@
     color: var(--ink);
     font-size: 15px;
   }
-  .milestone-age {
+  .milestone-when {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-weight: 700;
     color: var(--accent);
+    flex-shrink: 0;
+  }
+  .wealth-tag {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--ink-dim);
+    flex-shrink: 0;
+  }
+  .checkin-tag {
+    background: rgba(122, 162, 255, 0.10);
+    border: 1px solid rgba(122, 162, 255, 0.28);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--future-3, var(--ink-dim));
     flex-shrink: 0;
   }
   .milestone-line {
@@ -276,7 +377,9 @@
     font-weight: 700;
   }
   .field input[type='text'],
-  .field input[type='number'] {
+  .field input[type='number'],
+  .field input[type='date'],
+  .field select {
     background: var(--panel-warm);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -286,7 +389,8 @@
     color: var(--ink);
     min-height: 38px;
   }
-  .field input:focus {
+  .field input:focus,
+  .field select:focus {
     outline: 2px solid var(--accent);
     outline-offset: -1px;
     border-color: var(--accent);

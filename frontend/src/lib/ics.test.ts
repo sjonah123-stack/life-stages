@@ -7,7 +7,7 @@
 //   - stable UIDs (same input → same UID)
 //   - skip behavior: completed milestones, rituals without nextDate, etc.
 import { describe, expect, it } from 'vitest';
-import { buildIcs, countExportable, milestoneEvent, ritualEvent, savingsGoalEvent } from './ics';
+import { buildIcs, countExportable, milestoneEvent, milestoneCheckInEvents, ritualEvent, savingsGoalEvent } from './ics';
 import type { Milestone, Ritual, SavingsGoal } from '../types';
 
 const FROZEN = new Date(Date.UTC(2026, 4, 11, 12, 34, 56));
@@ -261,5 +261,138 @@ describe('countExportable + buildIcs filtering', () => {
       milestones, rituals: [], savingsGoals: [],
       birthdate: null,
     })).toBe(0);
+  });
+});
+
+describe('milestone targetDate override', () => {
+  const bd = new Date(2002, 11, 4);
+
+  it('uses targetDate when set, ignoring age', () => {
+    const m: Milestone = {
+      age: 30, // would normally place at 2032-12-04
+      label: 'X',
+      completed: false,
+      targetDate: '2027-07-04', // overrides → July 4 2027
+    };
+    const ev = milestoneEvent(m, bd, 0)!;
+    expect(ev.startDate.getFullYear()).toBe(2027);
+    expect(ev.startDate.getMonth()).toBe(6); // July
+    expect(ev.startDate.getDate()).toBe(4);
+  });
+
+  it('falls back to age-derived date when targetDate is malformed', () => {
+    const m: Milestone = {
+      age: 30,
+      label: 'X',
+      completed: false,
+      targetDate: 'not-a-date',
+    };
+    const ev = milestoneEvent(m, bd, 0)!;
+    expect(ev.startDate.getFullYear()).toBe(2032); // age 30
+  });
+
+  it('emits the targetDate in the all-day DATE format', () => {
+    const m: Milestone = {
+      age: 30,
+      label: 'X',
+      completed: false,
+      targetDate: '2027-07-04',
+    };
+    const ics = buildIcs({
+      milestones: [m],
+      rituals: [],
+      savingsGoals: [],
+      birthdate: bd,
+      now: FROZEN,
+    });
+    expect(ics).toContain('DTSTART;VALUE=DATE:20270704');
+  });
+});
+
+describe('milestone wealthKey', () => {
+  const bd = new Date(2002, 11, 4);
+
+  it('appends "Dimension: <wealthKey>" to the description', () => {
+    const m: Milestone = {
+      age: 28,
+      label: 'X',
+      completed: false,
+      wealthKey: 'physical',
+    };
+    const ev = milestoneEvent(m, bd, 0)!;
+    expect(ev.description).toContain('Dimension: physical');
+  });
+
+  it('omits when no wealthKey', () => {
+    const m: Milestone = { age: 28, label: 'X', completed: false };
+    const ev = milestoneEvent(m, bd, 0)!;
+    expect(ev.description).toBeUndefined();
+  });
+});
+
+describe('milestoneCheckInEvents', () => {
+  const bd = new Date(2002, 11, 4);
+  // Fixed "now" for deterministic test arithmetic.
+  const now = new Date(2026, 4, 11);
+
+  it('returns [] when checkInIntervalDays is absent', () => {
+    const m: Milestone = { age: 28, label: 'X', completed: false, targetDate: '2027-01-01' };
+    expect(milestoneCheckInEvents(m, bd, 0, now)).toEqual([]);
+  });
+
+  it('returns [] when completed', () => {
+    const m: Milestone = {
+      age: 23, label: 'X', completed: true,
+      targetDate: '2027-01-01', checkInIntervalDays: 30,
+    };
+    expect(milestoneCheckInEvents(m, bd, 0, now)).toEqual([]);
+  });
+
+  it('emits a single recurring event with proper RRULE', () => {
+    const m: Milestone = {
+      age: 28, label: 'Half marathon', completed: false,
+      targetDate: '2027-05-11', checkInIntervalDays: 30,
+    };
+    const evs = milestoneCheckInEvents(m, bd, 0, now);
+    expect(evs).toHaveLength(1);
+    expect(evs[0].summary).toBe('📋 Check-in: Half marathon');
+    // RRULE: DAILY interval=30, UNTIL is day before target (2027-05-10).
+    expect(evs[0].rrule).toBe('FREQ=DAILY;INTERVAL=30;UNTIL=20270510');
+  });
+
+  it('emits [] when the target is already in the past', () => {
+    const m: Milestone = {
+      age: 28, label: 'X', completed: false,
+      targetDate: '2020-01-01', checkInIntervalDays: 30,
+    };
+    expect(milestoneCheckInEvents(m, bd, 0, now)).toEqual([]);
+  });
+
+  it('emits [] when the interval is longer than the remaining window', () => {
+    const m: Milestone = {
+      age: 28, label: 'X', completed: false,
+      targetDate: '2026-05-20', // 9 days away from FROZEN(2026-05-11)
+      checkInIntervalDays: 30,  // too long
+    };
+    expect(milestoneCheckInEvents(m, bd, 0, now)).toEqual([]);
+  });
+
+  it('is included in buildIcs and counted by countExportable', () => {
+    const m: Milestone = {
+      age: 28, label: 'Half marathon', completed: false,
+      targetDate: '2027-05-11', checkInIntervalDays: 30,
+    };
+    const input = {
+      milestones: [m],
+      rituals: [],
+      savingsGoals: [],
+      birthdate: bd,
+      now,
+    };
+    // 1 milestone event + 1 check-in series = 2 exportable events.
+    expect(countExportable(input)).toBe(2);
+    const ics = buildIcs(input);
+    expect((ics.match(/BEGIN:VEVENT/g) ?? []).length).toBe(2);
+    expect(ics).toContain('SUMMARY:📋 Check-in: Half marathon');
   });
 });

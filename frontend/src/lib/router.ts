@@ -11,6 +11,7 @@ export const PAGES = [
   'people',
   'goals',
   'finance',
+  'progress',
   'settings',
 ] as const;
 export type Page = (typeof PAGES)[number];
@@ -21,12 +22,13 @@ export const PAGE_LABELS: Record<Page, string> = {
   people: 'People',
   goals: 'Goals',
   finance: 'Finance',
+  progress: 'Progress',
   settings: 'Settings',
 };
 
 // Tabs visible in the top-nav. Settings is reached via the gear icon.
 export const TAB_PAGES: Page[] = [
-  'today', 'journal', 'people', 'goals', 'finance',
+  'today', 'journal', 'people', 'goals', 'finance', 'progress',
 ];
 
 function pageFromHash(hash: string): Page {
