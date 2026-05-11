@@ -59,11 +59,21 @@ export interface Person {
   interactions?: Interaction[];
 }
 
-// ---- Milestones ----
+// ---- Milestones (SMART goals) ----
+// SMART = Specific, Measurable, Achievable, Relevant, Time-bound.
+//   - `label` covers Specific (what)
+//   - `measure` covers Measurable (how you'll know it's done)
+//   - `age` covers Time-bound (by when)
+//   - `why` covers Relevant (why it matters to you)
+//   - Achievable is a self-check, not a stored field
+// `measure` and `why` are optional so old entries with just label+age+completed
+// still load and render cleanly.
 export interface Milestone {
   age: number;
   label: string;
   completed: boolean;
+  measure?: string;
+  why?: string;
 }
 
 // ---- Reading ----
@@ -75,9 +85,13 @@ export interface Book {
 }
 
 // ---- Rituals ----
+// `nextDate` is the as-of-date for the next occurrence. Marking a ritual
+// done rolls it forward by floor(365/frequency) days. Optional so old
+// docs without it still load — UI falls back to "set a date" prompts.
 export interface Ritual {
   name: string;
   frequency: 1 | 2 | 4 | 12; // per year (yearly / twice / quarterly / monthly)
+  nextDate?: DateString;     // 'YYYY-MM-DD' of next occurrence
 }
 
 // ---- Net worth ----

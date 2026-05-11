@@ -62,11 +62,12 @@ life-stages/
         │   └── cloud-sync.ts  ← Firestore upload/download, debounced
         └── components/
             ├── nav/           ← TopNav.svelte, AuthPill.svelte
-            ├── pages/         ← Today, Journal, People, Reading, Goals, Finance, Settings
+            ├── pages/         ← Today, Journal, People, Goals, Finance, Settings
             ├── today/         ← AgeSlider, DimensionCards, GoodNews, StatRow, TexturePanel, TodayWealth
             ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid, FutureLetters,
             │                     OnThisDayBanner, MoodSparkline
-            ├── people/        ← PeopleSection, PersonRow, RitualsSection
+            ├── people/        ← PeopleSection, PersonRow
+            ├── goals/         ← BooksSection, RitualsSection (consolidated from retired Reading + People-rituals)
             ├── wealth/        ← AssessmentIntro, AssessmentSurvey, AssessmentResults, WealthRadar, WealthCard
             ├── finance/       ← NetWorthSection, SavingsSection, GivingSection, NetWorthSparkline
             └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen, ThemePicker
@@ -165,6 +166,8 @@ firebase deploy --only hosting
 - **Don't commit secrets or rotate Firebase keys** unless asked. The current `FIREBASE_CONFIG` in `config.ts` is the live project; treat it as user-managed.
 - **Don't reintroduce a retirement-age input.** The user's worldview rejects retirement-as-a-goal; the app doesn't track it. `retirementAge` was removed from `PersonalSettings`, the personal store, the Settings UI, and Financial Wealth's behavioral scoring. The field stays in `CloudPayload` as optional/read-tolerant only so old user docs load without error — never read or write it. If a future feature seems to want a "target age," it almost certainly belongs on a savings goal's `deadline` instead.
 - **Don't make charitable giving's 10% target user-configurable in v1.** The 10%-of-net-worth annual baseline is built into `givingTargetAnnual` on purpose — it's a worldview anchor, not a preference. If the user explicitly asks to override, that's fine; otherwise leave it as a default.
+- **Milestones are SMART by design.** `Milestone` has `label` (Specific), `measure?` (Measurable), `age` (Time-bound), `why?` (Relevant). Achievable is a self-check, not a field. When adding new milestone UI, keep the SMART framing in the form labels — it's not just data structure, it's a teaching prompt for thinking about goals well.
+- **Rituals live under Goals, not People.** `RitualsSection` was moved from `components/people/` to `components/goals/` when the user consolidated the page structure. `Ritual.nextDate` is optional; the "Done" button rolls it forward by `floor(365 / frequency)` days. Calendar-aware recurrence (e.g., 4th Thursday of November) is intentionally NOT implemented — too much complexity for the value; user can edit the date manually.
 
 ## Deploy flow recap
 
