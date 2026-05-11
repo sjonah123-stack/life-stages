@@ -7,6 +7,8 @@
   import DimensionCards from '../today/DimensionCards.svelte';
   import GoodNews from '../today/GoodNews.svelte';
   import TodayWealth from '../today/TodayWealth.svelte';
+  import AnniversaryCard from '../today/AnniversaryCard.svelte';
+  import DailyCheckInCard from '../today/DailyCheckInCard.svelte';
 
   $: subtitle = $birthdate
     ? `Slide through the years ahead. Anchored to ${prettyDOB($birthdate)} — every age is yours to walk through.`
@@ -19,6 +21,8 @@
     <p class="subtitle">{subtitle}</p>
   </header>
 
+  <AnniversaryCard />
+  <DailyCheckInCard />
   <AgeSlider />
   <StatRow />
   <TexturePanel />
@@ -35,7 +39,9 @@
   }
   header { margin-bottom: 8px; }
   header h1 {
-    font-size: 48px;
+    /* clamp keeps the hero responsive: small phones get 28px,
+       desktops cap at the original 48px. */
+    font-size: clamp(28px, 7vw, 48px);
     font-weight: 800;
     letter-spacing: -0.035em;
     line-height: 1.05;
@@ -47,9 +53,12 @@
   }
   .subtitle {
     color: var(--ink-dim);
-    margin: 0 0 32px;
-    font-size: 17px;
+    margin: 0 0 24px;
+    font-size: clamp(14px, 3vw, 17px);
     line-height: 1.55;
     max-width: 640px;
+  }
+  @media (max-width: 480px) {
+    .subtitle { margin: 0 0 16px; }
   }
 </style>

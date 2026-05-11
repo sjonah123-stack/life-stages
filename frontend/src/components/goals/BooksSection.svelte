@@ -1,8 +1,9 @@
 <script lang="ts">
+  // Books log — moved from the standalone Reading page (deleted) into the
+  // Goals page as a section. Same data model and store; only the UI moved.
   import { books } from '../../stores/collections';
   import { todayAge } from '../../stores/personal';
   import { SLIDER_MAX } from '../../config';
-  import PageHeader from '../shared/PageHeader.svelte';
 
   let titleInput = '';
   let authorInput = '';
@@ -46,55 +47,48 @@
   }
 </script>
 
-<section class="page">
-  <PageHeader
-    title="Reading"
-    subtitle="A line per book. Logged with the age you read it. A private library you'll be glad you kept."
-  />
-
-  <div class="module-section">
-    <h2>What you've been reading</h2>
-    <p class="sub">
-      A line per book. Logged with the age you read it, with optional one-sentence takeaway.
-    </p>
-    <div class="module-stats">
-      <span><span class="stat-num">{total}</span>{total === 1 ? 'book' : 'books'} read</span>
-      <span><span class="stat-num">{thisYear}</span>this year</span>
-    </div>
-
-    <div class="reading-list">
-      {#if total === 0}
-        <div class="empty">No books logged yet. The first one is the hardest.</div>
-      {:else}
-        {#each grouped as [age, group]}
-          <div class="reading-year-group">
-            <div class="reading-year-label">
-              <span class="age-tag">Age {age}</span>
-              <span class="count">· {group.length} {group.length === 1 ? 'book' : 'books'}</span>
-            </div>
-            {#each group as b}
-              <div class="book-row">
-                <div class="book-info">
-                  <div class="book-title">{b.title}</div>
-                  {#if b.author}<div class="book-author">{b.author}</div>{/if}
-                  {#if b.takeaway}<div class="book-takeaway">"{b.takeaway}"</div>{/if}
-                </div>
-                <button class="remove" on:click={() => remove(b.idx)} title="Remove">×</button>
-              </div>
-            {/each}
-          </div>
-        {/each}
-      {/if}
-    </div>
-
-    <form class="entry-form" on:submit={add}>
-      <input type="text" bind:value={titleInput} placeholder="Book title" maxlength={80} />
-      <input type="text" bind:value={authorInput} placeholder="Author (optional)" maxlength={60} />
-      <input type="number" bind:value={ageInput} placeholder="Age" min="0" max={SLIDER_MAX} />
-      <input type="text" bind:value={takeawayInput} placeholder="One-line takeaway (optional)" maxlength={120} />
-      <button type="submit">Add</button>
-    </form>
+<section class="module-section">
+  <h2>What you've been reading</h2>
+  <p class="sub">
+    A line per book. Logged with the age you read it, with optional one-sentence takeaway.
+  </p>
+  <div class="module-stats">
+    <span><span class="stat-num">{total}</span>{total === 1 ? 'book' : 'books'} read</span>
+    <span><span class="stat-num">{thisYear}</span>this year</span>
   </div>
+
+  <div class="reading-list">
+    {#if total === 0}
+      <div class="empty">No books logged yet. The first one is the hardest.</div>
+    {:else}
+      {#each grouped as [age, group]}
+        <div class="reading-year-group">
+          <div class="reading-year-label">
+            <span class="age-tag">Age {age}</span>
+            <span class="count">· {group.length} {group.length === 1 ? 'book' : 'books'}</span>
+          </div>
+          {#each group as b}
+            <div class="book-row">
+              <div class="book-info">
+                <div class="book-title">{b.title}</div>
+                {#if b.author}<div class="book-author">{b.author}</div>{/if}
+                {#if b.takeaway}<div class="book-takeaway">"{b.takeaway}"</div>{/if}
+              </div>
+              <button class="remove" on:click={() => remove(b.idx)} title="Remove">×</button>
+            </div>
+          {/each}
+        </div>
+      {/each}
+    {/if}
+  </div>
+
+  <form class="entry-form" on:submit={add}>
+    <input type="text" bind:value={titleInput} placeholder="Book title" maxlength={80} />
+    <input type="text" bind:value={authorInput} placeholder="Author (optional)" maxlength={60} />
+    <input type="number" bind:value={ageInput} placeholder="Age" min="0" max={SLIDER_MAX} />
+    <input type="text" bind:value={takeawayInput} placeholder="One-line takeaway (optional)" maxlength={120} />
+    <button type="submit">Add</button>
+  </form>
 </section>
 
 <style>

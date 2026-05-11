@@ -17,6 +17,8 @@ import {
 import {
   netWorthEntries, savingsGoals, savingsRate, givingEntries,
 } from './financial';
+import { habitChecks, anyHabitCheckedRecently } from './habits';
+import { bodyEntries, hasRecentBodyEntry } from './body';
 import { getEntry, weekKey, currentWeekIndex } from './journal-helpers';
 
 const RESULTS_KEY = 'assessmentResults';
@@ -143,12 +145,14 @@ export const behavioralScores = derived(
     smoker, exerciseLevel, sleepHours, familyLongevity,
     milestones, journal, letters, people, books, rituals,
     netWorthEntries, savingsGoals, savingsRate, givingEntries,
+    habitChecks, bodyEntries,
   ],
   ([
     $dob, $partnership, $careerField,
     $smoker, $exerciseLevel, $sleepHours, $familyLongevity,
     $milestones, $journal, $letters, $people, $books, $rituals,
     $netWorthEntries, $savingsGoals, $savingsRate, $givingEntries,
+    $habitChecks, $bodyEntries,
   ]) => {
     // ---- Time ----
     // Rebalanced 4 signals × 25 (was 5 × 20) after removing the Places signal.
@@ -190,28 +194,34 @@ export const behavioralScores = derived(
     social = Math.min(100, social);
 
     // ---- Mental ----
+    // Rebalanced 5 × 20pt after Habits launched.
     let mental = 0;
     const journaled7d = (() => {
       if (!$dob) return false;
       const e = getEntry(weekKey(todayWeekIdx));
       return !!(e.text && e.text.trim());
     })();
-    if (journaled7d) mental += 25;
+    if (journaled7d) mental += 20;
     const totalEntries = Object.values($journal).filter((v) => {
       if (typeof v === 'string') return !!v.trim();
       return !!(v as { text?: string })?.text?.trim();
     }).length;
-    if (totalEntries >= 10) mental += 25;
-    if (Object.keys($letters).length >= 1) mental += 25;
-    if ($books.length >= 3) mental += 25;
+    if (totalEntries >= 10) mental += 20;
+    if (Object.keys($letters).length >= 1) mental += 20;
+    if ($books.length >= 3) mental += 20;
+    // Any habit checked in the past 7 days → 20pt for daily mental practice.
+    if (anyHabitCheckedRecently($habitChecks, 7)) mental += 20;
     mental = Math.min(100, mental);
 
     // ---- Physical ----
+    // Rebalanced 5 × 20pt after Body daily-log launched.
     let physical = 0;
-    if ($sleepHours && $sleepHours > 0) physical += 25;
-    if ($exerciseLevel) physical += 25;
-    if ($smoker) physical += 25;
-    if ($familyLongevity && $familyLongevity > 0) physical += 25;
+    if ($sleepHours && $sleepHours > 0) physical += 20;
+    if ($exerciseLevel) physical += 20;
+    if ($smoker) physical += 20;
+    if ($familyLongevity && $familyLongevity > 0) physical += 20;
+    // Any body-log entry in the past 7 days → 20pt for active tracking.
+    if (hasRecentBodyEntry($bodyEntries, 7)) physical += 20;
     physical = Math.min(100, physical);
 
     // ---- Financial ----

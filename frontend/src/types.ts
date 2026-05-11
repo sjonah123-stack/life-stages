@@ -59,11 +59,21 @@ export interface Person {
   interactions?: Interaction[];
 }
 
-// ---- Milestones ----
+// ---- Milestones (SMART goals) ----
+// SMART = Specific, Measurable, Achievable, Relevant, Time-bound.
+//   - `label` covers Specific (what)
+//   - `measure` covers Measurable (how you'll know it's done)
+//   - `age` covers Time-bound (by when)
+//   - `why` covers Relevant (why it matters to you)
+//   - Achievable is a self-check, not a stored field
+// `measure` and `why` are optional so old entries with just label+age+completed
+// still load and render cleanly.
 export interface Milestone {
   age: number;
   label: string;
   completed: boolean;
+  measure?: string;
+  why?: string;
 }
 
 // ---- Reading ----
@@ -75,9 +85,13 @@ export interface Book {
 }
 
 // ---- Rituals ----
+// `nextDate` is the as-of-date for the next occurrence. Marking a ritual
+// done rolls it forward by floor(365/frequency) days. Optional so old
+// docs without it still load — UI falls back to "set a date" prompts.
 export interface Ritual {
   name: string;
   frequency: 1 | 2 | 4 | 12; // per year (yearly / twice / quarterly / monthly)
+  nextDate?: DateString;     // 'YYYY-MM-DD' of next occurrence
 }
 
 // ---- Net worth ----
@@ -98,6 +112,38 @@ export interface SavingsGoal {
   target: number;       // target dollar amount
   deadline?: DateString; // optional 'YYYY-MM-DD'
   createdAt: number;    // Date.now() at creation
+}
+
+// ---- Habits ----
+// Daily-cadence practices (meditate, gym, no-phone-after-9). Different
+// from rituals (annual) and milestones (one-time). Checks are a separate
+// list of (habitId, date) tuples — keeps Habit lightweight and makes
+// streak/chain math straightforward.
+export interface Habit {
+  id: string;
+  label: string;
+  emoji?: string;
+  wealthKey?: WealthKey;     // optional: tags the habit to a wealth dimension
+  createdAt: number;
+  archivedAt?: number;       // soft-archive; archived habits hide from UI but
+                             // their history persists for past visualizations
+}
+
+export interface HabitCheck {
+  habitId: string;
+  date: DateString;          // 'YYYY-MM-DD' — the day the habit was done
+}
+
+// ---- Body / daily check-in ----
+// One entry per day with optional weight/sleep/workout fields. Each field
+// is optional so users can log just sleep on some days, just weight on
+// others. Same-date overwrites (one entry per day).
+export interface BodyEntry {
+  date: DateString;
+  weight?: number;           // pounds (USD-anchored; user can input kg externally)
+  sleepHours?: number;       // hours of sleep the night before
+  workoutMinutes?: number;   // minutes of intentional movement
+  note?: string;
 }
 
 // ---- Charitable giving ----
@@ -201,6 +247,11 @@ export interface CloudPayload extends Partial<PersonalSettings> {
   savingsGoals?: SavingsGoal[];
   savingsRate?: number;
   givingEntries?: GivingEntry[];
+  // Habits (v1).
+  habits?: Habit[];
+  habitChecks?: HabitCheck[];
+  // Daily body / health log (v1).
+  bodyEntries?: BodyEntry[];
   // Legacy: `retirementAge` was a PersonalSettings field before the Finance
   // refactor. Old user docs may still carry it; we accept it on read so they
   // don't break, but never write it back. Drop entirely after a few months.
