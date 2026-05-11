@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectedAge, markSliderUserTouched } from '../../stores/slider';
+  import { selectedAge, markSliderUserTouched, isToday } from '../../stores/slider';
   import { todayAge } from '../../stores/personal';
   import { currentStage } from '../../stores/derived';
   import { SLIDER_MAX } from '../../config';
@@ -14,24 +14,46 @@
     selectedAge.set(v);
     markSliderUserTouched();
   }
+
+  function jumpToToday() {
+    if ($todayAge >= 0) {
+      selectedAge.set($todayAge);
+      markSliderUserTouched();
+    }
+  }
 </script>
 
-<div class="age-block" style="--lived-pct: {livedPct}%">
-  <div class="age-display">
-    <div class="age-num">{age}</div>
-    <div class="age-label">years old</div>
+<div class="age-block glass-tinted" style="--lived-pct: {livedPct}%">
+  <div class="top-row">
+    <div class="age-display">
+      <div class="age-num">{age}</div>
+      <div class="age-meta">
+        <div class="age-label">years</div>
+        {#if !$isToday && $todayAge >= 0}
+          <button class="jump-today" type="button" on:click={jumpToToday}>
+            ← back to today ({$todayAge})
+          </button>
+        {/if}
+      </div>
+    </div>
+
+    {#if stage}
+      <div class="stage-block">
+        <div class="stage-pill">{stage.name}</div>
+        <div class="poetic-line">{stage.poetic}</div>
+      </div>
+    {/if}
   </div>
-  {#if stage}
-    <div class="stage-pill">{stage.name}</div>
-    <div class="poetic-line">{stage.poetic}</div>
-  {/if}
 
   <div class="slider-track-wrap">
     {#if nowMarkerPct >= 0}
       <div
         class="now-marker"
         style="left: calc({nowMarkerPct}% + {(0.5 - nowMarkerPct / 100) * 28}px)"
-      ></div>
+      >
+        <span class="now-pulse"></span>
+        <span class="now-label">today</span>
+      </div>
     {/if}
     <input
       type="range"
@@ -50,65 +72,102 @@
 
 <style>
   .age-block {
-    background: var(--panel);
-    border-radius: 22px;
-    padding: 36px 32px 28px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-md);
+    --tint: var(--accent);
+    border-radius: 28px;
+    padding: 36px 36px 30px;
     position: relative;
     overflow: hidden;
   }
-  .age-block::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at top right, rgba(255, 201, 60, 0.18), transparent 60%);
-    pointer-events: none;
+  @media (max-width: 540px) {
+    .age-block { padding: 26px 22px 24px; border-radius: 22px; }
   }
+
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
   .age-display {
     display: flex;
     align-items: baseline;
     gap: 16px;
-    margin-bottom: 4px;
     position: relative;
   }
   .age-num {
-    font-size: 96px;
+    font-size: clamp(72px, 14vw, 120px);
     font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--future-3) 100%);
+    letter-spacing: -0.05em;
+    line-height: 0.92;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--future-3) 60%, var(--growth) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    /* Subtle glow behind the number — gives the glass surface something to refract. */
+    filter: drop-shadow(0 4px 14px rgba(255, 140, 97, 0.18));
+  }
+  .age-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
   .age-label {
     font-size: 20px;
     color: var(--ink-dim);
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
+  .jump-today {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    text-align: left;
+    letter-spacing: 0.01em;
+    transition: opacity 0.15s;
+  }
+  .jump-today:hover { opacity: 0.7; }
+
+  .stage-block {
+    max-width: 280px;
+    text-align: right;
+  }
+  @media (max-width: 640px) {
+    .stage-block { text-align: left; max-width: 100%; }
+  }
+
   .stage-pill {
     display: inline-block;
-    background: linear-gradient(135deg, var(--past) 0%, var(--accent) 100%);
+    background: linear-gradient(135deg, var(--past), var(--accent));
     color: white;
-    padding: 6px 16px;
+    padding: 7px 18px;
     border-radius: 999px;
     font-size: 13px;
     font-weight: 700;
-    margin-bottom: 10px;
     letter-spacing: 0.02em;
-    box-shadow: 0 2px 8px rgba(244, 184, 96, 0.3);
-    position: relative;
+    box-shadow: 0 4px 14px rgba(244, 184, 96, 0.35), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
   }
   .poetic-line {
     color: var(--ink-dim);
-    font-size: 15px;
-    margin-top: 6px;
-    margin-bottom: 18px;
+    font-size: 14px;
+    margin-top: 10px;
     font-style: italic;
-    position: relative;
+    line-height: 1.45;
   }
-  .slider-track-wrap { position: relative; padding: 32px 0 6px; }
+
+  .slider-track-wrap {
+    position: relative;
+    padding: 38px 0 6px;
+    margin-top: 8px;
+  }
   input[type='range'] {
     -webkit-appearance: none;
     appearance: none;
@@ -119,82 +178,103 @@
     z-index: 3;
   }
   input[type='range']::-webkit-slider-runnable-track {
-    height: 8px;
-    border-radius: 4px;
+    height: 10px;
+    border-radius: 999px;
     background: linear-gradient(
       to right,
       var(--past) 0%,
       var(--past) var(--lived-pct, 25%),
-      var(--future-1) var(--lived-pct, 25%),
-      var(--future-3) 100%
+      rgba(255, 255, 255, 0.5) var(--lived-pct, 25%),
+      rgba(255, 255, 255, 0.5) 100%
     );
-    box-shadow: inset 0 1px 2px rgba(44, 24, 16, 0.06);
+    box-shadow:
+      inset 0 1px 2px rgba(44, 24, 16, 0.1),
+      0 1px 0 rgba(255, 255, 255, 0.6);
   }
   input[type='range']::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(255, 140, 97, 0.25), 0 4px 14px rgba(206, 108, 74, 0.25);
+    background:
+      radial-gradient(circle at 30% 30%, white, #fff8f0);
+    box-shadow:
+      0 0 0 5px rgba(255, 140, 97, 0.22),
+      0 6px 18px rgba(206, 108, 74, 0.32),
+      0 1px 0 rgba(255, 255, 255, 0.9) inset;
     margin-top: -10px;
     cursor: grab;
     border: 2px solid var(--accent);
-    transition: transform 0.1s;
+    transition: transform 0.12s ease;
   }
-  input[type='range']::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.1); }
+  input[type='range']:hover::-webkit-slider-thumb { transform: scale(1.06); }
+  input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.12); }
   input[type='range']::-moz-range-track {
-    height: 8px;
-    border-radius: 4px;
+    height: 10px;
+    border-radius: 999px;
     background: linear-gradient(
       to right,
       var(--past) 0%,
       var(--past) var(--lived-pct, 25%),
-      var(--future-1) var(--lived-pct, 25%),
-      var(--future-3) 100%
+      rgba(255, 255, 255, 0.5) var(--lived-pct, 25%),
+      rgba(255, 255, 255, 0.5) 100%
     );
   }
   input[type='range']::-moz-range-thumb {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     background: white;
     border: 2px solid var(--accent);
-    box-shadow: 0 0 0 4px rgba(255, 140, 97, 0.25), 0 4px 14px rgba(206, 108, 74, 0.25);
+    box-shadow: 0 0 0 5px rgba(255, 140, 97, 0.22), 0 6px 18px rgba(206, 108, 74, 0.32);
     cursor: grab;
   }
   .ticks {
     display: flex;
     justify-content: space-between;
-    margin-top: 10px;
+    margin-top: 14px;
     color: var(--ink-faint);
     font-size: 11px;
     font-variant-numeric: tabular-nums;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
+
+  /* Today marker — pulsing dot + small label above the track. */
   .now-marker {
     position: absolute;
-    top: 22px;
-    width: 3px;
-    height: 32px;
-    background: var(--now);
+    top: 24px;
     transform: translateX(-50%);
-    box-shadow: 0 0 12px rgba(255, 201, 60, 0.5);
-    border-radius: 2px;
     pointer-events: none;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
-  .now-marker::after {
-    content: 'today';
+  .now-pulse {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--now);
+    box-shadow: 0 0 0 4px rgba(255, 201, 60, 0.25), 0 0 12px rgba(255, 201, 60, 0.55);
+    animation: now-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes now-pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(255, 201, 60, 0.18), 0 0 12px rgba(255, 201, 60, 0.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(255, 201, 60, 0.30), 0 0 18px rgba(255, 201, 60, 0.65); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .now-pulse { animation: none; }
+  }
+  .now-label {
     position: absolute;
-    top: -16px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: -18px;
     font-size: 10px;
     color: var(--accent);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 </style>

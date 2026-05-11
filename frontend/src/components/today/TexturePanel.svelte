@@ -29,8 +29,8 @@
       ];
 </script>
 
-<div class="texture-panel">
-  <h3>{title}</h3>
+<div class="texture-panel glass-tinted" style="--tint: var(--love);">
+  <div class="eyebrow-modern">{title}</div>
   <div class="texture-grid">
     {#each items as it}
       <div class="texture-item">
@@ -46,37 +46,41 @@
 
 <style>
   .texture-panel {
-    background: linear-gradient(135deg, rgba(255, 214, 165, 0.45), rgba(255, 107, 157, 0.18));
-    border: 1px solid rgba(255, 140, 97, 0.22);
-    border-radius: 18px;
-    padding: 24px 28px;
-    margin-bottom: 24px;
+    border-radius: 22px;
+    padding: 22px 26px 24px;
+    height: 100%;
   }
-  h3 {
-    margin: 0 0 16px;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    font-weight: 700;
-  }
+  .eyebrow-modern { margin-bottom: 18px; }
   .texture-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 22px;
   }
-  .texture-item { display: flex; align-items: center; gap: 12px; }
-  .texture-emoji { font-size: 30px; filter: saturate(1.2); }
+  @media (max-width: 480px) {
+    .texture-grid { grid-template-columns: 1fr; gap: 14px; }
+  }
+  .texture-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .texture-emoji {
+    font-size: 30px;
+    filter: saturate(1.15) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+    flex-shrink: 0;
+  }
   .texture-num {
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--ink);
-    line-height: 1.1;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
   }
   .texture-desc {
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--ink-dim);
-    margin-top: 2px;
-    line-height: 1.3;
+    margin-top: 3px;
+    line-height: 1.35;
   }
 </style>

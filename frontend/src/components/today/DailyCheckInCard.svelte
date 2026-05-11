@@ -81,7 +81,7 @@
   }
 </script>
 
-<section class="checkin-card">
+<section class="checkin-card glass">
   <div class="head">
     <div class="head-left">
       <div class="eyebrow">DAILY CHECK-IN</div>
@@ -153,12 +153,21 @@
 
 <style>
   .checkin-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
+    border-radius: 18px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .checkin-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--health), var(--career));
+    border-radius: 2px;
   }
   .head {
     display: flex;
@@ -170,11 +179,21 @@
   .head-left { flex: 1; min-width: 0; }
   .eyebrow {
     font-size: 10px;
-    color: var(--accent);
+    color: var(--ink-faint);
     text-transform: uppercase;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.18em;
     font-weight: 700;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 14px;
+    height: 1.5px;
+    background: linear-gradient(90deg, var(--health), transparent);
+    border-radius: 1px;
   }
   .head-line {
     font-size: 14px;
@@ -200,11 +219,12 @@
     transition: all 0.15s;
   }
   .btn.primary {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--health), var(--career));
     color: white;
     border: none;
+    box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--health) 40%, transparent);
   }
-  .btn.primary:hover { opacity: 0.92; }
+  .btn.primary:hover { transform: translateY(-1px); }
   .btn.primary:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn.ghost {
     background: transparent;

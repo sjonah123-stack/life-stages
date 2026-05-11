@@ -77,7 +77,7 @@
       </div>
     </div>
 
-    <div class="radar-row">
+    <div class="radar-row glass-tinted" style="--tint: var(--future-3);">
       <div class="radar-cell">
         <WealthRadar self={self} behavioral={behavioral} />
       </div>
@@ -120,7 +120,7 @@
 {/if}
 
 <style>
-  .results { display: flex; flex-direction: column; gap: 20px; margin-top: 8px; }
+  .results { display: flex; flex-direction: column; gap: 18px; margin-top: 4px; }
   .results-head {
     display: flex;
     justify-content: space-between;
@@ -146,10 +146,12 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--panel-warm);
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 999px;
     padding: 4px 12px 4px 14px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
   }
   .picker-label {
     font-size: 10px;
@@ -176,9 +178,9 @@
   }
   h2 {
     margin: 6px 0 0;
-    font-size: 26px;
+    font-size: clamp(22px, 4vw, 28px);
     font-weight: 800;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     color: var(--ink);
   }
   .head-actions {
@@ -193,10 +195,12 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    background: transparent;
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     color: var(--ink-dim);
     transition: all 0.15s;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
   }
   .btn.ghost:hover { border-color: var(--love); color: var(--love); }
   .btn.primary:hover { border-color: var(--accent); color: var(--accent); }
@@ -206,14 +210,11 @@
     grid-template-columns: minmax(280px, 1fr) 1fr;
     gap: 24px;
     align-items: center;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 24px 28px;
-    box-shadow: var(--shadow-sm);
+    border-radius: 22px;
+    padding: 28px 30px;
   }
   @media (max-width: 720px) {
-    .radar-row { grid-template-columns: 1fr; }
+    .radar-row { grid-template-columns: 1fr; padding: 22px; }
   }
   .radar-cell { display: flex; justify-content: center; }
 
@@ -221,19 +222,22 @@
     font-size: 11px;
     color: var(--accent);
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
   .focus ul { list-style: none; padding: 0; margin: 0 0 14px; }
   .focus li {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
-    padding: 10px 14px;
-    background: var(--panel-warm);
-    border-radius: 10px;
-    margin-bottom: 6px;
+    padding: 12px 16px;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.4));
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 14px;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 10px -4px rgba(44, 24, 16, 0.08);
   }
   .focus .emoji { font-size: 22px; }
   .focus .name {
@@ -244,13 +248,13 @@
   .focus-note {
     font-size: 13px;
     color: var(--ink-dim);
-    line-height: 1.5;
+    line-height: 1.55;
     margin: 0;
   }
 
   .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
     gap: 14px;
   }
 
@@ -259,6 +263,9 @@
     font-size: 12px;
     line-height: 1.55;
     text-align: center;
-    margin-top: 8px;
+    margin-top: 12px;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
   }
 </style>
