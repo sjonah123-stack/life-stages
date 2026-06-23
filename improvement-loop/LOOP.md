@@ -72,6 +72,20 @@ To reply: open the draft in Gmail, send it to yourself, and reply with your deci
 or just tell Claude in chat. The reply-builder finds your replies by the `[life-stages]`
 subject marker and skips any message id already in `loop-state.json`.
 
+### Keep docs current after every change (with a length guardrail)
+
+Whenever the loop (or a build session) lands a change, refresh the project docs **and keep them
+lean** — prune stale lines, don't just append:
+
+- `CLAUDE.md` (≲230 lines) — architecture/constraints; add durable facts only.
+- `SUMMARY.md` (≲120 lines) — latest-state snapshot; it's a snapshot, so rewrite the top rather
+  than stacking session logs.
+- `README.md` (≲60 lines) — short human overview; never let it become a CLAUDE.md copy again.
+- `BACKLOG.json` / this `LOOP.md` — keep statuses honest.
+
+The point of the cap: bloated docs eat the context window every future session loads, which
+defeats their purpose. If a doc is over budget, trim before adding.
+
 ### Environment reality (important)
 
 The scheduled tasks run in a Linux sandbox that **cannot build, test, or deploy** the app:

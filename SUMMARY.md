@@ -1,20 +1,25 @@
 # Session Summary — life-stages
 
-Last updated: 2026-05-07, after shipping the codebase cleanup pass to prod.
+Last updated: 2026-06-23 — set up the improvement loop + reconciled the backlog against real code.
 
 ## Where things stand right now
 
 | | URL | Status |
 |---|---|---|
-| **Production** | https://life-stages-90806.web.app | Wealth-on-Today refactor + cleanup pass. Live as of 2026-05-07. |
-| **Latest preview** | https://life-stages-90806--cleanup-pass-q45re9br.web.app | Same code as prod; expires ~2026-05-14 |
+| **Production** | https://life-stages-90806.web.app | Last deployed 2026-05-07. **Prod is behind `main`** — see below. |
 | **Legacy archive** | https://life-stages-90806.web.app/legacy.html | Old single-file app, viewable but not maintained |
 
-**Open thread:** none committed. Three plausible next directions, in rough priority:
+**Prod is behind source.** `main` has shipped (committed, not yet deployed) since the 2026-05-07
+prod build: the net-worth tracker (`stores/financial.ts` + `components/finance/*` + tests), broad
+store test coverage (11 `*.test.ts` files), and a "Modernize Today page (glass + gradient)" pass
+(2026-05-11) that made the hero h1 responsive via `clamp(34px, 8vw, 64px)`. **Next deploy ships all
+of this.** Run `cd frontend && npm run build && cd .. && firebase deploy --only hosting`.
 
-1. **Net-worth tracker** — the biggest known data thinness. Financial Wealth's behavioral score reads only `retirementAge` + `careerField`. Adding monthly net-worth check-ins, a savings rate input, and at least one financial goal would let "Financial Wealth" carry its own weight. Likely a new sub-section on Today or a small dedicated page reachable from a wealth card CTA. Wire it into `assessment.ts`'s Financial scoring rules.
-2. **Mobile responsiveness pass** — at 375px the Today hero h1 (48px) and the new Wealth section's headline overlap awkwardly. Composer-meta row also wraps. Audit each page at 375px in Claude Preview, fix typography/spacing per page.
-3. **Tests** — zero coverage. The wealth refactor introduced a non-trivial migration path (v1 → v2) and per-result mutation logic that would benefit from store-level round-trip tests. Vitest + @testing-library/svelte; start with `stores/assessment.ts` round-trip + `toggleRecommendation` semantics.
+**Improvement loop (new 2026-06-23).** `improvement-loop/` now holds a scored `BACKLOG.json`, an
+ideas inbox, and an email-digest loop (3 scheduled tasks) + a live `life-stages-backlog` dashboard.
+See `improvement-loop/LOOP.md`. The old "three next directions" (net-worth, mobile, tests) are all
+**done in source**; current open items: modern redesign (approved, big), TodayWealth collapsed-summary
+state, auth user-change test. People-page removal is on hold per the user.
 
 ## Pending git state
 
