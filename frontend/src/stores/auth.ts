@@ -34,6 +34,31 @@ export function setOnSignedInCallback(fn: () => void): void {
   onSignedInCallback = fn;
 }
 
+// What to do when the auth state settles. Pure + exported so the transition
+// rules are unit-tested without mocking Firebase.
+//   'load-cloud'  → pull this account's data down (loadFromCloud)
+//   'wipe-reload' → clear the device + reload (cross-account isolation)
+//   'noop'        → nothing changed
+export type AuthAction = 'load-cloud' | 'wipe-reload' | 'noop';
+
+export function authTransition(
+  previousUid: string | null,
+  newUid: string | null,
+  wasInitialized: boolean,
+): AuthAction {
+  // First settle on page load: a restored session loads cloud; null does nothing.
+  if (!wasInitialized) return newUid ? 'load-cloud' : 'noop';
+  if (previousUid === newUid) return 'noop';
+  // Sign-in from a logged-out session (null → user): load, never wipe. Wiping
+  // here deletes local data before it syncs and the reload can race the cloud
+  // load and blank the page — that was the data-not-showing bug. It also covers
+  // Firebase's "null-then-user" initial double-fire, which otherwise looks like
+  // an account switch.
+  if (newUid && !previousUid) return 'load-cloud';
+  // Real account switch (userA → userB) or sign-out (user → null).
+  return 'wipe-reload';
+}
+
 export function initAuth(): void {
   if (!isFirebaseConfigured()) return;
   const { auth } = getFirebase();
@@ -64,14 +89,12 @@ export function initAuth(): void {
         : null
     );
 
-    if (!authInitialized) {
-      authInitialized = true;
-      if (user) onSignedInCallback?.();
-      return;
-    }
-    // Auth state changed AFTER initial load (sign-in / sign-out / switch).
-    // Wipe local data + reload so no in-memory state carries across accounts.
-    if (previousUid !== newUid) {
+    const action = authTransition(previousUid, newUid, authInitialized);
+    authInitialized = true;
+
+    if (action === 'load-cloud') {
+      onSignedInCallback?.();
+    } else if (action === 'wipe-reload') {
       clearAllLocalData();
       window.location.reload();
     }
