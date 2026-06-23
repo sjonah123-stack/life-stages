@@ -60,17 +60,10 @@ export const weeksLived = derived(daysLived, ($days) => Math.floor($days / 7));
 // Whether the user is in blank-state (no real birthdate yet).
 export const isBlankState = derived(dob, ($dob) => !$dob);
 
-// ---- Theme application ----
-
-// Side effect: keep <body> class in sync with theme store.
-// Subscribed at module load (single subscription for the lifetime of the page).
-let lastTheme: Theme | null = null;
-theme.subscribe(($theme) => {
-  if (typeof document === 'undefined') return;
-  if (lastTheme) document.body.classList.remove(`theme-${lastTheme}`);
-  document.body.classList.add(`theme-${$theme}`);
-  lastTheme = $theme;
-});
+// ---- Theme ----
+// The app now ships a single editorial palette (cream / charcoal / terracotta),
+// so there is no <body> theme class to maintain. The `theme` store and field are
+// kept only so existing local/cloud user docs continue to load without error.
 
 // ---- Setter helpers (more ergonomic than .set() in some places) ----
 

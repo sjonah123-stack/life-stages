@@ -5,7 +5,6 @@
   } from '../../stores/personal';
   import { personalHorizon } from '../../stores/derived';
   import { formatDOB } from '../../utils';
-  import ThemePicker from '../shared/ThemePicker.svelte';
   import PageHeader from '../shared/PageHeader.svelte';
 
   const today = formatDOB(new Date());
@@ -29,10 +28,6 @@
           <button type="button" class:active={$sex === 'female'} on:click={() => sex.set('female')}>Female</button>
           <button type="button" class:active={$sex === 'male'} on:click={() => sex.set('male')}>Male</button>
         </div>
-      </div>
-      <div class="field">
-        <span class="field-label">Theme</span>
-        <ThemePicker />
       </div>
     </div>
 

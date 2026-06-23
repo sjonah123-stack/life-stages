@@ -1,14 +1,13 @@
 <script lang="ts">
   import { currentPage, TAB_PAGES, PAGE_LABELS } from '../../lib/router';
   import { isBlankState } from '../../stores/personal';
-  import ThemePicker from '../shared/ThemePicker.svelte';
   import AuthPill from './AuthPill.svelte';
 </script>
 
 <nav class="top-nav">
   <div class="top-nav-inner">
     <a href="#/today" class="brand">
-      <span class="brand-mark"></span>
+      <span class="brand-mark">L</span>
       Your Life
     </a>
     {#if !$isBlankState}
@@ -19,7 +18,6 @@
       </div>
     {/if}
     <div class="nav-right">
-      <ThemePicker />
       {#if !$isBlankState}
         <a href="#/settings" class="icon-btn" title="Settings" aria-label="Settings">⚙</a>
       {/if}
@@ -33,41 +31,44 @@
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(255, 247, 232, 0.85);
-    backdrop-filter: saturate(180%) blur(12px);
-    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    background: rgba(244, 240, 232, 0.82);
+    backdrop-filter: saturate(140%) blur(22px);
+    -webkit-backdrop-filter: saturate(140%) blur(22px);
     border-bottom: 1px solid var(--border);
   }
-  :global(body.theme-ocean) .top-nav { background: rgba(232, 244, 255, 0.85); }
-  :global(body.theme-forest) .top-nav { background: rgba(240, 247, 232, 0.85); }
   .top-nav-inner {
     max-width: 1080px;
     margin: 0 auto;
-    padding: 12px 32px;
+    padding: 14px 32px;
     display: flex;
     align-items: center;
     gap: 18px;
     flex-wrap: wrap;
   }
   .brand {
-    font-size: 16px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--accent), var(--future-3));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
     white-space: nowrap;
     margin-right: auto;
   }
   .brand-mark {
-    display: inline-block;
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, var(--accent), var(--future-3));
-    margin-right: 8px;
-    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #F4F0E8;
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 600;
+    margin-right: 10px;
   }
   .nav-tabs {
     display: flex;
@@ -75,7 +76,7 @@
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 999px;
-    padding: 3px;
+    padding: 4px;
     box-shadow: var(--shadow-sm);
     overflow-x: auto;
     scrollbar-width: none;
@@ -84,10 +85,10 @@
   .nav-tab {
     background: transparent;
     border: none;
-    padding: 7px 14px;
+    padding: 8px 16px;
     border-radius: 999px;
     cursor: pointer;
-    font-family: inherit;
+    font-family: var(--sans);
     font-size: 13px;
     font-weight: 600;
     color: var(--ink-dim);
@@ -96,9 +97,8 @@
   }
   .nav-tab:hover { color: var(--ink); }
   .nav-tab.active {
-    background: linear-gradient(135deg, var(--accent), var(--future-3));
-    color: white;
-    box-shadow: 0 2px 8px rgba(255, 140, 97, 0.3);
+    background: var(--ink);
+    color: #F4F0E8;
   }
   .nav-right {
     display: flex;

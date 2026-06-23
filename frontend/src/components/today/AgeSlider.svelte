@@ -99,16 +99,17 @@
     position: relative;
   }
   .age-num {
-    font-size: clamp(72px, 14vw, 120px);
-    font-weight: 800;
-    letter-spacing: -0.05em;
+    font-family: var(--serif);
+    font-size: clamp(80px, 15vw, 132px);
+    font-weight: 600;
+    letter-spacing: -0.03em;
     line-height: 0.92;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--future-3) 60%, var(--growth) 100%);
+    background: linear-gradient(135deg, var(--accent-soft) 0%, var(--accent) 55%, var(--accent-deep) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    /* Subtle glow behind the number — gives the glass surface something to refract. */
-    filter: drop-shadow(0 4px 14px rgba(255, 140, 97, 0.18));
+    /* Subtle warm glow behind the number. */
+    filter: drop-shadow(0 4px 14px rgba(181, 101, 74, 0.16));
   }
   .age-meta {
     display: flex;

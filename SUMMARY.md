@@ -1,6 +1,18 @@
 # Session Summary — life-stages
 
-Last updated: 2026-06-23 — set up the improvement loop + reconciled the backlog against real code.
+Last updated: 2026-06-23 — shipped the editorial redesign (preview channel) + removed the People page.
+
+## Redesign (2026-06-23)
+
+Re-skinned the whole app to a single editorial design language — warm cream paper, charcoal
+ink, terracotta accent, Cormorant Garamond (serif) + Hanken Grotesk (sans). Implemented entirely
+through the existing CSS-variable system in `app.css` (palette tokens + fonts remapped), so every
+component inherited the look; signature surfaces (TopNav, PageHeader, AgeSlider number, `.glass`
+cards) were hand-tuned. The 3-theme switcher was retired: ThemePicker deleted, body `theme-*`
+class removed, `theme` field kept read-tolerant only. All current pages/features preserved (re-skin
+only, no IA change). Fonts via Google Fonts `<link>` in `index.html`; PWA manifest colours updated.
+Preview channel: **https://life-stages-90806--redesign-iwsb7yer.web.app** (expires 2026-06-30) —
+awaiting approval before prod.
 
 ## Where things stand right now
 
@@ -18,8 +30,8 @@ of this.** Run `cd frontend && npm run build && cd .. && firebase deploy --only 
 **Improvement loop (new 2026-06-23).** `improvement-loop/` now holds a scored `BACKLOG.json`, an
 ideas inbox, and an email-digest loop (3 scheduled tasks) + a live `life-stages-backlog` dashboard.
 See `improvement-loop/LOOP.md`. The old "three next directions" (net-worth, mobile, tests) are all
-**done in source**; current open items: modern redesign (approved, big), TodayWealth collapsed-summary
-state, auth user-change test. People-page removal is on hold per the user.
+**done in source**; the modern redesign and the People-page removal are now **done** too. Current
+open items: TodayWealth collapsed-summary state, auth user-change test.
 
 ## Pending git state
 

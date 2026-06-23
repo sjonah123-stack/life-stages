@@ -16,7 +16,7 @@
   <h1>Your one extraordinary life</h1>
   <p>
     An interactive dashboard that walks through every year of your life — slider, journal,
-    photos, people. To start, tell us when you were born.
+    photos, milestones. To start, tell us when you were born.
   </p>
   <form class="welcome-form" on:submit={handleSubmit}>
     <input

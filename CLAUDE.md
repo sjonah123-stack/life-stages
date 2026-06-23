@@ -39,7 +39,7 @@ life-stages/
     └── src/
         ├── App.svelte         ← router root (hash-based)
         ├── main.ts            ← entry: mount + initCloudSync + initAuth
-        ├── app.css            ← global theme variables (sunrise/ocean/forest) + .page animation
+        ├── app.css            ← editorial palette (cream/charcoal/terracotta) CSS vars + fonts + .page animation
         ├── types.ts           ← every domain type
         ├── config.ts          ← LIFESPAN, FIREBASE_CONFIG, MOOD_OPTIONS, LS_PREFIX, etc.
         ├── data.ts            ← STAGES, CAREER_FIELDS, COUNTRY_NOTES, PARTNERSHIP_NOTES, RELATION_LABEL, PROMPTS
@@ -66,17 +66,16 @@ life-stages/
         │   └── cloud-sync.ts  ← Firestore upload/download, debounced
         └── components/
             ├── nav/           ← TopNav.svelte, AuthPill.svelte
-            ├── pages/         ← Today, Journal, People, Goals, Finance, Progress, Settings
+            ├── pages/         ← Today, Journal, Goals, Finance, Progress, Settings
             ├── today/         ← AgeSlider, DimensionCards, GoodNews, StatRow, TexturePanel, TodayWealth,
             │                     AnniversaryCard, DailyCheckInCard
             ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid, FutureLetters,
             │                     OnThisDayBanner, MoodSparkline
-            ├── people/        ← PeopleSection, PersonRow
             ├── goals/         ← BooksSection, RitualsSection, HabitsSection
             ├── wealth/        ← AssessmentIntro, AssessmentSurvey, AssessmentResults, WealthRadar, WealthCard
             ├── finance/       ← NetWorthSection, SavingsSection, GivingSection, NetWorthSparkline
             ├── progress/      ← BodyTrendsSection, AchievementsSection, PersonalBestsSection, Sparkline
-            └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen, ThemePicker
+            └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen
 ```
 
 ## Critical conventions
@@ -167,6 +166,7 @@ firebase deploy --only hosting
 - **Don't edit the legacy `index.html` at the repo root.** It's a frozen archive. New work lives in `frontend/`.
 - **Don't deploy directly to prod for major changes** — preview-channel-first. The single-file refactor that broke prod taught us this.
 - **Don't add a chart library** for visualizations — the radar in WealthRadar.svelte is hand-rolled SVG and that's a deliberate choice. Use it as the precedent.
+- **One editorial palette, no theme switcher.** The 3-theme system (sunrise/ocean/forest) was retired for a single curated look: warm cream paper (`--bg-1` #F4F0E8), charcoal ink (`--ink` #1C1A17), terracotta accent (`--accent` #B5654A), Cormorant Garamond (serif display, `--serif`) + Hanken Grotesk (sans, `--sans`). All colours/fonts live as CSS vars in `app.css` — restyle by editing tokens, not by hardcoding hexes in components. The `theme` field stays in `PersonalSettings`/`CloudPayload` as read-tolerant only (like `retirementAge`); the body no longer carries a `theme-*` class. Don't reintroduce ThemePicker or per-theme overrides.
 - **Don't bypass `LS_PREFIX`** when reading/writing localStorage.
 - **Don't introduce `--no-verify` or `--force` git flags** without explicit user permission.
 - **Don't commit secrets or rotate Firebase keys** unless asked. The current `FIREBASE_CONFIG` in `config.ts` is the live project; treat it as user-managed.
