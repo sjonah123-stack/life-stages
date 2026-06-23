@@ -108,9 +108,9 @@ export const RECOMMENDATIONS = {
     { id: 'time-journal-streak', text: 'Start a 7-day journal streak.', href: '#/journal' },
   ],
   social: [
-    { id: 'social-add-people', text: 'Add the 5 most important people in your life.', href: '#/people' },
-    { id: 'social-log-chat', text: 'Log a chat with one of them this week.', href: '#/people' },
-    { id: 'social-add-ritual', text: 'Add an annual ritual that matters to you.', href: '#/people' },
+    { id: 'social-add-ritual', text: 'Add an annual ritual that matters to you.', href: '#/goals' },
+    { id: 'social-journal-relationships', text: 'Journal about a relationship worth nurturing.', href: '#/journal' },
+    { id: 'social-future-letter', text: 'Write a future letter to someone you care about.', href: '#/journal' },
   ],
   mental: [
     { id: 'mental-first-entry', text: 'Write your first journal entry.', href: '#/journal' },

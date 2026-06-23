@@ -5,7 +5,6 @@
   import WelcomeScreen from './components/shared/WelcomeScreen.svelte';
   import Today from './components/pages/Today.svelte';
   import Journal from './components/pages/Journal.svelte';
-  import People from './components/pages/People.svelte';
   import Goals from './components/pages/Goals.svelte';
   import Finance from './components/pages/Finance.svelte';
   import Progress from './components/pages/Progress.svelte';
@@ -22,8 +21,6 @@
       <Today />
     {:else if $currentPage === 'journal'}
       <Journal />
-    {:else if $currentPage === 'people'}
-      <People />
     {:else if $currentPage === 'goals'}
       <Goals />
     {:else if $currentPage === 'finance'}

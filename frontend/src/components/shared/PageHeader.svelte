@@ -1,7 +1,7 @@
 <script lang="ts">
-  // Standard page header used by Settings, Journal, People, Places,
-  // Reading, Goals, and the placeholder pages. Today.svelte uses its
-  // own gradient hero header instead — this is the plain variant.
+  // Standard page header used by Settings, Journal, Goals, and the
+  // placeholder pages. Today.svelte uses its own gradient hero header
+  // instead — this is the plain variant.
   export let title: string;
   export let subtitle: string = '';
 </script>

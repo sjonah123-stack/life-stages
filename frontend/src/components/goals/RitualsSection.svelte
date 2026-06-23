@@ -1,6 +1,6 @@
 <script lang="ts">
-  // Rituals you want to keep — moved here from the People page so all the
-  // "things I'm aiming toward / coming back to" content lives under Goals.
+  // Rituals you want to keep — all the "things I'm aiming toward / coming
+  // back to" content lives under Goals.
   // The next-occurrence date is the new piece: pick a target date when you
   // add the ritual, hit "Done" when you complete one, and the next date
   // rolls forward by 365 / frequency days.
