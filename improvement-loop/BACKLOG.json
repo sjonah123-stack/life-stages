@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "lastRun": "2026-06-23",
+  "lastRunSummary": "Seeded from SUMMARY.md known gaps. First autonomous run pending.",
+  "scoring": {
+    "method": "value-effort",
+    "note": "score = round((value / effort) * 10). value and effort are each 1-5 (5 = highest value / most effort). Higher score = do sooner."
+  },
+  "items": [
+    {
+      "id": "net-worth-tracker",
+      "title": "Build the net-worth tracker",
+      "type": "feature",
+      "source": "summary-known-gap",
+      "status": "backlog",
+      "value": 5,
+      "effort": 4,
+      "score": 13,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "Financial Wealth's behavioral score is thin (only careerField). New stores/financial.ts exists per CLAUDE.md but verify depth. Monthly net-worth check-ins + savings rate + >=1 savings goal. Highest-leverage feature. Plan-mode this."
+    },
+    {
+      "id": "mobile-responsiveness",
+      "title": "Mobile responsiveness pass at 375px",
+      "type": "polish",
+      "source": "summary-known-gap",
+      "status": "backlog",
+      "value": 4,
+      "effort": 3,
+      "score": 13,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "Today hero h1 (48px) collides with Wealth h2 at 375px; composer-meta wraps; wealth radar grid minmax(280px,1fr) tight. Audit each page at 375px, fix per page."
+    },
+    {
+      "id": "test-coverage",
+      "title": "Add store-level test coverage",
+      "type": "tech-debt",
+      "source": "summary-known-gap",
+      "status": "backlog",
+      "value": 4,
+      "effort": 2,
+      "score": 20,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "CLAUDE.md now documents vitest + co-located *.test.ts and existing util/store tests. Verify current coverage; extend to financial.ts, habits.ts, body.ts round-trips and assessment migration paths."
+    },
+    {
+      "id": "bundle-size",
+      "title": "Reduce bundle size via lazy imports",
+      "type": "tech-debt",
+      "source": "summary-known-gap",
+      "status": "backlog",
+      "value": 2,
+      "effort": 3,
+      "score": 7,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "~210KB gzip. Already split firebase + leaflet + main. Lazy-load leaflet/Places via dynamic import for further wins."
+    },
+    {
+      "id": "dimensioncards-any-casts",
+      "title": "Remove any-casts in DimensionCards.svelte",
+      "type": "tech-debt",
+      "source": "summary-known-gap",
+      "status": "backlog",
+      "value": 2,
+      "effort": 2,
+      "score": 10,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "Partnership narrowing uses `any`. Tighten types."
+    },
+    {
+      "id": "todaywealth-summary-state",
+      "title": "Collapsed summary state for TodayWealth",
+      "type": "polish",
+      "source": "summary-known-gap",
+      "status": "backlog",
+      "value": 3,
+      "effort": 3,
+      "score": 10,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "When a saved result exists, Today renders full radar+5cards+checklist inline. Add a collapsed summary card with expand affordance (new TodayWealthSummary.svelte)."
+    },
+    {
+      "id": "auth-userchange-test",
+      "title": "Test auth user-change wipe-and-reload path",
+      "type": "tech-debt",
+      "source": "summary-known-gap",
+      "status": "backlog",
+      "value": 3,
+      "effort": 2,
+      "score": 15,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "Coded in stores/auth.ts but never tested with two real Google accounts on one device. Risk: cross-user data bleed."
+    },
+    {
+      "id": "periodic-nudges",
+      "title": "Periodic nudges (assessment / journal reminders)",
+      "type": "feature",
+      "source": "summary-known-gap",
+      "status": "icebox",
+      "value": 3,
+      "effort": 4,
+      "score": 8,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "Needs an email/push delivery channel. Bigger lift; parked in icebox."
+    }
+  ],
+  "archive": []
+}
