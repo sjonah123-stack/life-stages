@@ -1,67 +1,26 @@
 {
   "schemaVersion": 1,
   "lastRun": "2026-06-23",
-  "lastRunSummary": "Processed email reply: test-coverage + net-worth-tracker + mobile (rescoped) approved; bundle-size skipped; added remove-people-page (approved) and theme-customizer (needs clarification).",
+  "lastRunSummary": "Reconciled backlog against actual code: net-worth, store tests, mobile hero fix, and any-casts were already built (committed after the 2026-05-07 prod deploy) — moved to archive as done. Remaining open: modern-redesign, todaywealth-summary-state, auth-userchange-test; remove-people on hold.",
   "scoring": {
     "method": "value-effort",
     "note": "score = round((value / effort) * 10). value and effort are each 1-5 (5 = highest value / most effort). Higher score = do sooner."
   },
-  "statuses": "backlog | approved (queued to build) | needs-info | in-progress | icebox | wont-do (archived) | done (archived)",
+  "statuses": "backlog | approved (queued to build) | needs-info | hold | in-progress | icebox | wont-do (archived) | done (archived)",
+  "note": "Several items were marked done after a 2026-06-23 code audit revealed the original seed (from SUMMARY.md dated 2026-05-07) was stale. Prod was last deployed 2026-05-07; source has since gained these features. Deploying current source ships them.",
   "items": [
     {
-      "id": "test-coverage",
-      "title": "Add store-level test coverage",
+      "id": "auth-userchange-test",
+      "title": "Test auth user-change wipe-and-reload path",
       "type": "tech-debt",
       "source": "summary-known-gap",
-      "status": "approved",
-      "value": 4,
-      "effort": 2,
-      "score": 20,
-      "created": "2026-06-23",
-      "updated": "2026-06-23",
-      "approvedVia": "email 2026-06-23",
-      "notes": "APPROVED to build. Small/safe: extend round-trip tests to financial.ts, habits.ts, body.ts + assessment migration paths. Build in a Claude Preview session (Mac) where the toolchain runs, then deploy."
-    },
-    {
-      "id": "mobile-responsiveness",
-      "title": "Mobile fix — Today hero h1 at 375px",
-      "type": "polish",
-      "source": "summary-known-gap",
-      "status": "approved",
-      "value": 4,
-      "effort": 1,
-      "score": 40,
-      "created": "2026-06-23",
-      "updated": "2026-06-23",
-      "approvedVia": "email 2026-06-23 (rescoped)",
-      "notes": "RESCOPED per your reply: only fix the Today hero h1 collision at 375px for now (was a full mobile pass). Small CSS change in components/today + app.css. Other 375px issues (composer-meta wrap, radar grid) deferred to a separate item later."
-    },
-    {
-      "id": "net-worth-tracker",
-      "title": "Build the net-worth tracker",
-      "type": "feature",
-      "source": "summary-known-gap",
-      "status": "approved",
-      "value": 5,
-      "effort": 4,
-      "score": 13,
-      "created": "2026-06-23",
-      "updated": "2026-06-23",
-      "approvedVia": "email 2026-06-23",
-      "notes": "APPROVED but MAJOR — CLAUDE.md/SUMMARY say plan-mode this. New stores/financial.ts depth, monthly net-worth check-ins + savings rate + >=1 goal, wire into Financial behavioral scoring. Do in a planning session, not an unattended ship. Gated from auto-prod by design."
-    },
-    {
-      "id": "remove-people-page",
-      "title": "Remove the People / relationships page",
-      "type": "feature",
-      "source": "email-2026-06-23",
-      "status": "hold",
+      "status": "backlog",
       "value": 3,
-      "effort": 3,
-      "score": 10,
+      "effort": 2,
+      "score": 15,
       "created": "2026-06-23",
       "updated": "2026-06-23",
-      "notes": "ON HOLD per your 2026-06-23 follow-up ('let me think'). Structural when revisited: lib/router.ts (PAGES/TAB_PAGES/PAGE_LABELS), App.svelte routing branch, TopNav, components/people/*, people store in collections.ts + cloud-sync. Decision still open: delete People data vs remove page+nav only. Rituals already moved to Goals, so unaffected."
+      "notes": "Still open. Coded in stores/auth.ts but never tested with two real Google accounts on one device. Risk: cross-user data bleed. Needs a manual/integration test."
     },
     {
       "id": "modern-redesign",
@@ -75,33 +34,7 @@
       "created": "2026-06-23",
       "updated": "2026-06-23",
       "approvedVia": "email 2026-06-23 (clarified: full redesign, not just a settings panel)",
-      "notes": "Make the app look sleeker/more modern across pages (not just a theme picker). BIG design effort — best done in a dedicated design pass: audit current look, define direction (type scale, spacing, color, component styling), then apply page-by-page with preview gates. Keep the hand-rolled-SVG / no-chart-lib constraints. Suggest using the design-critique / design-system skills to scope it."
-    },
-    {
-      "id": "auth-userchange-test",
-      "title": "Test auth user-change wipe-and-reload path",
-      "type": "tech-debt",
-      "source": "summary-known-gap",
-      "status": "backlog",
-      "value": 3,
-      "effort": 2,
-      "score": 15,
-      "created": "2026-06-23",
-      "updated": "2026-06-23",
-      "notes": "Never tested with two real Google accounts on one device. Risk: cross-user data bleed."
-    },
-    {
-      "id": "dimensioncards-any-casts",
-      "title": "Remove any-casts in DimensionCards.svelte",
-      "type": "tech-debt",
-      "source": "summary-known-gap",
-      "status": "backlog",
-      "value": 2,
-      "effort": 2,
-      "score": 10,
-      "created": "2026-06-23",
-      "updated": "2026-06-23",
-      "notes": "Partnership narrowing uses any. Tighten types."
+      "notes": "Make the app look sleeker/more modern across pages. BIG design effort — do as a dedicated pass: audit current look (design-critique skill), define direction (type scale, spacing, color, component styling), apply page-by-page with preview gates. Keep hand-rolled-SVG / no-chart-lib constraints. NOTE: a 'Modernize Today page with glass + gradient' pass already landed 2026-05-11 — extend that language to the rest of the app rather than starting cold."
     },
     {
       "id": "todaywealth-summary-state",
@@ -114,7 +47,20 @@
       "score": 10,
       "created": "2026-06-23",
       "updated": "2026-06-23",
-      "notes": "When a saved result exists, Today renders full radar+5cards+checklist inline. Add a collapsed summary card with expand affordance (new TodayWealthSummary.svelte)."
+      "notes": "Confirmed still open (no TodayWealthSummary.svelte, no collapse/expand). When a saved result exists, Today renders the full radar+5cards+checklist inline. Add a collapsed summary card with expand affordance."
+    },
+    {
+      "id": "remove-people-page",
+      "title": "Remove the People / relationships page",
+      "type": "feature",
+      "source": "email-2026-06-23",
+      "status": "hold",
+      "value": 3,
+      "effort": 3,
+      "score": 10,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "ON HOLD per your 2026-06-23 follow-up ('let me think'). Structural when revisited: lib/router.ts, App.svelte routing, TopNav, components/people/*, people store + cloud-sync. Decision open: delete People data vs remove page+nav only."
     },
     {
       "id": "periodic-nudges",
@@ -127,10 +73,66 @@
       "score": 8,
       "created": "2026-06-23",
       "updated": "2026-06-23",
-      "notes": "Needs an email/push delivery channel. Bigger lift; parked in icebox."
+      "notes": "Needs an email/push delivery channel. Bigger lift; parked in icebox. (Note: the improvement-loop now has an email digest channel — could be repurposed.)"
     }
   ],
   "archive": [
+    {
+      "id": "net-worth-tracker",
+      "title": "Build the net-worth tracker",
+      "type": "feature",
+      "source": "summary-known-gap",
+      "status": "done",
+      "value": 5,
+      "effort": 4,
+      "score": 13,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "resolvedVia": "code audit 2026-06-23 — already implemented",
+      "notes": "DONE (already built). stores/financial.ts (223 lines) + components/finance/{NetWorthSection,SavingsSection,GivingSection,NetWorthSparkline} + stores/financial.test.ts (284 lines). Pending prod deploy only. If you want deeper features, open a new scoped item."
+    },
+    {
+      "id": "test-coverage",
+      "title": "Add store-level test coverage",
+      "type": "tech-debt",
+      "source": "summary-known-gap",
+      "status": "done",
+      "value": 4,
+      "effort": 2,
+      "score": 20,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "resolvedVia": "code audit 2026-06-23 — already implemented",
+      "notes": "DONE (already built). 11 test files present incl. financial.test.ts, body.test.ts (149), habits.test.ts (222), assessment/anniversary/achievements/collections/persisted/journal-helpers/utils/ics. Gaps could still be filled but core coverage exists."
+    },
+    {
+      "id": "mobile-responsiveness",
+      "title": "Mobile fix — Today hero h1 at 375px",
+      "type": "polish",
+      "source": "summary-known-gap",
+      "status": "done",
+      "value": 4,
+      "effort": 1,
+      "score": 40,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "resolvedVia": "code audit 2026-06-23 — already implemented",
+      "notes": "DONE in source. Today hero h1 uses font-size: clamp(34px, 8vw, 64px) + a <=480px media query (committed 2026-05-11 'Modernize Today page'). The old '48px at 375px' issue is from a pre-clamp version. Pending prod deploy. Other 375px touch-ups (composer-meta wrap, radar grid) were deferred and could be a fresh item."
+    },
+    {
+      "id": "dimensioncards-any-casts",
+      "title": "Remove any-casts in DimensionCards.svelte",
+      "type": "tech-debt",
+      "source": "summary-known-gap",
+      "status": "done",
+      "value": 2,
+      "effort": 2,
+      "score": 10,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "resolvedVia": "code audit 2026-06-23 — no any-casts found",
+      "notes": "DONE. grep for ': any' / 'as any' / '<any>' in DimensionCards.svelte returned 0."
+    },
     {
       "id": "bundle-size",
       "title": "Reduce bundle size via lazy imports",
@@ -143,7 +145,7 @@
       "created": "2026-06-23",
       "updated": "2026-06-23",
       "resolvedVia": "email 2026-06-23",
-      "notes": "SKIPPED per your reply ('skip bundle-size'). Archived; re-add if it matters later."
+      "notes": "SKIPPED per your reply ('skip bundle-size'). Re-add if it matters later."
     }
   ]
 }
