@@ -185,9 +185,28 @@ firebase deploy --only hosting
 6. Commit via CLI (pre-set git identity is `sjonah123 / sjonah123@gmail.com`)
 7. Tell user "X commits to push via GitHub Desktop"
 
+## Improvement loop
+
+`improvement-loop/` is a self-running system for deciding what to build next. `BACKLOG.json`
+is the scored source of truth; `IDEAS_INBOX.md` is freeform capture; `LOOP.md` documents it.
+Three scheduled tasks drive it: `life-stages-improvement-loop` (weekly review), `life-stages-digest`
+(every 2 days — drafts an email digest of suggestions + in-app notification), `life-stages-build-replies`
+(reads your email replies and triages decisions into the backlog). A live Cowork artifact
+`life-stages-backlog` renders it. **Environment limit:** the scheduled sandbox can't build/test/deploy
+(no Firebase CLI, npm registry unreachable, mount blocks file deletion → git locks jam) — actual
+coding + deploy happen in an interactive session on the Mac. See `improvement-loop/LOOP.md`.
+
+## Keeping docs current (after every change)
+
+After any meaningful change, update the docs **and keep them lean** — prune stale lines, don't
+just append. Targets: `CLAUDE.md` ≲230 lines, `SUMMARY.md` ≲120, `README.md` ≲60. README is a
+short human overview (not a CLAUDE.md copy — it used to be one; don't let it drift back). Bloated
+docs eat the context window, which defeats their purpose.
+
 ## Where to look first
 
 - **`SUMMARY.md` next to this file** — latest session's progress, decisions, what's pending
+- **`improvement-loop/LOOP.md`** — the backlog + email loop and its environment constraints
 - **`CLAUDE.md` (this file)** — durable constraints and architecture
 - The plan file: `/Users/Jonahs/.claude/plans/let-s-do-a-b-and-ancient-lobster.md` (latest plan; gets overwritten when a new plan-mode session runs)
 - User memory: `/Users/Jonahs/.claude/projects/-Users-Jonahs-Code/memory/MEMORY.md` (birthdate Dec 4 2002, 90-year framing preference, declined name personalization)
