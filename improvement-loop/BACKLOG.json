@@ -1,63 +1,94 @@
 {
   "schemaVersion": 1,
   "lastRun": "2026-06-23",
-  "lastRunSummary": "Seeded from SUMMARY.md known gaps. First autonomous run pending.",
+  "lastRunSummary": "Processed email reply: test-coverage + net-worth-tracker + mobile (rescoped) approved; bundle-size skipped; added remove-people-page (approved) and theme-customizer (needs clarification).",
   "scoring": {
     "method": "value-effort",
     "note": "score = round((value / effort) * 10). value and effort are each 1-5 (5 = highest value / most effort). Higher score = do sooner."
   },
+  "statuses": "backlog | approved (queued to build) | needs-info | in-progress | icebox | wont-do (archived) | done (archived)",
   "items": [
-    {
-      "id": "net-worth-tracker",
-      "title": "Build the net-worth tracker",
-      "type": "feature",
-      "source": "summary-known-gap",
-      "status": "backlog",
-      "value": 5,
-      "effort": 4,
-      "score": 13,
-      "created": "2026-06-23",
-      "updated": "2026-06-23",
-      "notes": "Financial Wealth's behavioral score is thin (only careerField). New stores/financial.ts exists per CLAUDE.md but verify depth. Monthly net-worth check-ins + savings rate + >=1 savings goal. Highest-leverage feature. Plan-mode this."
-    },
-    {
-      "id": "mobile-responsiveness",
-      "title": "Mobile responsiveness pass at 375px",
-      "type": "polish",
-      "source": "summary-known-gap",
-      "status": "backlog",
-      "value": 4,
-      "effort": 3,
-      "score": 13,
-      "created": "2026-06-23",
-      "updated": "2026-06-23",
-      "notes": "Today hero h1 (48px) collides with Wealth h2 at 375px; composer-meta wraps; wealth radar grid minmax(280px,1fr) tight. Audit each page at 375px, fix per page."
-    },
     {
       "id": "test-coverage",
       "title": "Add store-level test coverage",
       "type": "tech-debt",
       "source": "summary-known-gap",
-      "status": "backlog",
+      "status": "approved",
       "value": 4,
       "effort": 2,
       "score": 20,
       "created": "2026-06-23",
       "updated": "2026-06-23",
-      "notes": "CLAUDE.md now documents vitest + co-located *.test.ts and existing util/store tests. Verify current coverage; extend to financial.ts, habits.ts, body.ts round-trips and assessment migration paths."
+      "approvedVia": "email 2026-06-23",
+      "notes": "APPROVED to build. Small/safe: extend round-trip tests to financial.ts, habits.ts, body.ts + assessment migration paths. Build in a Claude Preview session (Mac) where the toolchain runs, then deploy."
     },
     {
-      "id": "bundle-size",
-      "title": "Reduce bundle size via lazy imports",
+      "id": "mobile-responsiveness",
+      "title": "Mobile fix — Today hero h1 at 375px",
+      "type": "polish",
+      "source": "summary-known-gap",
+      "status": "approved",
+      "value": 4,
+      "effort": 1,
+      "score": 40,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "approvedVia": "email 2026-06-23 (rescoped)",
+      "notes": "RESCOPED per your reply: only fix the Today hero h1 collision at 375px for now (was a full mobile pass). Small CSS change in components/today + app.css. Other 375px issues (composer-meta wrap, radar grid) deferred to a separate item later."
+    },
+    {
+      "id": "net-worth-tracker",
+      "title": "Build the net-worth tracker",
+      "type": "feature",
+      "source": "summary-known-gap",
+      "status": "approved",
+      "value": 5,
+      "effort": 4,
+      "score": 13,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "approvedVia": "email 2026-06-23",
+      "notes": "APPROVED but MAJOR — CLAUDE.md/SUMMARY say plan-mode this. New stores/financial.ts depth, monthly net-worth check-ins + savings rate + >=1 goal, wire into Financial behavioral scoring. Do in a planning session, not an unattended ship. Gated from auto-prod by design."
+    },
+    {
+      "id": "remove-people-page",
+      "title": "Remove the People / relationships page",
+      "type": "feature",
+      "source": "email-2026-06-23",
+      "status": "hold",
+      "value": 3,
+      "effort": 3,
+      "score": 10,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "notes": "ON HOLD per your 2026-06-23 follow-up ('let me think'). Structural when revisited: lib/router.ts (PAGES/TAB_PAGES/PAGE_LABELS), App.svelte routing branch, TopNav, components/people/*, people store in collections.ts + cloud-sync. Decision still open: delete People data vs remove page+nav only. Rituals already moved to Goals, so unaffected."
+    },
+    {
+      "id": "modern-redesign",
+      "title": "Modern visual redesign",
+      "type": "feature",
+      "source": "email-2026-06-23",
+      "status": "approved",
+      "value": 5,
+      "effort": 5,
+      "score": 10,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "approvedVia": "email 2026-06-23 (clarified: full redesign, not just a settings panel)",
+      "notes": "Make the app look sleeker/more modern across pages (not just a theme picker). BIG design effort — best done in a dedicated design pass: audit current look, define direction (type scale, spacing, color, component styling), then apply page-by-page with preview gates. Keep the hand-rolled-SVG / no-chart-lib constraints. Suggest using the design-critique / design-system skills to scope it."
+    },
+    {
+      "id": "auth-userchange-test",
+      "title": "Test auth user-change wipe-and-reload path",
       "type": "tech-debt",
       "source": "summary-known-gap",
       "status": "backlog",
-      "value": 2,
-      "effort": 3,
-      "score": 7,
+      "value": 3,
+      "effort": 2,
+      "score": 15,
       "created": "2026-06-23",
       "updated": "2026-06-23",
-      "notes": "~210KB gzip. Already split firebase + leaflet + main. Lazy-load leaflet/Places via dynamic import for further wins."
+      "notes": "Never tested with two real Google accounts on one device. Risk: cross-user data bleed."
     },
     {
       "id": "dimensioncards-any-casts",
@@ -70,7 +101,7 @@
       "score": 10,
       "created": "2026-06-23",
       "updated": "2026-06-23",
-      "notes": "Partnership narrowing uses `any`. Tighten types."
+      "notes": "Partnership narrowing uses any. Tighten types."
     },
     {
       "id": "todaywealth-summary-state",
@@ -86,19 +117,6 @@
       "notes": "When a saved result exists, Today renders full radar+5cards+checklist inline. Add a collapsed summary card with expand affordance (new TodayWealthSummary.svelte)."
     },
     {
-      "id": "auth-userchange-test",
-      "title": "Test auth user-change wipe-and-reload path",
-      "type": "tech-debt",
-      "source": "summary-known-gap",
-      "status": "backlog",
-      "value": 3,
-      "effort": 2,
-      "score": 15,
-      "created": "2026-06-23",
-      "updated": "2026-06-23",
-      "notes": "Coded in stores/auth.ts but never tested with two real Google accounts on one device. Risk: cross-user data bleed."
-    },
-    {
       "id": "periodic-nudges",
       "title": "Periodic nudges (assessment / journal reminders)",
       "type": "feature",
@@ -112,5 +130,20 @@
       "notes": "Needs an email/push delivery channel. Bigger lift; parked in icebox."
     }
   ],
-  "archive": []
+  "archive": [
+    {
+      "id": "bundle-size",
+      "title": "Reduce bundle size via lazy imports",
+      "type": "tech-debt",
+      "source": "summary-known-gap",
+      "status": "wont-do",
+      "value": 2,
+      "effort": 3,
+      "score": 7,
+      "created": "2026-06-23",
+      "updated": "2026-06-23",
+      "resolvedVia": "email 2026-06-23",
+      "notes": "SKIPPED per your reply ('skip bundle-size'). Archived; re-add if it matters later."
+    }
+  ]
 }

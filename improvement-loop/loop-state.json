@@ -4,13 +4,27 @@
   "subjectPrefix": "[life-stages]",
   "digest": {
     "lastDigestDate": "2026-06-23",
-    "lastDigestThreadId": null,
+    "lastDigestThreadId": "19ef628dafd69b79",
     "lastDigestMessageId": "r4598296071330647285",
     "count": 1
   },
   "replies": {
-    "lastCheckedDate": null,
-    "processedMessageIds": []
+    "lastCheckedDate": "2026-06-23",
+    "processedMessageIds": ["19ef62cc22c8602d"]
   },
-  "shipped": []
+  "shipped": [],
+  "decisionsLog": [
+    {
+      "date": "2026-06-23",
+      "replyMessageId": "19ef62cc22c8602d",
+      "decisions": [
+        {"instruction": "build test-coverage", "item": "test-coverage", "result": "approved — queued to build (toolchain not runnable in this sandbox)"},
+        {"instruction": "build net-worth-tracker", "item": "net-worth-tracker", "result": "approved but MAJOR — gated to a planning session"},
+        {"instruction": "skip bundle-size", "item": "bundle-size", "result": "wont-do — archived"},
+        {"instruction": "change mobile-responsiveness: only fix Today hero h1", "item": "mobile-responsiveness", "result": "rescoped + approved — queued to build"},
+        {"instruction": "remove the people/relationship page", "item": "remove-people-page", "result": "new item, approved but MAJOR — needs scope decision (delete data vs remove page only)"},
+        {"instruction": "new window to change site appearance / more modern look", "item": "theme-customizer", "result": "new item, needs-info — clarification requested"}
+      ]
+    }
+  ]
 }

@@ -72,6 +72,30 @@ To reply: open the draft in Gmail, send it to yourself, and reply with your deci
 or just tell Claude in chat. The reply-builder finds your replies by the `[life-stages]`
 subject marker and skips any message id already in `loop-state.json`.
 
+### Environment reality (important)
+
+The scheduled tasks run in a Linux sandbox that **cannot build, test, or deploy** the app:
+no Firebase CLI, the npm registry is unreachable so deps won't install, and the mounted
+folder blocks file deletion (which also jams `git` after the first commit). So the loop is
+split:
+
+- **Autonomous (sandbox):** digest → read replies → triage decisions into `BACKLOG.json` →
+  update the dashboard → draft the reply email. All of this works (the Write tool persists
+  files even when git/build don't).
+- **Build + deploy (your Mac):** the actual coding, `npm test && npm run build`,
+  `firebase deploy`, and the commit/push happen in an interactive Cowork session on your
+  Mac (where the toolchain + Firebase auth live). The reply email hands you a per-item
+  build plan to make that fast.
+
+If git ever reports a stale `.git/index.lock`, delete that file on your Mac and commit via
+GitHub Desktop — the sandbox can't remove it.
+
+Optional path to true autonomous deploy: generate a Firebase CI token on your Mac
+(`firebase login:ci`) and store it as a `FIREBASE_TOKEN` secret the task can read, plus a
+deps cache the sandbox can reach. That's real infra setup and involves a secret you'd
+manage yourself — not needed for a personal project, but it's the only way to remove the
+Mac-in-the-loop step.
+
 ### Ship-to-prod guardrails (you chose auto-ship)
 
 The builder will deploy to production on its own ONLY when all of these hold:
