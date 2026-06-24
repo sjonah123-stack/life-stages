@@ -137,8 +137,17 @@ export async function loadFromCloud(): Promise<void> {
     if (snap.exists()) {
       const cloudDoc = snap.data() as { data?: CloudPayload; snapshotSeq?: number };
       if (typeof cloudDoc.snapshotSeq === 'number') snapshotSeq = cloudDoc.snapshotSeq;
-      if (cloudDoc?.data) applyCloudState(cloudDoc.data);
-      setSyncStatus('synced', 'Synced ✓');
+      const cloudData = cloudDoc?.data;
+      if (isPayloadEmpty(cloudData) && !isPayloadEmpty(collectStateForCloud())) {
+        // The cloud doc is blank but this device still has data (e.g. recovering
+        // after an earlier bad write wiped the cloud). Keep local and push it
+        // back up instead of letting the empty cloud overwrite it on apply.
+        setSyncStatus('synced', 'Synced ✓');
+        saveToCloud();
+      } else {
+        if (cloudData) applyCloudState(cloudData);
+        setSyncStatus('synced', 'Synced ✓');
+      }
     } else {
       // First sign-in for this account — push current local up.
       setSyncStatus('synced', 'Synced ✓');
