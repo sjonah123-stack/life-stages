@@ -25,7 +25,8 @@ import {
   setFromCloud as setBodyFromCloud,
 } from './body';
 import { currentUser, setSyncStatus, setOnSignedInCallback } from './auth';
-import type { CloudPayload } from '../types';
+import { uploadJournalPhoto, isDataUrl } from '../lib/photos';
+import type { CloudPayload, Journal } from '../types';
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let applyingCloud = false;
@@ -158,12 +159,35 @@ export async function loadFromCloud(): Promise<void> {
   }
 }
 
+// Before anything reaches the cloud, move any base64 journal photos to Cloud
+// Storage and replace them with their download URL. This keeps the Firestore
+// doc small (well clear of the 1 MB limit) regardless of how many photos exist.
+// Best-effort per photo: a failed upload leaves that entry as a data URL to
+// retry on the next save, and never blocks the rest of the sync.
+async function migrateJournalPhotos(uid: string): Promise<void> {
+  const current = get(journal);
+  let changed = false;
+  const next: Journal = { ...current };
+  for (const [key, entry] of Object.entries(current)) {
+    if (!entry || !isDataUrl(entry.photo)) continue;
+    try {
+      const url = await uploadJournalPhoto(uid, key, entry.photo);
+      next[key] = { ...entry, photo: url };
+      changed = true;
+    } catch {
+      /* keep the data URL; retry next save */
+    }
+  }
+  if (changed) journal.set(next);
+}
+
 export async function saveToCloud(): Promise<void> {
   const { db } = getFirebase();
   const user = get(currentUser);
   if (!db || !user) return;
   setSyncStatus('syncing', 'Saving…');
   try {
+    await migrateJournalPhotos(user.uid);
     const ref = doc(db, 'users', user.uid);
     const payload = collectStateForCloud();
 

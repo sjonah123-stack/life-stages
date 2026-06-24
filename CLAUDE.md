@@ -31,6 +31,7 @@ life-stages/
 ├── firebase.json              ← hosting + firestore (rules/indexes) + functions config
 ├── firestore.rules            ← per-user lock: users/{uid} (+snapshots, +versions) by that uid
 ├── firestore.indexes.json     ← (empty) Firestore composite indexes
+├── storage.rules              ← per-user lock on Cloud Storage (journal photos under users/{uid})
 ├── functions/                 ← Cloud Functions (TS): server-side versioning + restore API
 │   └── src/index.ts           ← archiveUserVersion trigger, list/restoreUserVersion callables
 ├── .firebaserc
@@ -112,6 +113,7 @@ The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` d
 - `applyCloudState` sets stores during cloud download; those `.set()` calls would normally trigger the auto-upload subscription. The `applyingCloud` flag in cloud-sync.ts suppresses this. Don't remove it.
 - **Empty-overwrite guard:** `saveToCloud` refuses to overwrite a populated cloud doc with an empty local payload (`isPayloadEmpty`, tested). This is the last line of defence against the data-loss class — don't weaken it.
 - **Rolling snapshots:** before each non-empty overwrite, the payload is backed up to `users/{uid}/snapshots/{slot}`, round-robin over `SNAPSHOT_SLOTS` (5). `snapshotSeq` is seeded from the main doc on load. Best-effort; recoverable via the Firestore console.
+- **Photos live in Cloud Storage, never the doc.** `JournalEntry.photo` holds a `data:` URL locally (offline-capable) but is uploaded to Storage (`users/{uid}/journal/{key}.jpg`, see `lib/photos.ts`) and replaced with its download URL on every `saveToCloud` (`migrateJournalPhotos`). This keeps the Firestore doc clear of the 1 MB limit. `<img src={photo}>` and `!!photo` checks work for both URL kinds, so don't special-case them. Requires Cloud Storage enabled on the project.
 
 ### Hash router
 

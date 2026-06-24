@@ -1,6 +1,7 @@
 // Resize an uploaded image to a max long-edge of 800px and re-encode
-// as JPEG (0.82 quality). Returns a base64 data URL suitable for
-// localStorage / Firestore embedding.
+// as JPEG (0.82 quality). Returns a base64 data URL — held locally, then
+// uploaded to Cloud Storage on sync (see lib/photos.ts) so it never bloats
+// the Firestore doc.
 
 export type ImageErrorKind = 'too-large' | 'unsupported' | 'decode-failed' | 'read-failed';
 
