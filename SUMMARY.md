@@ -1,18 +1,38 @@
 # Session Summary — life-stages
 
-Last updated: 2026-06-23 — shipped the editorial redesign (preview channel) + removed the People page.
+Last updated: 2026-06-24 — redesign shipped to prod, data-loss bug fixed, backend (Cloud Functions) built out.
 
-## Redesign (2026-06-23)
+## Redesign — SHIPPED TO PROD (2026-06-24)
 
-Re-skinned the whole app to a single editorial design language — warm cream paper, charcoal
-ink, terracotta accent, Cormorant Garamond (serif) + Hanken Grotesk (sans). Implemented entirely
-through the existing CSS-variable system in `app.css` (palette tokens + fonts remapped), so every
-component inherited the look; signature surfaces (TopNav, PageHeader, AgeSlider number, `.glass`
-cards) were hand-tuned. The 3-theme switcher was retired: ThemePicker deleted, body `theme-*`
-class removed, `theme` field kept read-tolerant only. All current pages/features preserved (re-skin
-only, no IA change). Fonts via Google Fonts `<link>` in `index.html`; PWA manifest colours updated.
-Preview channel: **https://life-stages-90806--redesign-iwsb7yer.web.app** (expires 2026-06-30) —
-awaiting approval before prod.
+Re-skinned the whole app to a single editorial design language (cream/charcoal/terracotta,
+Cormorant Garamond + Hanken Grotesk), via the existing CSS-variable system in `app.css`. The
+3-theme switcher was retired (ThemePicker deleted, `theme` field read-tolerant only). Re-skin
+only, no IA change. Live at https://life-stages-90806.web.app.
+
+## Data-loss fix + sync hardening (2026-06-24)
+
+Root cause: the auth observer wiped local data + reloaded on *every* post-init sign-in, racing the
+cloud load (and misreading Firebase's null-then-user fire as an account switch). Fixed: a sign-in
+(`null → user`) now loads cloud, never wipes; only account-switch / sign-out wipes (`authTransition`,
+tested). Layered defences: empty-overwrite guard on save, load-side rescue (blank cloud won't clobber
+a device with data), rolling client snapshots (`users/{uid}/snapshots`). The user's historical data
+was already overwritten before the fix and is unrecoverable (no PITR was on); they chose to move on.
+
+## Backend buildout — Cloud Functions (2026-06-24, NOT deployed yet)
+
+- **Phase 1:** `functions/` (TS, Functions v2). `archiveUserVersion` trigger backs up the prior
+  user-doc state to `users/{uid}/versions` (pruned to 20) — server-authoritative, client can't skip.
+  `list/restoreUserVersion` callables. Rules lock `versions` (owner-read, no client write).
+- **Phase 2:** Journal photos moved out of the Firestore doc to Cloud Storage (`lib/photos.ts`;
+  `migrateJournalPhotos` runs in `saveToCloud`). Fixes the 1 MB-doc landmine. `storage.rules` added.
+- **Phase 3:** User-owned export/import (Settings → Your data) — download/restore full data as JSON.
+
+## ⚠️ Console actions still owed by the user (nothing billable deployed by Claude)
+
+1. Publish Firestore rules: `firebase deploy --only firestore:rules`.
+2. Deploy functions + storage rules: `firebase deploy --only functions,storage` — **requires
+   enabling Cloud Storage** first (console → Storage → Get Started).
+3. Enable Firestore **PITR / scheduled backups** (console).
 
 ## Where things stand right now
 
