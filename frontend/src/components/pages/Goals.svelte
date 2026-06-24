@@ -8,6 +8,7 @@
   import RitualsSection from '../goals/RitualsSection.svelte';
   import HabitsSection from '../goals/HabitsSection.svelte';
   import CalendarExportButton from '../goals/CalendarExportButton.svelte';
+  import AiMilestoneSuggest from '../goals/AiMilestoneSuggest.svelte';
   import type { WealthKey } from '../../types';
 
   // SMART milestone form — Specific (label), Measurable (measure),
@@ -106,6 +107,8 @@
       or a specific date), and Relevant (why it matters). Tag each one to a wealth dimension
       so the balance is visible at a glance. They show up as pins on your timeline.
     </p>
+
+    <AiMilestoneSuggest />
 
     <div class="milestone-list">
       {#if $milestones.length === 0}

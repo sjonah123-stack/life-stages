@@ -22,6 +22,16 @@ export const FIREBASE_CONFIG = {
   measurementId: 'G-QNL2E47SGG',
 };
 
+// --- AI features (Firebase AI Logic / Gemini) ---
+// reCAPTCHA v3 site key for App Check. Empty = App Check disabled (the app runs
+// fine without it). Set this once it's created in the Firebase console so AI
+// calls are protected from billing abuse before enabling enforcement.
+export const RECAPTCHA_SITE_KEY = '';
+
+// Gemini model id for AI Logic. Verify the exact id in the Firebase AI Logic
+// console model picker — ids change over time.
+export const GEMINI_MODEL = 'gemini-2.5-flash';
+
 // URL params we explicitly never write (and clean up if seen).
 export const PRIVATE_URL_PARAMS = [
   'dob', 's', 'th', 'c', 'p', 'k', 'cf', 'r', 'pr', 'by', 'hy', 'm',
