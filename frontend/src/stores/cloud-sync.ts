@@ -227,6 +227,31 @@ export async function saveToCloud(): Promise<void> {
   }
 }
 
+// ---- User-owned export / import ----
+// A backup the user fully controls: download everything as JSON, restore it
+// anywhere. Works offline and across accounts — the ultimate integrity net.
+
+export function exportStateAsJson(): string {
+  return JSON.stringify({ app: 'life-stages', exported: Date.now(), ...collectStateForCloud() }, null, 2);
+}
+
+// Restore from a previously exported JSON string. Returns false on malformed
+// input (caller shows an error). On success, local stores are updated and the
+// imported state is pushed to the cloud.
+export function importStateFromJson(raw: string): boolean {
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); } catch { return false; }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+  // A valid backup carries at least one recognised field.
+  const p = parsed as Partial<CloudPayload>;
+  if (isPayloadEmpty(p) && p.sex === undefined && p.savingsRate === undefined) return false;
+  applyCloudState(p);
+  // applyCloudState suppresses the auto-upload; push the imported state up once
+  // the suppression flag clears.
+  setTimeout(() => scheduleCloudSave(), 0);
+  return true;
+}
+
 export function scheduleCloudSave(): void {
   if (applyingCloud) return; // we're applying a cloud doc — don't bounce back
   const user = get(currentUser);

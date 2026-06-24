@@ -114,6 +114,7 @@ The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` d
 - **Empty-overwrite guard:** `saveToCloud` refuses to overwrite a populated cloud doc with an empty local payload (`isPayloadEmpty`, tested). This is the last line of defence against the data-loss class — don't weaken it.
 - **Rolling snapshots:** before each non-empty overwrite, the payload is backed up to `users/{uid}/snapshots/{slot}`, round-robin over `SNAPSHOT_SLOTS` (5). `snapshotSeq` is seeded from the main doc on load. Best-effort; recoverable via the Firestore console.
 - **Photos live in Cloud Storage, never the doc.** `JournalEntry.photo` holds a `data:` URL locally (offline-capable) but is uploaded to Storage (`users/{uid}/journal/{key}.jpg`, see `lib/photos.ts`) and replaced with its download URL on every `saveToCloud` (`migrateJournalPhotos`). This keeps the Firestore doc clear of the 1 MB limit. `<img src={photo}>` and `!!photo` checks work for both URL kinds, so don't special-case them. Requires Cloud Storage enabled on the project.
+- **Export / import** (`exportStateAsJson` / `importStateFromJson`, Settings → Your data): a user-owned JSON backup/restore that reuses `collectStateForCloud` / `applyCloudState`. Import rejects malformed/empty files and pushes the restored state up after the `applyingCloud` flag clears.
 
 ### Hash router
 

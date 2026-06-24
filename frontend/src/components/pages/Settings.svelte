@@ -5,9 +5,43 @@
   } from '../../stores/personal';
   import { personalHorizon } from '../../stores/derived';
   import { formatDOB } from '../../utils';
+  import { exportStateAsJson, importStateFromJson } from '../../stores/cloud-sync';
   import PageHeader from '../shared/PageHeader.svelte';
 
   const today = formatDOB(new Date());
+
+  let importMsg = '';
+
+  function downloadBackup(): void {
+    const blob = new Blob([exportStateAsJson()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `life-stages-backup-${formatDOB(new Date())}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportFile(e: Event): Promise<void> {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const ok = confirm(
+      'Restore from this backup?\n\nIt replaces your current data on this device ' +
+        '(and syncs up if you\'re signed in). Your existing data is backed up in the ' +
+        'cloud version history first.'
+    );
+    if (!ok) { input.value = ''; return; }
+    try {
+      const text = await file.text();
+      importMsg = importStateFromJson(text)
+        ? 'Restored ✓'
+        : "That file isn't a valid life-stages backup.";
+    } catch {
+      importMsg = "Couldn't read that file.";
+    }
+    input.value = '';
+  }
 </script>
 
 <section class="page">
@@ -129,6 +163,22 @@
       </div>
     </details>
   </div>
+
+  <div class="data-card">
+    <div class="data-head">
+      <h2>Your data</h2>
+      <p>Download a complete backup any time, or restore from one. Your data also
+        syncs to the cloud and keeps a rolling version history.</p>
+    </div>
+    <div class="data-actions">
+      <button type="button" class="data-btn" on:click={downloadBackup}>Download backup</button>
+      <label class="data-btn ghost">
+        Restore from file
+        <input type="file" accept="application/json,.json" on:change={handleImportFile} hidden />
+      </label>
+      {#if importMsg}<span class="import-msg">{importMsg}</span>{/if}
+    </div>
+  </div>
 </section>
 
 <style>
@@ -139,6 +189,57 @@
     border: 1px solid var(--border);
     border-radius: 18px;
     box-shadow: var(--shadow-sm);
+  }
+  .data-card {
+    padding: 22px 22px 24px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .data-head h2 {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+  .data-head p {
+    margin: 0 0 18px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-dim);
+    max-width: 56ch;
+  }
+  .data-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .data-btn {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #F4F0E8;
+    transition: opacity 0.15s;
+  }
+  .data-btn:hover { opacity: 0.85; }
+  .data-btn.ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--border);
+  }
+  .import-msg {
+    font-size: 13px;
+    color: var(--ink-dim);
   }
   .personalize-row {
     display: flex;
