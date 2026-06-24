@@ -29,8 +29,9 @@ export const FIREBASE_CONFIG = {
 export const RECAPTCHA_SITE_KEY = '';
 
 // Gemini model id for AI Logic. Verify the exact id in the Firebase AI Logic
-// console model picker — ids change over time.
-export const GEMINI_MODEL = 'gemini-2.5-flash';
+// console model picker — ids change over time. If a call fails with a
+// model-not-found error, the exact string is in that picker.
+export const GEMINI_MODEL = 'gemini-3.5-flash';
 
 // URL params we explicitly never write (and clean up if seen).
 export const PRIVATE_URL_PARAMS = [
