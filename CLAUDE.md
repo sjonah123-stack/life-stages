@@ -28,9 +28,11 @@ life-stages/
 ├── SUMMARY.md                 ← latest session handoff (what's done, what's pending)
 ├── index.html                 ← LEGACY archive, do not edit; copied to frontend/public/legacy.html at build
 ├── manifest.json, sw.js, icon.svg ← legacy PWA assets, no longer in serving path
-├── firebase.json              ← hosting.public → frontend/dist; firestore rules+indexes
-├── firestore.rules            ← per-user lock: users/{uid} (+snapshots) readable only by that uid
+├── firebase.json              ← hosting + firestore (rules/indexes) + functions config
+├── firestore.rules            ← per-user lock: users/{uid} (+snapshots, +versions) by that uid
 ├── firestore.indexes.json     ← (empty) Firestore composite indexes
+├── functions/                 ← Cloud Functions (TS): server-side versioning + restore API
+│   └── src/index.ts           ← archiveUserVersion trigger, list/restoreUserVersion callables
 ├── .firebaserc
 └── frontend/
     ├── package.json
