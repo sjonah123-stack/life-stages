@@ -56,6 +56,12 @@ build/Release
 # Dependency directories
 node_modules/
 
+# Guard against a stray `npm install` at the repo ROOT — the real packages live
+# in frontend/ and functions/. The leading slash scopes this to the root only,
+# so frontend/package.json and functions/package.json are unaffected.
+/package.json
+/package-lock.json
+
 # Optional npm cache directory
 .npm
 
