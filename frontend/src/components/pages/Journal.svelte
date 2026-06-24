@@ -4,6 +4,7 @@
   import JournalPulse from '../journal/JournalPulse.svelte';
   import WeeksGrid from '../journal/WeeksGrid.svelte';
   import FutureLetters from '../journal/FutureLetters.svelte';
+  import AiJournalInsight from '../journal/AiJournalInsight.svelte';
   import PageHeader from '../shared/PageHeader.svelte';
 
   function handleEdit(key: string) {
@@ -19,6 +20,7 @@
 
   <JournalPulse />
   <Composer />
+  <AiJournalInsight />
   <EntryFeed onEditEntry={handleEdit} />
 
   <details class="calendar-collapse">

@@ -108,6 +108,13 @@ When adding a new persisted field:
 
 The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` decides what the `onAuthStateChanged` listener does: a sign-in from a logged-out session (`null → user`) **loads from cloud** (never wipes — that was the data-loss bug); only a real account switch (`userA → userB`) or sign-out (`user → null`) wipes localStorage + reloads (`clearAllLocalData()` + `window.location.reload()`) for cross-account isolation. The rules are unit-tested in `auth.test.ts`. Don't reintroduce a wipe on plain sign-in.
 
+### AI features (Firebase AI Logic / Gemini)
+
+`lib/ai.ts` calls Gemini via Firebase AI Logic (`GoogleAIBackend`), using `Schema`-typed **structured output** so responses come back as validated JSON. Model id is `GEMINI_MODEL` in `config.ts` — verify the exact string in the AI Logic console. Three features: milestone suggestions (`AiMilestoneSuggest.svelte` → Goals), journal insights (`AiJournalInsight.svelte` → Journal), reflective prompts (in `Composer.svelte`). Conventions:
+- **Never trust model output** — every result runs through a pure normalizer (`normalizeAiMilestones`/`normalizeInsight`/`normalizePrompts`, tested) that clamps/validates before use.
+- **AI is gated to signed-in users** (billing tied to an account) and **never written to the `snapshots` backup buffer** — that buffer is for recovery only. Journal insights persist **locally** (`stores/ai.ts`, regenerable, keeps the user doc lean), not in Firestore.
+- **App Check** (`lib/firebase.ts`) is gated on `RECAPTCHA_SITE_KEY`; empty = disabled so the app runs unprotected-but-working until the key is set. Required before exposing AI on prod (billing-abuse protection).
+
 ### Cloud sync gotchas
 
 - `applyCloudState` sets stores during cloud download; those `.set()` calls would normally trigger the auto-upload subscription. The `applyingCloud` flag in cloud-sync.ts suppresses this. Don't remove it.

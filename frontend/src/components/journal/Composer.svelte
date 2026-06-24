@@ -12,6 +12,34 @@
   import { MOOD_OPTIONS, LIFESPAN } from '../../config';
   import type { Mood } from '../../types';
   import OnThisDayBanner from './OnThisDayBanner.svelte';
+  import { generatePrompts } from '../../lib/ai';
+  import { currentUser } from '../../stores/auth';
+  import { currentStage } from '../../stores/derived';
+  import { journal } from '../../stores/collections';
+
+  // AI reflective prompts (signed-in only).
+  let aiPrompts: string[] = [];
+  let aiLoading = false;
+
+  async function getAiPrompts() {
+    aiLoading = true;
+    try {
+      const recent = Object.values($journal)
+        .map((e) => e?.text?.trim())
+        .filter((t): t is string => !!t)
+        .slice(-5);
+      aiPrompts = await generatePrompts($currentStage?.name ?? 'this stage of life', recent);
+    } catch {
+      aiPrompts = [];
+    } finally {
+      aiLoading = false;
+    }
+  }
+
+  function useAiPrompt(p: string) {
+    promptText = p;
+    aiPrompts = [];
+  }
 
   // Editor state
   let dateInput: string = '';
@@ -232,7 +260,19 @@
       <span>💡</span>
       <span class="prompt-text">{promptText}</span>
       <button type="button" class="reroll" title="New prompt" on:click={() => promptText = pickPrompt()}>🎲</button>
+      {#if $currentUser}
+        <button type="button" class="reroll" title="AI prompts for your stage" on:click={getAiPrompts} disabled={aiLoading}>
+          {aiLoading ? '…' : '✦'}
+        </button>
+      {/if}
     </div>
+    {#if aiPrompts.length}
+      <div class="ai-prompts">
+        {#each aiPrompts as p}
+          <button type="button" class="ai-prompt-chip" on:click={() => useAiPrompt(p)}>{p}</button>
+        {/each}
+      </div>
+    {/if}
   {/if}
 
   <textarea
@@ -385,6 +425,28 @@
     line-height: 1;
   }
   .reroll:hover { transform: rotate(90deg); }
+  .reroll:disabled { cursor: default; opacity: 0.6; }
+  .ai-prompts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .ai-prompt-chip {
+    text-align: left;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.4;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .ai-prompt-chip:hover { border-color: var(--accent); }
   .composer-textarea {
     width: 100%;
     min-height: 120px;
