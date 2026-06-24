@@ -15,6 +15,10 @@ let aiInstance: ReturnType<typeof getAI> | null = null;
 function aiBackend() {
   const { app } = getFirebase();
   if (!app) throw new Error('Firebase is not configured.');
+  // Gemini Developer API backend. It currently serves gemini-3.5-flash (Vertex
+  // does not). Billed via the Gemini API on AI Studio — enable pay-as-you-go
+  // there (links to the project's Cloud billing) so calls aren't rejected once
+  // free credits are exhausted.
   if (!aiInstance) aiInstance = getAI(app, { backend: new GoogleAIBackend() });
   return aiInstance;
 }
