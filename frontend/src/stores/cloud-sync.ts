@@ -30,6 +30,31 @@ import type { CloudPayload } from '../types';
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let applyingCloud = false;
 
+// Rolling backups: before overwriting the main doc, the current payload is
+// written to users/{uid}/snapshots/{slot}, round-robin over a fixed number of
+// slots. Bounded storage, no listing/pruning needed. `snapshotSeq` is seeded
+// from the cloud doc on load so the rotation continues across sessions.
+const SNAPSHOT_SLOTS = 5;
+let snapshotSeq = 0;
+
+// A payload is "empty" when it carries no meaningful user data. Used to refuse
+// overwriting a populated cloud doc with a blank local state — the data-loss
+// class where an empty save races ahead of (or replaces) real cloud data.
+export function isPayloadEmpty(p: Partial<CloudPayload> | null | undefined): boolean {
+  if (!p) return true;
+  if (p.dob) return false;
+  const arrays: unknown[] = [
+    p.milestones, p.people, p.books, p.rituals, p.priorities,
+    p.netWorthEntries, p.savingsGoals, p.givingEntries,
+    p.habits, p.habitChecks, p.bodyEntries, p.assessmentResults,
+  ];
+  if (arrays.some((a) => Array.isArray(a) && a.length > 0)) return false;
+  // journal + letters are keyed objects, not arrays.
+  if (p.journal && Object.keys(p.journal).length > 0) return false;
+  if (p.letters && Object.keys(p.letters).length > 0) return false;
+  return true;
+}
+
 export function collectStateForCloud(): CloudPayload {
   return {
     v: 2,
@@ -110,7 +135,8 @@ export async function loadFromCloud(): Promise<void> {
     const ref = doc(db, 'users', user.uid);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      const cloudDoc = snap.data() as { data?: CloudPayload };
+      const cloudDoc = snap.data() as { data?: CloudPayload; snapshotSeq?: number };
+      if (typeof cloudDoc.snapshotSeq === 'number') snapshotSeq = cloudDoc.snapshotSeq;
       if (cloudDoc?.data) applyCloudState(cloudDoc.data);
       setSyncStatus('synced', 'Synced ✓');
     } else {
@@ -131,9 +157,35 @@ export async function saveToCloud(): Promise<void> {
   try {
     const ref = doc(db, 'users', user.uid);
     const payload = collectStateForCloud();
+
+    // Guard: never overwrite a populated cloud doc with empty local state.
+    // If local is empty, read the existing doc first; if the cloud already has
+    // real data, refuse the write rather than blanking it.
+    if (isPayloadEmpty(payload)) {
+      const existing = await getDoc(ref);
+      const existingData = existing.exists()
+        ? (existing.data() as { data?: CloudPayload }).data
+        : undefined;
+      if (!isPayloadEmpty(existingData)) {
+        setSyncStatus('synced', 'Synced ✓');
+        return;
+      }
+    } else {
+      // Roll a backup before overwriting, so a bad write is self-recoverable.
+      // Best-effort: a snapshot failure must never block the real save.
+      const slot = snapshotSeq % SNAPSHOT_SLOTS;
+      snapshotSeq += 1;
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid, 'snapshots', String(slot)),
+          { data: payload, savedAt: serverTimestamp() }
+        );
+      } catch { /* snapshots are best-effort */ }
+    }
+
     await setDoc(
       ref,
-      { data: payload, updated_at: serverTimestamp() },
+      { data: payload, updated_at: serverTimestamp(), snapshotSeq },
       { merge: true }
     );
     setSyncStatus('synced', 'Synced ✓');

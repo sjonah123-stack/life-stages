@@ -28,7 +28,9 @@ life-stages/
 ├── SUMMARY.md                 ← latest session handoff (what's done, what's pending)
 ├── index.html                 ← LEGACY archive, do not edit; copied to frontend/public/legacy.html at build
 ├── manifest.json, sw.js, icon.svg ← legacy PWA assets, no longer in serving path
-├── firebase.json              ← points hosting.public at frontend/dist
+├── firebase.json              ← hosting.public → frontend/dist; firestore rules+indexes
+├── firestore.rules            ← per-user lock: users/{uid} (+snapshots) readable only by that uid
+├── firestore.indexes.json     ← (empty) Firestore composite indexes
 ├── .firebaserc
 └── frontend/
     ├── package.json
@@ -101,11 +103,13 @@ When adding a new persisted field:
 
 ### Cross-user data isolation
 
-Sign-out and auth-user-change BOTH wipe localStorage and reload (`clearAllLocalData()` + `window.location.reload()`). This is in `stores/auth.ts → onAuthStateChanged` listener with an `authInitialized` flag to distinguish initial fire from later changes. Never bypass this.
+The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` decides what the `onAuthStateChanged` listener does: a sign-in from a logged-out session (`null → user`) **loads from cloud** (never wipes — that was the data-loss bug); only a real account switch (`userA → userB`) or sign-out (`user → null`) wipes localStorage + reloads (`clearAllLocalData()` + `window.location.reload()`) for cross-account isolation. The rules are unit-tested in `auth.test.ts`. Don't reintroduce a wipe on plain sign-in.
 
-### Cloud sync gotcha
+### Cloud sync gotchas
 
-`applyCloudState` sets stores during cloud download; those `.set()` calls would normally trigger the auto-upload subscription. The `applyingCloud` flag in cloud-sync.ts suppresses this. Don't remove it.
+- `applyCloudState` sets stores during cloud download; those `.set()` calls would normally trigger the auto-upload subscription. The `applyingCloud` flag in cloud-sync.ts suppresses this. Don't remove it.
+- **Empty-overwrite guard:** `saveToCloud` refuses to overwrite a populated cloud doc with an empty local payload (`isPayloadEmpty`, tested). This is the last line of defence against the data-loss class — don't weaken it.
+- **Rolling snapshots:** before each non-empty overwrite, the payload is backed up to `users/{uid}/snapshots/{slot}`, round-robin over `SNAPSHOT_SLOTS` (5). `snapshotSeq` is seeded from the main doc on load. Best-effort; recoverable via the Firestore console.
 
 ### Hash router
 

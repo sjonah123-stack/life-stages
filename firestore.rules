@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Life-stages stores one document per user at users/{uid}, written by the
+// signed-in account from cloud-sync.ts. Each user may read/write ONLY their
+// own document and their own rolling snapshots subcollection. Nothing else is
+// reachable. Keep this in sync with the paths in stores/cloud-sync.ts.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Rolling backups the app writes before overwriting the main doc.
+      match /snapshots/{slot} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}
