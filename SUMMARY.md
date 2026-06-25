@@ -1,6 +1,6 @@
 # Session Summary — life-stages
 
-Last updated: 2026-06-25 — AI features live (billing on), App Check wired; redesign + backend shipped.
+Last updated: 2026-06-25 — AI features live (billing on), App Check secret registered + verifying (400s resolved); redesign + backend shipped.
 
 ## Where prod stands
 
@@ -34,10 +34,13 @@ commit count each session: `git rev-list --count origin/main..HEAD`.
 
 1. ✅ **AI Studio billing — DONE.** Pay-as-you-go enabled; all three AI features proven working live
    on `gemini-3.5-flash`.
-2. **App Check — site key wired + deployed; enforcement pending.** `RECAPTCHA_SITE_KEY` is set and
-   App Check initializes on prod (skips localhost). Still owed: register the reCAPTCHA *secret* in the
-   App Check console, verify tokens show "verified" in Metrics, then enable enforcement for
-   Firestore/Storage/AI Logic. **Don't enforce before tokens verify** or prod (incl. AI) breaks.
+2. **App Check — secret registered; tokens verifying; enforcement pending.** `RECAPTCHA_SITE_KEY` is
+   set and App Check initializes on prod (skips localhost). The reCAPTCHA *legacy secret* (from the
+   Cloud-console key at `/security/recaptcha/6LfUIDMt…`, not the classic admin) is now registered in
+   the App Check console and the prior `appCheck/400` token errors are gone (verified live in the prod
+   console). Still owed: confirm requests show "verified" in App Check → APIs Metrics, then enable
+   enforcement for Firestore/Storage/AI Logic. **Don't enforce before tokens verify** or prod (incl.
+   AI) breaks.
 3. **Firestore PITR / scheduled backups** — optional now that version history is live; recommended.
 
 ## Design decisions (don't relitigate)
@@ -54,8 +57,9 @@ commit count each session: `git rev-list --count origin/main..HEAD`.
 
 ## Known gaps / backlog
 
-- **App Check enforcement not yet on** — site key wired + deployed, but until the secret is registered
-  and enforcement enabled, AI calls are unprotected from billing abuse.
+- **App Check enforcement not yet on** — site key + secret now registered and token 400s resolved,
+  but until enforcement is enabled, AI calls remain unprotected from billing abuse. Enable once
+  Metrics shows verified requests.
 - **Mobile polish** — audit pages at 375px (hero h1, composer-meta wrap, radar grid).
 - **In-app version-restore UI** — `list`/`restoreUserVersion` are deployed but not surfaced in the UI.
 - **Leftover old-palette colour** in the Composer prompt box (`rgba(255,201,60,…)`).
