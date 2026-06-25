@@ -1,6 +1,6 @@
 # Session Summary — life-stages
 
-Last updated: 2026-06-24 — redesign + data-loss fix + Cloud Functions backend + AI features all live.
+Last updated: 2026-06-25 — AI features live (billing on), App Check wired; redesign + backend shipped.
 
 ## Where prod stands
 
@@ -30,13 +30,14 @@ commit count each session: `git rev-list --count origin/main..HEAD`.
    structured-output Schemas, tested normalizers). Milestone suggestions (Goals), journal insights
    (Journal), reflective prompts (Composer). Gated to signed-in users; App Check wired but dormant.
 
-## ⚠️ Owed by the user (console only — Claude can't do these)
+## Owed by the user (console only — Claude can't do these)
 
-1. **AI Studio billing** — AI calls return `429 prepayment credits depleted` until pay-as-you-go is
-   enabled for the Gemini API at aistudio.google.com. **This is the only thing blocking AI** — code,
-   model, and wiring are correct and proven (a live call reached `gemini-3.5-flash:generateContent`).
-2. **App Check** — create a reCAPTCHA v3 key → set `RECAPTCHA_SITE_KEY` in `config.ts` → enable
-   enforcement. Protects AI from billing abuse.
+1. ✅ **AI Studio billing — DONE.** Pay-as-you-go enabled; all three AI features proven working live
+   on `gemini-3.5-flash`.
+2. **App Check — site key wired + deployed; enforcement pending.** `RECAPTCHA_SITE_KEY` is set and
+   App Check initializes on prod (skips localhost). Still owed: register the reCAPTCHA *secret* in the
+   App Check console, verify tokens show "verified" in Metrics, then enable enforcement for
+   Firestore/Storage/AI Logic. **Don't enforce before tokens verify** or prod (incl. AI) breaks.
 3. **Firestore PITR / scheduled backups** — optional now that version history is live; recommended.
 
 ## Design decisions (don't relitigate)
@@ -53,7 +54,8 @@ commit count each session: `git rev-list --count origin/main..HEAD`.
 
 ## Known gaps / backlog
 
-- **App Check is dormant** until the reCAPTCHA key is set — AI is unprotected from abuse meanwhile.
+- **App Check enforcement not yet on** — site key wired + deployed, but until the secret is registered
+  and enforcement enabled, AI calls are unprotected from billing abuse.
 - **Mobile polish** — audit pages at 375px (hero h1, composer-meta wrap, radar grid).
 - **In-app version-restore UI** — `list`/`restoreUserVersion` are deployed but not surfaced in the UI.
 - **Leftover old-palette colour** in the Composer prompt box (`rgba(255,201,60,…)`).
