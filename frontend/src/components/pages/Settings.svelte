@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     dob, sex, country, partnership, kids, careerField,
+    role, aspiration,
     smoker, exerciseLevel, sleepHours, familyLongevity,
   } from '../../stores/personal';
   import { personalHorizon } from '../../stores/derived';
@@ -118,6 +119,26 @@
             <option value="entrepreneurship">Entrepreneurship</option>
             <option value="other">Other</option>
           </select>
+        </div>
+      </div>
+      <div class="personalize-row personalize-free">
+        <div class="field field-wide">
+          <span class="field-label">What you do (in your words)</span>
+          <input
+            type="text"
+            bind:value={$role}
+            placeholder="e.g. commercial real estate investor"
+            maxlength="120"
+          />
+        </div>
+        <div class="field field-wide">
+          <span class="field-label">A meaningful life in ~10 years looks like…</span>
+          <textarea
+            bind:value={$aspiration}
+            rows="2"
+            placeholder="A sentence or two — used to personalize your AI suggestions"
+            maxlength="400"
+          ></textarea>
         </div>
       </div>
     </details>
@@ -261,6 +282,8 @@
   }
   .personalize input[type='date'],
   .personalize input[type='number'],
+  .personalize input[type='text'],
+  .personalize textarea,
   .personalize select {
     background: var(--panel-warm);
     border: 1px solid var(--border);
@@ -273,6 +296,11 @@
   }
   .personalize input[type='number'] { width: 86px; }
   .personalize select { cursor: pointer; }
+  .personalize textarea { resize: vertical; line-height: 1.4; }
+  .personalize-free { margin-top: 14px; align-items: stretch; }
+  .field-wide { flex: 1 1 260px; }
+  .field-wide input[type='text'],
+  .field-wide textarea { width: 100%; box-sizing: border-box; }
 
   .sex-toggle {
     display: inline-flex;

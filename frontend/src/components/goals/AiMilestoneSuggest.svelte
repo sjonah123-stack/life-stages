@@ -3,10 +3,14 @@
   // users so AI billing is tied to an authenticated account. Suggestions are
   // proposals only — the user reviews each and chooses what to add to Goals.
   import { currentStage } from '../../stores/derived';
-  import { todayAge } from '../../stores/personal';
-  import { milestones } from '../../stores/collections';
+  import {
+    todayAge, careerField, role, aspiration, partnership, kids,
+  } from '../../stores/personal';
+  import { milestones, priorities } from '../../stores/collections';
+  import { behavioralScores } from '../../stores/assessment';
   import { currentUser } from '../../stores/auth';
   import { suggestMilestones } from '../../lib/ai';
+  import { WEALTHS } from '../../data/assessment';
   import type { Milestone } from '../../types';
 
   let loading = false;
@@ -15,12 +19,35 @@
 
   $: stageName = $currentStage?.name ?? 'this stage of life';
 
+  // The wealth dimension the user currently scores lowest on — fed to the AI so
+  // at least one suggestion targets where they need it most.
+  function weakestWealthLabel(): string | undefined {
+    const scores = $behavioralScores as Record<string, number>;
+    let weakestKey = '';
+    let min = Infinity;
+    for (const k of Object.keys(scores)) {
+      if (scores[k] < min) { min = scores[k]; weakestKey = k; }
+    }
+    return WEALTHS.find((w) => w.key === weakestKey)?.label;
+  }
+
   async function suggest() {
     loading = true;
     error = '';
     suggestions = [];
     try {
-      suggestions = await suggestMilestones(stageName, $todayAge);
+      suggestions = await suggestMilestones({
+        stage: stageName,
+        currentAge: $todayAge,
+        role: $role || undefined,
+        careerField: $careerField || undefined,
+        partnership: $partnership || undefined,
+        kids: $kids || undefined,
+        aspiration: $aspiration || undefined,
+        priorities: $priorities?.length ? $priorities : undefined,
+        weakestWealth: weakestWealthLabel(),
+        existingMilestones: $milestones.map((m) => m.label).slice(0, 12),
+      });
       if (suggestions.length === 0) error = 'No suggestions came back — try again.';
     } catch (e) {
       error = 'AI is unavailable right now. (Firebase AI Logic must be enabled for the project.)';

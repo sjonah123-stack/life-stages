@@ -69,26 +69,31 @@ export const SURVEY: SurveyQuestion[] = [
   { id: 'time-1', wealth: 'time', prompt: 'I have control over how I spend most of my time.' },
   { id: 'time-2', wealth: 'time', prompt: "I'm present and engaged in my daily life rather than rushing through it." },
   { id: 'time-3', wealth: 'time', prompt: 'I feel I have enough time for the things that matter most to me.' },
+  { id: 'time-4', wealth: 'time', prompt: 'I rarely reach the end of a day wondering where the time went.' },
 
   // Social
   { id: 'social-1', wealth: 'social', prompt: 'I have at least three people I could call when I\'m struggling.' },
   { id: 'social-2', wealth: 'social', prompt: 'I see or talk to the people I care about regularly.' },
   { id: 'social-3', wealth: 'social', prompt: 'I feel known and accepted by the people closest to me.' },
+  { id: 'social-4', wealth: 'social', prompt: "I'm satisfied with the amount of quality time I spend with people I love." },
 
   // Mental
   { id: 'mental-1', wealth: 'mental', prompt: 'I feel mentally clear and engaged most days.' },
   { id: 'mental-2', wealth: 'mental', prompt: "I'm regularly learning something that interests me." },
   { id: 'mental-3', wealth: 'mental', prompt: 'I have a sense of purpose and direction in my life.' },
+  { id: 'mental-4', wealth: 'mental', prompt: 'I make space for reflection, stillness, or creative thought.' },
 
   // Physical
   { id: 'physical-1', wealth: 'physical', prompt: 'I feel physically energetic most days.' },
   { id: 'physical-2', wealth: 'physical', prompt: 'My sleep is restorative.' },
   { id: 'physical-3', wealth: 'physical', prompt: 'I move my body in ways that feel good.' },
+  { id: 'physical-4', wealth: 'physical', prompt: 'I have the energy outside of work to do the things I enjoy.' },
 
   // Financial
   { id: 'financial-1', wealth: 'financial', prompt: 'I have enough financial cushion that money is rarely a stressor.' },
   { id: 'financial-2', wealth: 'financial', prompt: "I'm building toward financial freedom (whatever that means to me)." },
   { id: 'financial-3', wealth: 'financial', prompt: 'I spend in ways that align with my values.' },
+  { id: 'financial-4', wealth: 'financial', prompt: 'I have a clear picture of where my money goes each month.' },
 ];
 
 export const LIKERT_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
@@ -141,11 +146,13 @@ export function computeSelfScores(answers: { questionId: string; value: number }
     sums[q.wealth] += a.value;
     counts[q.wealth] += 1;
   }
-  // Each wealth has 3 questions, scale 1-5 → max 15 → normalize to 0-100.
+  // Normalize each wealth by its actual answered-question count (scale 1-5 →
+  // max = count × 5) so the survey can carry any number of questions per wealth
+  // without skewing scores. Was hardcoded /15 (3 questions); now count-driven.
   const result: Record<WealthKey, number> = { time: 0, social: 0, mental: 0, physical: 0, financial: 0 };
   for (const key of Object.keys(sums) as WealthKey[]) {
     if (counts[key] === 0) continue;
-    result[key] = Math.round((sums[key] / 15) * 100);
+    result[key] = Math.round((sums[key] / (counts[key] * 5)) * 100);
   }
   return result;
 }

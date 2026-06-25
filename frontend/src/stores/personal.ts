@@ -31,6 +31,12 @@ export const kids = persisted<number>('kids', 0, num, numStr);
 
 export const careerField = persisted<CareerField>('career', '', (raw) => raw as CareerField, str);
 
+// Free-text personalization, primarily to feed AI suggestions.
+// `role` = the user's own words for what they do (richer than careerField).
+// `aspiration` = what a meaningful life looks like to them ~10 years out.
+export const role = persisted<string>('role', '', str, str);
+export const aspiration = persisted<string>('aspiration', '', str, str);
+
 // Private (localStorage only — never URL or cloud-shareable share-link)
 export const smoker = persisted<Smoking>('smoker', '', (raw) => raw as Smoking, str);
 export const exerciseLevel = persisted<ExerciseLevel>('exercise', '', (raw) => raw as ExerciseLevel, str);

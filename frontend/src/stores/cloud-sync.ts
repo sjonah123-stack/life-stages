@@ -5,6 +5,7 @@ import { get } from 'svelte/store';
 import { getFirebase, doc, setDoc, getDoc, serverTimestamp } from '../lib/firebase';
 import {
   dob, sex, theme, country, partnership, kids, careerField,
+  role, aspiration,
   smoker, exerciseLevel, sleepHours, familyLongevity,
 } from './personal';
 import {
@@ -66,6 +67,8 @@ export function collectStateForCloud(): CloudPayload {
     partnership: get(partnership),
     kids: get(kids),
     careerField: get(careerField),
+    role: get(role),
+    aspiration: get(aspiration),
     smoker: get(smoker),
     exerciseLevel: get(exerciseLevel),
     sleepHours: get(sleepHours),
@@ -102,6 +105,8 @@ export function applyCloudState(cloud: Partial<CloudPayload>): void {
     if (cloud.partnership !== undefined) partnership.set(cloud.partnership);
     if (cloud.kids !== undefined) kids.set(cloud.kids);
     if (cloud.careerField !== undefined) careerField.set(cloud.careerField);
+    if (cloud.role !== undefined) role.set(cloud.role);
+    if (cloud.aspiration !== undefined) aspiration.set(cloud.aspiration);
     // `cloud.retirementAge` may be present in legacy docs; we accept it on
     // read (no error) but no longer mirror it to a store. See types.ts.
     if (cloud.smoker !== undefined) smoker.set(cloud.smoker);
@@ -268,6 +273,7 @@ export function scheduleCloudSave(): void {
 function subscribeAll(): void {
   const everyStore = [
     dob, sex, theme, country, partnership, kids, careerField,
+    role, aspiration,
     smoker, exerciseLevel, sleepHours, familyLongevity,
     priorities, bestYear, hardestYear,
     milestones, journal, letters, people, books, rituals,

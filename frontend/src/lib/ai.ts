@@ -9,7 +9,7 @@ import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from 'firebase/ai'
 import { getFirebase } from './firebase';
 import { GEMINI_MODEL } from '../config';
 import { LIFESPAN } from '../config';
-import type { Milestone } from '../types';
+import type { Milestone, WealthKey } from '../types';
 
 let aiInstance: ReturnType<typeof getAI> | null = null;
 function aiBackend() {
@@ -36,6 +36,8 @@ async function runStructured(schema: Schema, prompt: string): Promise<unknown> {
 
 // ---- Milestone suggestions ----
 
+const WEALTH_KEYS: readonly WealthKey[] = ['time', 'social', 'mental', 'physical', 'financial'];
+
 const MILESTONE_SCHEMA = Schema.array({
   items: Schema.object({
     properties: {
@@ -43,25 +45,83 @@ const MILESTONE_SCHEMA = Schema.array({
       measure: Schema.string(),
       age: Schema.integer(),
       why: Schema.string(),
+      wealthKey: Schema.string(),
     },
   }),
 });
 
-interface RawAiMilestone { label?: unknown; measure?: unknown; age?: unknown; why?: unknown; }
+interface RawAiMilestone { label?: unknown; measure?: unknown; age?: unknown; why?: unknown; wealthKey?: unknown; }
 
-export function milestonePrompt(stage: string, currentAge: number): string {
-  return [
-    'You help someone set life goals using the SMART framework.',
-    `They are ${currentAge} years old, in the life stage: "${stage}".`,
-    'Suggest exactly 3 meaningful, positive, achievable milestones for the years ahead.',
-    'For each: label (specific, under 8 words), measure (how they know it is done),',
-    `age (an integer target age strictly greater than ${currentAge} and at most ${LIFESPAN}),`,
-    'why (one sentence on why it matters). Be grounded and personal, not generic platitudes.',
-  ].join(' ');
+// Everything the prompt can use to personalize suggestions. Only `stage` and
+// `currentAge` are required; the rest are best-effort context pulled from the
+// user's profile. The more that's present, the less generic the output.
+export interface MilestoneContext {
+  stage: string;
+  currentAge: number;
+  role?: string;            // user's own words for what they do
+  careerField?: string;     // fallback if no free-text role
+  partnership?: string;
+  kids?: number;
+  aspiration?: string;      // what a meaningful life looks like ~10y out
+  priorities?: string[];    // areas they care most about right now
+  weakestWealth?: string;   // label of their lowest wealth dimension
+  existingMilestones?: string[]; // labels of goals they already have
+}
+
+// Build a personalized milestone prompt. The whole point is to feed the model
+// the user's actual context so it stops suggesting generic, irrelevant goals
+// (e.g. "become a software engineer" to someone in an unrelated field).
+export function milestonePrompt(ctx: MilestoneContext): string {
+  const { stage, currentAge } = ctx;
+  const lines: string[] = [];
+  lines.push(
+    'You help someone set meaningful, personal life goals using the SMART framework, ' +
+    'grounded in the "5 Types of Wealth": time, social, mental, physical, financial.',
+  );
+  lines.push(`They are ${currentAge} years old, in the life stage: "${stage}".`);
+
+  const facts: string[] = [];
+  if (ctx.role) facts.push(`What they do: ${ctx.role}.`);
+  else if (ctx.careerField) facts.push(`Career field: ${ctx.careerField}.`);
+  if (ctx.partnership) facts.push(`Relationship status: ${ctx.partnership}.`);
+  if (typeof ctx.kids === 'number' && ctx.kids > 0) {
+    facts.push(`They have ${ctx.kids} ${ctx.kids === 1 ? 'child' : 'children'}.`);
+  }
+  if (ctx.aspiration) facts.push(`In ~10 years, a meaningful life to them looks like: ${ctx.aspiration}.`);
+  if (ctx.priorities?.length) facts.push(`They care most right now about: ${ctx.priorities.join(', ')}.`);
+  if (ctx.weakestWealth) {
+    facts.push(`Their weakest wealth dimension is ${ctx.weakestWealth}; at least one suggestion should help there.`);
+  }
+  if (facts.length) lines.push('About this person: ' + facts.join(' '));
+
+  if (ctx.existingMilestones?.length) {
+    lines.push(
+      'They already have these goals — do NOT repeat or rephrase them; complement them and fill gaps: ' +
+      ctx.existingMilestones.map((m) => `"${m}"`).join(', ') + '.',
+    );
+  }
+
+  lines.push(
+    'Suggest exactly 3 milestones specific to THIS person — not generic advice that could apply to anyone. ' +
+    'Build on their actual role, relationships, and aspirations.',
+  );
+  lines.push(
+    'For each: label (specific, under 8 words), measure (how they know it is done), ' +
+    `age (an integer strictly greater than ${currentAge} and at most ${LIFESPAN}), ` +
+    'why (one grounded sentence tied to their context), and ' +
+    'wealthKey (one of: time, social, mental, physical, financial).',
+  );
+  lines.push(
+    `Good example: {"label":"Mentor two juniors","measure":"both lead a shipped project","age":${currentAge + 2},` +
+    '"why":"deepens your leadership in the work you already do","wealthKey":"mental"}.',
+  );
+  lines.push('Avoid vague platitudes and goals unrelated to their stated life.');
+  return lines.join(' ');
 }
 
 // Validate/clamp the model's output into real Milestone objects. Drops anything
-// malformed; keeps at most 3.
+// malformed; keeps at most 3. wealthKey is only kept when it's one of the 5
+// valid keys (so the existing untyped callers/tests stay unaffected).
 export function normalizeAiMilestones(raw: unknown, currentAge: number): Milestone[] {
   if (!Array.isArray(raw)) return [];
   const out: Milestone[] = [];
@@ -71,21 +131,26 @@ export function normalizeAiMilestones(raw: unknown, currentAge: number): Milesto
     let age = Math.round(Number(item?.age));
     if (!Number.isFinite(age)) age = currentAge + 1;
     age = Math.min(LIFESPAN, Math.max(currentAge + 1, age));
+    const wealthKey =
+      typeof item?.wealthKey === 'string' && WEALTH_KEYS.includes(item.wealthKey as WealthKey)
+        ? (item.wealthKey as WealthKey)
+        : undefined;
     out.push({
       age,
       label,
       completed: false,
       measure: typeof item?.measure === 'string' ? item.measure.trim() : undefined,
       why: typeof item?.why === 'string' ? item.why.trim() : undefined,
+      ...(wealthKey ? { wealthKey } : {}),
     });
     if (out.length === 3) break;
   }
   return out;
 }
 
-export async function suggestMilestones(stage: string, currentAge: number): Promise<Milestone[]> {
-  const raw = await runStructured(MILESTONE_SCHEMA, milestonePrompt(stage, currentAge));
-  return normalizeAiMilestones(raw, currentAge);
+export async function suggestMilestones(ctx: MilestoneContext): Promise<Milestone[]> {
+  const raw = await runStructured(MILESTONE_SCHEMA, milestonePrompt(ctx));
+  return normalizeAiMilestones(raw, ctx.currentAge);
 }
 
 // ---- Journal insights ----

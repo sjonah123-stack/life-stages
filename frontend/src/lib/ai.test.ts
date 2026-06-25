@@ -57,9 +57,39 @@ describe('normalizePrompts', () => {
 
 describe('prompt builders', () => {
   it('milestonePrompt names the stage, age, and bounds', () => {
-    const p = milestonePrompt('Building', 23);
+    const p = milestonePrompt({ stage: 'Building', currentAge: 23 });
     expect(p).toContain('Building');
     expect(p).toContain('23');
+  });
+  it('milestonePrompt folds in personal context (role, aspiration, weakest wealth)', () => {
+    const p = milestonePrompt({
+      stage: 'Building',
+      currentAge: 30,
+      role: 'real estate investor',
+      aspiration: 'a portfolio that funds my family',
+      weakestWealth: 'Physical Wealth',
+      priorities: ['health', 'money'],
+    });
+    expect(p).toContain('real estate investor');
+    expect(p).toContain('a portfolio that funds my family');
+    expect(p).toContain('Physical Wealth');
+    expect(p).toContain('health, money');
+  });
+  it('milestonePrompt tells the model not to repeat existing goals', () => {
+    const p = milestonePrompt({
+      stage: 'Building',
+      currentAge: 30,
+      existingMilestones: ['Run a marathon'],
+    });
+    expect(p).toContain('Run a marathon');
+    expect(p).toMatch(/do NOT repeat/i);
+  });
+
+  it('normalizeAiMilestones keeps a valid wealthKey and drops an invalid one', () => {
+    const ok = normalizeAiMilestones([{ label: 'a', age: 40, wealthKey: 'physical' }], 23);
+    expect(ok[0].wealthKey).toBe('physical');
+    const bad = normalizeAiMilestones([{ label: 'b', age: 40, wealthKey: 'nonsense' }], 23);
+    expect(bad[0].wealthKey).toBeUndefined();
   });
   it('journalInsightPrompt includes the entries and caps to the last 30', () => {
     const entries = Array.from({ length: 40 }, (_, i) => `entry ${i}`);

@@ -181,6 +181,12 @@ export interface PersonalSettings {
   partnership: Partnership;
   kids: number;
   careerField: CareerField;
+  // Free-text personalization (feeds the AI suggestions). `role` is the user's
+  // own words for what they do — far richer than the careerField enum.
+  // `aspiration` is what a meaningful life looks like to them ~10 years out.
+  // Both optional-tolerant: default '' and old docs without them load fine.
+  role: string;
+  aspiration: string;
   // Private (localStorage only, never URL)
   smoker: Smoking;
   exerciseLevel: ExerciseLevel;
