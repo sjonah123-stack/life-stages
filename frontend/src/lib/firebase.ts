@@ -28,11 +28,13 @@ export function isFirebaseConfigured(): boolean {
 export function getFirebase() {
   if (!app && isFirebaseConfigured()) {
     app = initializeApp(FIREBASE_CONFIG);
-    // App Check must initialize before other services. Only when a reCAPTCHA
-    // site key is configured — otherwise the app runs unprotected but working,
-    // and we avoid handing out invalid tokens. Required to safely expose the
-    // client-side AI SDK (prevents billing abuse once enforcement is on).
-    if (RECAPTCHA_SITE_KEY) {
+    // App Check must initialize before other services. Runs only when a
+    // reCAPTCHA site key is set AND we're not on localhost — reCAPTCHA v3 can't
+    // verify a localhost origin (it 400s and spams the console), and the dev
+    // server doesn't need protection. Required to safely expose the client-side
+    // AI SDK on prod (prevents billing abuse once enforcement is on).
+    const onLocalhost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+    if (RECAPTCHA_SITE_KEY && !onLocalhost) {
       try {
         initializeAppCheck(app, {
           provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
