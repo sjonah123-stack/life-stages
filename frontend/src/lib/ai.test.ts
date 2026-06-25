@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizeAiMilestones, normalizeInsight, normalizePrompts,
   milestonePrompt, journalInsightPrompt,
+  weeklyReflectionPrompt, normalizeWeeklyReflection,
 } from './ai';
 
 describe('normalizeAiMilestones', () => {
@@ -96,5 +97,37 @@ describe('prompt builders', () => {
     const p = journalInsightPrompt(entries);
     expect(p).toContain('entry 39');
     expect(p).not.toContain('entry 5:'); // entry 0-9 trimmed out (only last 30 kept)
+  });
+  it('weeklyReflectionPrompt includes habit count, stage, and recent entries', () => {
+    const p = weeklyReflectionPrompt({
+      stage: 'Building',
+      recentEntries: ['felt stretched at work', 'good run on saturday'],
+      habitCheckins: 4,
+      weakestWealth: 'Social Wealth',
+    });
+    expect(p).toContain('Building');
+    expect(p).toContain('4 habit');
+    expect(p).toContain('Social Wealth');
+    expect(p).toContain('good run on saturday');
+  });
+  it('weeklyReflectionPrompt handles an empty week without crashing', () => {
+    const p = weeklyReflectionPrompt({ stage: 'Building', recentEntries: [], habitCheckins: 0 });
+    expect(p).toContain('not journaled recently');
+  });
+});
+
+describe('normalizeWeeklyReflection', () => {
+  it('trims fields and keeps a valid wealthKey', () => {
+    const out = normalizeWeeklyReflection({
+      reflection: '  steady week  ',
+      focus: '  call a friend  ',
+      wealthKey: 'social',
+    });
+    expect(out).toEqual({ reflection: 'steady week', focus: 'call a friend', wealthKey: 'social' });
+  });
+  it('drops an invalid wealthKey and tolerates garbage', () => {
+    expect(normalizeWeeklyReflection({ reflection: 'x', focus: 'y', wealthKey: 'bogus' }))
+      .toEqual({ reflection: 'x', focus: 'y' });
+    expect(normalizeWeeklyReflection(null)).toEqual({ reflection: '', focus: '' });
   });
 });

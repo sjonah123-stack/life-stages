@@ -218,3 +218,72 @@ export async function generatePrompts(stage: string, recent: string[]): Promise<
   const raw = await runStructured(PROMPTS_SCHEMA, reflectivePromptsPrompt(stage, recent));
   return normalizePrompts(raw);
 }
+
+// ---- Weekly reflection ----
+// A short, personal weekly check-in across journal + habits + wealth balance,
+// with one concrete focus for the week ahead. Like journal insights, the output
+// is regenerable and stored locally (never in the cloud doc / snapshots buffer).
+
+const WEEKLY_SCHEMA = Schema.object({
+  properties: {
+    reflection: Schema.string(),
+    focus: Schema.string(),
+    wealthKey: Schema.string(),
+  },
+});
+
+export interface WeeklyReflection {
+  reflection: string;
+  focus: string;
+  wealthKey?: WealthKey;
+}
+
+export interface WeeklyContext {
+  stage: string;
+  recentEntries: string[];    // recent journal text (most recent last)
+  habitCheckins: number;      // count of habit check-ins in the last 7 days
+  weakestWealth?: string;     // label of the lowest wealth dimension
+}
+
+export function weeklyReflectionPrompt(ctx: WeeklyContext): string {
+  const lines: string[] = [];
+  lines.push(
+    'You are a warm, grounded weekly check-in for one person, framed around the ' +
+    '"5 Types of Wealth" (time, social, mental, physical, financial). Be specific and ' +
+    'non-judgemental; never invent facts not present below.',
+  );
+  lines.push(`They are in the life stage: "${ctx.stage}".`);
+  lines.push(`In the last 7 days they logged ${ctx.habitCheckins} habit check-in(s).`);
+  if (ctx.weakestWealth) lines.push(`Their lowest wealth dimension right now is ${ctx.weakestWealth}.`);
+  if (ctx.recentEntries.length) {
+    const body = ctx.recentEntries
+      .slice(-8)
+      .map((t, i) => `Entry ${i + 1}: ${t.replace(/\s+/g, ' ').trim()}`)
+      .join('\n');
+    lines.push('Recent journal entries:\n' + body);
+  } else {
+    lines.push('They have not journaled recently.');
+  }
+  lines.push(
+    'Write: reflection (2-3 warm sentences naming a real pattern from the week), ' +
+    'focus (one concrete, doable focus for the coming week), and ' +
+    'wealthKey (which of time/social/mental/physical/financial the focus serves).',
+  );
+  return lines.join(' ');
+}
+
+export function normalizeWeeklyReflection(raw: unknown): WeeklyReflection {
+  const r = (raw ?? {}) as { reflection?: unknown; focus?: unknown; wealthKey?: unknown };
+  const reflection = typeof r.reflection === 'string' ? r.reflection.trim() : '';
+  const focus = typeof r.focus === 'string' ? r.focus.trim() : '';
+  const wealthKey =
+    typeof r.wealthKey === 'string' && WEALTH_KEYS.includes(r.wealthKey as WealthKey)
+      ? (r.wealthKey as WealthKey)
+      : undefined;
+  return { reflection, focus, ...(wealthKey ? { wealthKey } : {}) };
+}
+
+export async function reflectOnWeek(ctx: WeeklyContext): Promise<WeeklyReflection> {
+  const raw = await runStructured(WEEKLY_SCHEMA, weeklyReflectionPrompt(ctx));
+  return normalizeWeeklyReflection(raw);
+}

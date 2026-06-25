@@ -1,6 +1,6 @@
 # Session Summary — life-stages
 
-Last updated: 2026-06-25 — AI features live (billing on), App Check secret registered + verifying (400s resolved); redesign + backend shipped.
+Last updated: 2026-06-25 — AI personalization + onboarding + wealth-trends + weekly reflection built (preview-pending); App Check secret registered + verifying (400s resolved); AI features live (billing on).
 
 ## Where prod stands
 
@@ -12,6 +12,25 @@ Last updated: 2026-06-25 — AI features live (billing on), App Check secret reg
 Backend is deployed: 3 Cloud Functions (Node 22), Firestore + Storage rules released. The user
 pushes commits via **GitHub Desktop** (the terminal here has no git auth). Tell them the pending
 commit count each session: `git rev-list --count origin/main..HEAD`.
+
+## Session 2026-06-25 — AI personalization + 3 new features (built, preview-pending)
+
+Driven by the AI suggesting irrelevant goals (e.g. "become a software engineer") because the
+prompt only got stage + age. All four committed, verified (266 tests, 0 type errors, clean build),
+**not yet deployed** — preview-channel first, then prod after the user signs off.
+
+1. **AI personalization (F1).** `milestonePrompt` now takes a context object (role, careerField,
+   partnership, kids, aspiration, priorities, weakest wealth, existing milestones — "don't repeat
+   these"); each suggestion tags a `wealthKey`; ≥1 targets the weakest dimension. New free-text
+   `role` + `aspiration` fields (personal store, types, cloud-sync, Settings UI). 5-Wealths quiz:
+   +1 scored Q per dimension (12→20); `computeSelfScores` now normalizes by answered count, not /15.
+2. **Onboarding wizard (F2).** `WelcomeScreen.svelte` is now a 3-step first-run flow (DOB+sex →
+   role/career/partnership/kids → aspiration). Gated on blank-state; DOB commits last. No App.svelte change.
+3. **Wealth over time (F3).** `progress/WealthTrendsSection.svelte` plots each dimension across saved
+   `assessmentResults` (data already dated) via the existing `Sparkline`. On the Progress page.
+4. **Weekly reflection (F4).** `lib/ai.ts` `reflectOnWeek` + `progress/WeeklyReflectionSection.svelte`
+   — AI check-in over journal + habit check-ins + weakest wealth, with one focus for the week. Cached
+   locally (`stores/ai.ts` `latestWeeklyReflection`), signed-in only, never in the cloud doc.
 
 ## Major work this session (2026-06-24)
 
