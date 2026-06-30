@@ -9,11 +9,25 @@
     "count": 1
   },
   "replies": {
-    "lastCheckedDate": "2026-06-24",
+    "lastCheckedDate": "2026-06-30",
     "processedMessageIds": ["19ef62cc22c8602d"]
   },
   "shipped": [],
   "decisionsLog": [
+    {
+      "date": "2026-06-30",
+      "replyMessageId": null,
+      "decisions": [
+        {"instruction": "(scheduled run)", "item": null, "result": "no new replies — thread 19ef628dafd69b79 still contains only the loop's digest (19ef62c45175583e), the already-processed decision reply (19ef62cc22c8602d), and the loop's own reply (19ef635583b99547). No backlog changes."}
+      ]
+    },
+    {
+      "date": "2026-06-26",
+      "replyMessageId": null,
+      "decisions": [
+        {"instruction": "(scheduled run)", "item": null, "result": "no new replies — thread 19ef628dafd69b79 still contains only the already-processed decision reply (19ef62cc22c8602d), the loop's digest (19ef62c45175583e), and the loop's own reply (19ef635583b99547). No backlog changes."}
+      ]
+    },
     {
       "date": "2026-06-24",
       "replyMessageId": null,

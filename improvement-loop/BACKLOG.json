@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "lastRun": "2026-06-23",
-  "lastRunSummary": "Reconciled backlog against actual code: net-worth, store tests, mobile hero fix, and any-casts were already built (committed after the 2026-05-07 prod deploy) — moved to archive as done. Remaining open: modern-redesign, todaywealth-summary-state, auth-userchange-test; remove-people on hold.",
+  "lastRun": "2026-06-29",
+  "lastRunSummary": "Weekly run: review clean (svelte-check 0 errors, 0 TODO/FIXME/HACK; tests un-runnable in sandbox per EPERM). Inbox empty (only the example placeholder). No new items, no dupes, scores verified. Open: modern-redesign (approved), todaywealth-summary-state, auth-userchange-test; remove-people on hold; periodic-nudges iceboxed.",
   "scoring": {
     "method": "value-effort",
     "note": "score = round((value / effort) * 10). value and effort are each 1-5 (5 = highest value / most effort). Higher score = do sooner."
