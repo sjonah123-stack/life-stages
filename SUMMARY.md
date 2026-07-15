@@ -1,13 +1,12 @@
 # Session Summary — life-stages
 
-Last updated: 2026-07-15 — delight features (confetti, badge toasts, Today habits strip) + full UI polish pass built and on preview channel `delight-ui`; prod deploy pending user sign-off.
+Last updated: 2026-07-15 — delight features (confetti, badge toasts, Today habits strip) + full UI polish pass **deployed to prod**.
 
 ## Where prod stands
 
 | | URL | Status |
 |---|---|---|
-| **Production** | https://life-stages-90806.web.app | AI features + editorial redesign (pre-delight). |
-| **Preview** | https://life-stages-90806--delight-ui-2t4o79cr.web.app | Delight + polish build (expires 2026-07-22). |
+| **Production** | https://life-stages-90806.web.app | Latest build: AI + editorial redesign + delight/polish. |
 | **Legacy archive** | https://life-stages-90806.web.app/legacy.html | Old single-file app, frozen. |
 
 Backend is deployed: 3 Cloud Functions (Node 22), Firestore + Storage rules released. The user
