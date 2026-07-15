@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "lastRun": "2026-06-29",
-  "lastRunSummary": "Weekly run: review clean (svelte-check 0 errors, 0 TODO/FIXME/HACK; tests un-runnable in sandbox per EPERM). Inbox empty (only the example placeholder). No new items, no dupes, scores verified. Open: modern-redesign (approved), todaywealth-summary-state, auth-userchange-test; remove-people on hold; periodic-nudges iceboxed.",
+  "lastRun": "2026-07-15",
+  "lastRunSummary": "Weekly run 2026-07-15: review clean (svelte-check 0 errors / 5 warnings — all already tracked in tsconfig-ts7-deprecations; 0 TODO/FIXME/HACK; tests un-runnable in sandbox per EPERM, unchanged). Inbox empty. No new items, no dupes; scores verified. Top: tsconfig-ts7-deprecations (20), auth-userchange-test (15), modern-redesign (approved, 10).",
   "scoring": {
     "method": "value-effort",
     "note": "score = round((value / effort) * 10). value and effort are each 1-5 (5 = highest value / most effort). Higher score = do sooner."
@@ -9,6 +9,19 @@
   "statuses": "backlog | approved (queued to build) | needs-info | hold | in-progress | icebox | wont-do (archived) | done (archived)",
   "note": "Several items were marked done after a 2026-06-23 code audit revealed the original seed (from SUMMARY.md dated 2026-05-07) was stale. Prod was last deployed 2026-05-07; source has since gained these features. Deploying current source ships them.",
   "items": [
+    {
+      "id": "tsconfig-ts7-deprecations",
+      "title": "Fix tsconfig deprecation warnings (TS 7.0)",
+      "type": "review",
+      "source": "loop-run-2026-07-06",
+      "status": "backlog",
+      "value": 2,
+      "effort": 1,
+      "score": 20,
+      "created": "2026-07-06",
+      "updated": "2026-07-06",
+      "notes": "svelte-check warns: moduleResolution=node10 deprecated (stops working in TypeScript 7.0), and tsconfig.app.json / tsconfig.node.json referenced projects must set composite:true and may not disable emit. Quick fix: switch moduleResolution to 'bundler' (Vite-recommended) or add ignoreDeprecations; align the project references. 0 errors today — hygiene before it becomes breakage."
+    },
     {
       "id": "auth-userchange-test",
       "title": "Test auth user-change wipe-and-reload path",
