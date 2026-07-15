@@ -3,6 +3,7 @@
   import { isBlankState } from './stores/personal';
   import TopNav from './components/nav/TopNav.svelte';
   import WelcomeScreen from './components/shared/WelcomeScreen.svelte';
+  import ToastHost from './components/shared/ToastHost.svelte';
   import Today from './components/pages/Today.svelte';
   import Journal from './components/pages/Journal.svelte';
   import Goals from './components/pages/Goals.svelte';
@@ -32,3 +33,5 @@
     {/if}
   </main>
 {/if}
+
+<ToastHost />

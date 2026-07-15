@@ -40,7 +40,7 @@
     font-size: 36px;
     flex-shrink: 0;
     line-height: 1;
-    filter: drop-shadow(0 4px 10px rgba(255, 201, 60, 0.4));
+    filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--money) 40%, transparent));
     position: relative;
   }
   .good-news-content { flex: 1; position: relative; }

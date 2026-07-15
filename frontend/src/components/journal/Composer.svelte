@@ -331,7 +331,7 @@
   }
   .journal-composer.editing {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(255, 140, 97, 0.15), var(--shadow-md);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent), var(--shadow-md);
   }
   .composer-meta {
     display: flex;
@@ -359,7 +359,7 @@
   .week-info { font-size: 13px; color: var(--ink-dim); }
   .age-tag {
     background: var(--accent);
-    color: white;
+    color: var(--bg-1);
     padding: 2px 8px;
     border-radius: 999px;
     font-weight: 700;
@@ -390,7 +390,7 @@
   .mood-picker button.selected {
     background: linear-gradient(135deg, var(--accent), var(--future-3));
     opacity: 1;
-    box-shadow: 0 2px 6px rgba(255, 140, 97, 0.3);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 30%, transparent);
   }
   .editing-tag {
     margin-left: auto;
@@ -404,8 +404,8 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 201, 60, 0.12);
-    border: 1px solid rgba(255, 201, 60, 0.3);
+    background: color-mix(in srgb, var(--money) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--money) 30%, transparent);
     border-radius: 999px;
     padding: 5px 10px 5px 14px;
     font-size: 13px;
@@ -500,7 +500,7 @@
   }
   .save-btn {
     background: var(--accent);
-    color: white;
+    color: var(--bg-1);
     border: none;
     border-radius: 8px;
     padding: 8px 14px;
@@ -551,8 +551,8 @@
     gap: 8px;
     margin-top: 10px;
     padding: 10px 14px;
-    background: rgba(255, 107, 157, 0.08);
-    border: 1px solid rgba(255, 107, 157, 0.3);
+    background: color-mix(in srgb, var(--love) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--love) 30%, transparent);
     border-radius: 10px;
     color: var(--ink);
     font-size: 13px;

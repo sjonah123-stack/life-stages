@@ -162,7 +162,7 @@
   .entry-search:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(255, 140, 97, 0.15);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
   }
   .entry-search-wrap::before {
     content: '🔍';
@@ -230,7 +230,7 @@
   .year-chip:hover { border-color: var(--accent); color: var(--accent); }
   .year-chip.active {
     background: var(--accent);
-    color: white;
+    color: var(--bg-1);
     border-color: var(--accent);
   }
   .entries-feed { display: flex; flex-direction: column; gap: 8px; }
@@ -248,7 +248,7 @@
   .entry-card:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-sm);
-    border-color: rgba(255, 140, 97, 0.25);
+    border-color: color-mix(in srgb, var(--accent) 25%, transparent);
   }
   .photo-thumb,
   .photo-placeholder {
@@ -278,7 +278,7 @@
   }
   .date { color: var(--ink-dim); font-weight: 700; }
   .age-pill {
-    background: rgba(255, 140, 97, 0.12);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
     color: var(--accent);
     padding: 2px 8px;
     border-radius: 999px;
@@ -322,12 +322,12 @@
     transition: all 0.15s;
   }
   .edit:hover {
-    background: rgba(255, 140, 97, 0.1);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
     color: var(--accent);
     border-color: var(--accent);
   }
   .delete:hover {
-    background: rgba(255, 107, 157, 0.08);
+    background: color-mix(in srgb, var(--love) 8%, transparent);
     color: var(--love);
     border-color: var(--love);
   }

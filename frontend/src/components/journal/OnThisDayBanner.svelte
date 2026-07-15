@@ -92,8 +92,12 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background: linear-gradient(135deg, rgba(122, 162, 255, 0.10), rgba(185, 131, 255, 0.10));
-    border: 1px solid rgba(122, 162, 255, 0.25);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--growth) 10%, transparent),
+      color-mix(in srgb, var(--growth) 7%, transparent)
+    );
+    border: 1px solid color-mix(in srgb, var(--growth) 25%, transparent);
     border-radius: 12px;
     padding: 10px 14px;
     margin-bottom: 10px;

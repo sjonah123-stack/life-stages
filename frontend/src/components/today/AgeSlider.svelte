@@ -148,13 +148,13 @@
   .stage-pill {
     display: inline-block;
     background: linear-gradient(135deg, var(--past), var(--accent));
-    color: white;
+    color: var(--bg-1);
     padding: 7px 18px;
     border-radius: 999px;
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.02em;
-    box-shadow: 0 4px 14px rgba(244, 184, 96, 0.35), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent-soft) 35%, transparent), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
   }
   .poetic-line {
     color: var(--ink-dim);
@@ -201,7 +201,7 @@
     background:
       radial-gradient(circle at 30% 30%, white, #fff8f0);
     box-shadow:
-      0 0 0 5px rgba(255, 140, 97, 0.22),
+      0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent),
       0 6px 18px rgba(206, 108, 74, 0.32),
       0 1px 0 rgba(255, 255, 255, 0.9) inset;
     margin-top: -10px;
@@ -228,7 +228,7 @@
     border-radius: 50%;
     background: white;
     border: 2px solid var(--accent);
-    box-shadow: 0 0 0 5px rgba(255, 140, 97, 0.22), 0 6px 18px rgba(206, 108, 74, 0.32);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent), 0 6px 18px rgba(206, 108, 74, 0.32);
     cursor: grab;
   }
   .ticks {
@@ -258,12 +258,12 @@
     height: 10px;
     border-radius: 50%;
     background: var(--now);
-    box-shadow: 0 0 0 4px rgba(255, 201, 60, 0.25), 0 0 12px rgba(255, 201, 60, 0.55);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-soft) 25%, transparent), 0 0 12px color-mix(in srgb, var(--accent-soft) 55%, transparent);
     animation: now-pulse 2.4s ease-in-out infinite;
   }
   @keyframes now-pulse {
-    0%, 100% { box-shadow: 0 0 0 4px rgba(255, 201, 60, 0.18), 0 0 12px rgba(255, 201, 60, 0.4); }
-    50%      { box-shadow: 0 0 0 8px rgba(255, 201, 60, 0.30), 0 0 18px rgba(255, 201, 60, 0.65); }
+    0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-soft) 18%, transparent), 0 0 12px color-mix(in srgb, var(--accent-soft) 40%, transparent); }
+    50%      { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent-soft) 30%, transparent), 0 0 18px color-mix(in srgb, var(--accent-soft) 65%, transparent); }
   }
   @media (prefers-reduced-motion: reduce) {
     .now-pulse { animation: none; }

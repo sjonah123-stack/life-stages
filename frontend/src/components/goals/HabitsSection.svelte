@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
+  import { slide } from 'svelte/transition';
   import {
     activeHabits,
     checkKeys,
@@ -7,8 +8,9 @@
     chainFor,
     addHabit,
     deleteHabit,
-    toggleHabitCheck,
   } from '../../stores/habits';
+  import { toggleHabitWithCelebration } from '../../lib/habit-celebration';
+  import { motionDuration } from '../../lib/motion';
   import { formatDOB } from '../../utils';
   import type { WealthKey } from '../../types';
 
@@ -77,14 +79,14 @@
         {@const checkedToday = keys.has(`${h.id}|${today}`)}
         {@const streak = streakFor(h.id, keys)}
         {@const chain = chainFor(h.id, keys, 28)}
-        <div class="habit-row">
+        <div class="habit-row" transition:slide|local={{ duration: motionDuration(180) }}>
           <button
             class="check-toggle"
             class:checked={checkedToday}
             type="button"
             aria-label={checkedToday ? 'Mark not done today' : 'Mark done today'}
             aria-pressed={checkedToday}
-            on:click={() => toggleHabitCheck(h.id)}
+            on:click={(e) => toggleHabitWithCelebration(h, checkedToday, e.currentTarget)}
           >
             {#if checkedToday}✓{/if}
           </button>
@@ -126,7 +128,7 @@
       <button type="button" class="add-btn" on:click={openForm}>+ Add habit</button>
     </div>
   {:else}
-    <form class="form" on:submit|preventDefault={submit}>
+    <form class="form" transition:slide|local={{ duration: motionDuration(180) }} on:submit|preventDefault={submit}>
       <div class="form-row">
         <label class="field">
           <span>Habit</span>
@@ -172,14 +174,6 @@
 </section>
 
 <style>
-  .module-section {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 26px 28px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
-  }
   h2 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
   .sub { color: var(--ink-dim); margin: 0 0 18px; font-size: 14px; line-height: 1.5; }
   .empty {
@@ -217,7 +211,7 @@
     cursor: pointer;
     padding: 0;
     margin-top: 2px;
-    color: white;
+    color: var(--bg-1);
     font-size: 16px;
     font-weight: 800;
     line-height: 1;
@@ -228,6 +222,10 @@
   .check-toggle.checked {
     background: var(--accent);
     border-color: var(--accent);
+    animation: check-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .check-toggle.checked { animation: none; }
   }
   .habit-body { flex: 1; min-width: 0; }
   .habit-head {
@@ -259,9 +257,9 @@
     font-size: 12px;
     font-weight: 700;
     color: var(--accent);
-    background: rgba(255, 140, 97, 0.08);
-    border: 1px solid rgba(255, 140, 97, 0.25);
-    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-radius: var(--radius-pill);
     padding: 3px 10px;
   }
 
@@ -361,31 +359,10 @@
   .form-error {
     color: var(--love);
     font-size: 13px;
-    background: rgba(255, 107, 157, 0.08);
-    border: 1px solid rgba(255, 107, 157, 0.3);
-    border-radius: 8px;
+    background: color-mix(in srgb, var(--love) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--love) 30%, transparent);
+    border-radius: var(--radius-xs);
     padding: 8px 12px;
   }
   .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
-  .btn {
-    border-radius: 10px;
-    padding: 9px 16px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .btn.primary {
-    background: var(--accent);
-    color: white;
-    border: none;
-  }
-  .btn.primary:hover { opacity: 0.92; }
-  .btn.ghost {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--ink-dim);
-  }
-  .btn.ghost:hover { color: var(--ink); border-color: var(--ink-dim); }
 </style>

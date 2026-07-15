@@ -190,14 +190,6 @@
 </section>
 
 <style>
-  .module-section {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 26px 28px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
-  }
   h2 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
   .sub { color: var(--ink-dim); margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
   .module-stats {
@@ -410,7 +402,7 @@
   .rest-row input[type='number'] { width: 80px; }
   .rest-row button {
     background: var(--accent);
-    color: white;
+    color: var(--bg-1);
     border: none;
     border-radius: 10px;
     padding: 9px 18px;

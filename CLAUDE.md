@@ -123,6 +123,21 @@ The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` d
 - **Photos live in Cloud Storage, never the doc.** `JournalEntry.photo` holds a `data:` URL locally (offline-capable) but is uploaded to Storage (`users/{uid}/journal/{key}.jpg`, see `lib/photos.ts`) and replaced with its download URL on every `saveToCloud` (`migrateJournalPhotos`). This keeps the Firestore doc clear of the 1 MB limit. `<img src={photo}>` and `!!photo` checks work for both URL kinds, so don't special-case them. Requires Cloud Storage enabled on the project.
 - **Export / import** (`exportStateAsJson` / `importStateFromJson`, Settings → Your data): a user-owned JSON backup/restore that reuses `collectStateForCloud` / `applyCloudState`. Import rejects malformed/empty files and pushes the restored state up after the `applyingCloud` flag clears.
 
+### Delight features (confetti / toasts / badge unlocks)
+
+"Tasteful delight" only — no XP, levels, or streak-guilt. Conventions:
+- **Confetti is hand-rolled canvas** (`lib/confetti.ts`, same ethos as the SVG radar — no library).
+  Every celebration is a no-op under `prefers-reduced-motion`; all Svelte transition durations go
+  through `lib/motion.ts → motionDuration()`.
+- **Habit check-offs celebrate via `lib/habit-celebration.ts`** (used by HabitsSection + the Today
+  strip): fanfare only on uncheck→check, milestones [7,30,100,365] toast once per session.
+- **Achievement unlock toasts** (`stores/achievement-notifier.ts`): `achievementsSeen` is
+  **device-local by design** (notification state, not user data — don't add it to CloudPayload).
+  Seeding rules (null sentinel + `isApplyingCloud()` guard) prevent toast storms on first load and
+  fresh-device sign-in — don't remove either guard.
+- Shared UI: `stores/toasts.ts` + `ToastHost.svelte` (mounted once in App.svelte); `.module-section`
+  and `.btn` are global classes in `app.css` — don't re-declare them per component.
+
 ### Hash router
 
 Pages live in `lib/router.ts → PAGES`. Adding a new page:

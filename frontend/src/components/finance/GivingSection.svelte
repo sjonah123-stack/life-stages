@@ -81,7 +81,7 @@
   }
 </script>
 
-<section class="giving-section">
+<section class="module-section">
   <header>
     <div class="eyebrow">GIVING</div>
     <h2>What you're giving back</h2>
@@ -182,13 +182,6 @@
 </section>
 
 <style>
-  .giving-section {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 22px 26px;
-    box-shadow: var(--shadow-sm);
-  }
   header { margin-bottom: 16px; }
   .eyebrow {
     font-size: 11px;
@@ -250,28 +243,6 @@
   }
 
   .actions { margin: 4px 0 0; }
-  .btn {
-    border-radius: 10px;
-    padding: 9px 16px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .btn.primary {
-    background: var(--accent);
-    color: white;
-    border: none;
-    box-shadow: 0 2px 8px rgba(255, 140, 97, 0.25);
-  }
-  .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255, 140, 97, 0.35); }
-  .btn.ghost {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--ink-dim);
-  }
-  .btn.ghost:hover { color: var(--ink); border-color: var(--ink-dim); }
 
   .form {
     margin-top: 16px;
@@ -308,9 +279,9 @@
   .form-error {
     color: var(--love);
     font-size: 13px;
-    background: rgba(255, 107, 157, 0.08);
-    border: 1px solid rgba(255, 107, 157, 0.3);
-    border-radius: 8px;
+    background: color-mix(in srgb, var(--love) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--love) 30%, transparent);
+    border-radius: var(--radius-xs);
     padding: 8px 12px;
   }
   .form-actions { display: flex; gap: 8px; justify-content: flex-end; }

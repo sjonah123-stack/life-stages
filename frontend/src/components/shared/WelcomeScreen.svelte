@@ -228,12 +228,12 @@
   }
   .actions .primary {
     background: linear-gradient(135deg, var(--accent), var(--future-3));
-    color: white;
-    box-shadow: 0 4px 14px rgba(255, 140, 97, 0.32);
+    color: var(--bg-1);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 32%, transparent);
   }
   .actions .primary:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(255, 140, 97, 0.4);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 40%, transparent);
   }
   .actions .primary:disabled { opacity: 0.5; cursor: default; }
   .actions .ghost {
@@ -263,8 +263,8 @@
   }
   .sex-toggle button.active {
     background: var(--accent);
-    color: white;
-    box-shadow: 0 2px 8px rgba(255, 140, 97, 0.3);
+    color: var(--bg-1);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent);
   }
   .welcome-or {
     margin: 20px 0 14px;

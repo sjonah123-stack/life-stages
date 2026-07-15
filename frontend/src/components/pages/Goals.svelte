@@ -228,14 +228,6 @@
 </section>
 
 <style>
-  .module-section {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 26px 28px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
-  }
   h2 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
   .sub { color: var(--ink-dim); margin: 0 0 18px; font-size: 14px; line-height: 1.5; }
 
@@ -258,7 +250,11 @@
     transition: background 0.15s;
   }
   .milestone-card.done {
-    background: linear-gradient(135deg, rgba(244, 184, 96, 0.10), rgba(255, 140, 97, 0.06));
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--money) 10%, transparent),
+      color-mix(in srgb, var(--accent) 6%, transparent)
+    );
   }
 
   .check-toggle {
@@ -274,7 +270,7 @@
     cursor: pointer;
     padding: 0;
     margin-top: 2px;
-    color: white;
+    color: var(--bg-1);
     font-size: 14px;
     font-weight: 800;
     line-height: 1;
@@ -285,6 +281,10 @@
   .check-toggle.checked {
     background: var(--accent);
     border-color: var(--accent);
+    animation: check-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .check-toggle.checked { animation: none; }
   }
 
   .milestone-body { flex: 1; min-width: 0; }
@@ -320,8 +320,8 @@
     flex-shrink: 0;
   }
   .checkin-tag {
-    background: rgba(122, 162, 255, 0.10);
-    border: 1px solid rgba(122, 162, 255, 0.28);
+    background: color-mix(in srgb, var(--growth) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--growth) 28%, transparent);
     border-radius: 999px;
     padding: 2px 8px;
     font-size: 10px;
@@ -416,7 +416,7 @@
   }
   .entry-form button[type='submit'] {
     background: var(--accent);
-    color: white;
+    color: var(--bg-1);
     border: none;
     border-radius: 10px;
     padding: 9px 18px;

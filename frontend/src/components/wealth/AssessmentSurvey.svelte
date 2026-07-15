@@ -173,7 +173,11 @@
   }
   .likert-option:hover { border-color: var(--accent); }
   .likert-option.selected {
-    background: linear-gradient(135deg, rgba(255, 140, 97, 0.12), rgba(255, 107, 157, 0.08));
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      color-mix(in srgb, var(--accent-soft) 8%, transparent)
+    );
     border-color: var(--accent);
   }
   .likert-option .num {
@@ -191,7 +195,7 @@
   }
   .likert-option.selected .num {
     background: var(--accent);
-    color: white;
+    color: var(--bg-1);
     border-color: var(--accent);
   }
   .likert-option .lbl {
@@ -219,7 +223,7 @@
   .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .nav-btn.primary {
     background: var(--accent);
-    color: white;
+    color: var(--bg-1);
     border-color: var(--accent);
   }
   .nav-btn.primary:hover:not(:disabled) {

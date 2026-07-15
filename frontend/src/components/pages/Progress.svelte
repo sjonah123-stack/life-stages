@@ -23,10 +23,3 @@
   <BodyTrendsSection />
 </section>
 
-<style>
-  .page { animation: fadeInPage 0.25s ease-out; }
-  @keyframes fadeInPage {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>

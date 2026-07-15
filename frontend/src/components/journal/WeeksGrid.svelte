@@ -86,7 +86,7 @@
   .week.lived { background: var(--past-dim); }
   .week.now {
     background: var(--now);
-    box-shadow: 0 0 8px rgba(255, 201, 60, 0.5);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-soft) 50%, transparent);
   }
   .week.has-entry {
     box-shadow: inset 0 0 0 1.5px var(--accent);

@@ -15,6 +15,11 @@
   let frequencyInput: 1 | 2 | 4 | 12 = 1;
   let nextDateInput = '';
 
+  // Transient "advanced ✓" feedback after Done — mirrors the savedFlash
+  // pattern in DailyCheckInCard. Index of the row that was just advanced.
+  let doneFlashIdx: number | null = null;
+  let doneFlashTimer: ReturnType<typeof setTimeout> | null = null;
+
   $: yearsAhead = $todayAge >= 0 ? Math.max(0, $personalHorizon - $todayAge) : 0;
 
   function addRitual(e: SubmitEvent) {
@@ -53,6 +58,9 @@
         return { ...r, nextDate: formatDOB(next) };
       }),
     );
+    doneFlashIdx = i;
+    if (doneFlashTimer) clearTimeout(doneFlashTimer);
+    doneFlashTimer = setTimeout(() => { doneFlashIdx = null; }, 2400);
   }
 
   // Computed remaining lifetime occurrences (existing semantic).
@@ -132,6 +140,9 @@
               {#if r.nextDate}
                 · next: {fmtNice(r.nextDate)}{#if until} ({until}){/if}
               {/if}
+              {#if doneFlashIdx === i}
+                <span class="done-flash">✓ advanced</span>
+              {/if}
             </div>
           </div>
           <div class="ritual-actions">
@@ -164,14 +175,6 @@
 </section>
 
 <style>
-  .module-section {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 26px 28px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
-  }
   h2 { margin: 0 0 4px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
   .sub { color: var(--ink-dim); margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
   .module-stats {
@@ -203,12 +206,21 @@
     flex-wrap: wrap;
   }
   .ritual-row.overdue {
-    background: linear-gradient(135deg, rgba(255, 107, 157, 0.06), rgba(255, 140, 97, 0.04));
-    border-color: rgba(255, 107, 157, 0.3);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--love) 6%, transparent),
+      color-mix(in srgb, var(--accent) 4%, transparent)
+    );
+    border-color: color-mix(in srgb, var(--love) 30%, transparent);
   }
   .ritual-info { flex: 1; min-width: 0; }
   .ritual-name { font-weight: 700; color: var(--ink); font-size: 15px; }
   .ritual-meta { color: var(--ink-dim); font-size: 12px; margin-top: 2px; }
+  .done-flash {
+    color: var(--health);
+    font-weight: 700;
+    margin-left: 4px;
+  }
 
   .ritual-actions {
     display: flex;
@@ -234,7 +246,7 @@
   }
   .ritual-remaining {
     background: linear-gradient(135deg, var(--accent), var(--future-3));
-    color: white;
+    color: var(--bg-1);
     padding: 5px 12px;
     border-radius: 999px;
     font-size: 12px;
@@ -274,7 +286,7 @@
   .entry-form input[type='date'] { min-width: 150px; }
   .entry-form button {
     background: var(--accent);
-    color: white;
+    color: var(--bg-1);
     border: none;
     border-radius: 10px;
     padding: 9px 18px;

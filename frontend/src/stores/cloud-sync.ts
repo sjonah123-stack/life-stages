@@ -32,6 +32,13 @@ import type { CloudPayload, Journal } from '../types';
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let applyingCloud = false;
 
+// True while applyCloudState is setting stores from a downloaded doc.
+// Lets derived-store listeners (e.g. the achievement notifier) tell a
+// cloud download apart from a genuine user action.
+export function isApplyingCloud(): boolean {
+  return applyingCloud;
+}
+
 // Rolling backups: before overwriting the main doc, the current payload is
 // written to users/{uid}/snapshots/{slot}, round-robin over a fixed number of
 // slots. Bounded storage, no listing/pruning needed. `snapshotSeq` is seeded

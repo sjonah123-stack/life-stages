@@ -9,6 +9,7 @@
   import TodayWealth from '../today/TodayWealth.svelte';
   import AnniversaryCard from '../today/AnniversaryCard.svelte';
   import DailyCheckInCard from '../today/DailyCheckInCard.svelte';
+  import TodayHabitsCard from '../today/TodayHabitsCard.svelte';
 
   $: greeting = (() => {
     const h = new Date().getHours();
@@ -43,6 +44,8 @@
   </div>
 
   <DailyCheckInCard />
+
+  <TodayHabitsCard />
 
   <div class="texture-row">
     <TexturePanel />

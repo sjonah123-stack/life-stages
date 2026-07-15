@@ -23,19 +23,10 @@
 </section>
 
 <style>
-  .page { animation: fadeInPage 0.25s ease-out; }
-  @keyframes fadeInPage {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .stack {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-top: 8px;
-  }
+  /* Section spacing comes from the shared .module-section margin. */
+  .stack { margin-top: 8px; }
   .privacy {
-    margin-top: 24px;
+    margin-top: 8px;
     text-align: center;
     color: var(--ink-faint);
     font-size: 12px;

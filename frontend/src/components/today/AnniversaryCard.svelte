@@ -218,7 +218,7 @@
   .milestones-list {
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px dashed rgba(255, 140, 97, 0.3);
+    border-top: 1px dashed color-mix(in srgb, var(--accent) 30%, transparent);
   }
   .milestone-pill {
     display: inline-block;
@@ -234,7 +234,7 @@
   .letters-block {
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px dashed rgba(255, 140, 97, 0.3);
+    border-top: 1px dashed color-mix(in srgb, var(--accent) 30%, transparent);
   }
   .letter-reveal {
     display: block;

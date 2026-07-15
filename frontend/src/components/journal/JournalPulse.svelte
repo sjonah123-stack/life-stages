@@ -199,8 +199,12 @@
     margin-top: 4px;
   }
   .streak-card {
-    background: linear-gradient(135deg, rgba(255, 201, 60, 0.18), rgba(255, 140, 97, 0.10));
-    border: 1px solid rgba(255, 140, 97, 0.22);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--money) 18%, transparent),
+      color-mix(in srgb, var(--accent) 10%, transparent)
+    );
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
     border-radius: 14px;
     padding: 14px 16px;
     display: flex;
@@ -221,8 +225,12 @@
   }
 
   .anniversary-card {
-    background: linear-gradient(135deg, rgba(185, 131, 255, 0.12), rgba(122, 162, 255, 0.10));
-    border: 1px solid rgba(185, 131, 255, 0.24);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--growth) 12%, transparent),
+      color-mix(in srgb, var(--growth) 8%, transparent)
+    );
+    border: 1px solid color-mix(in srgb, var(--growth) 24%, transparent);
     border-radius: 14px;
     padding: 14px 16px;
     cursor: pointer;

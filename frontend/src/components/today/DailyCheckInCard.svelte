@@ -220,7 +220,7 @@
   }
   .btn.primary {
     background: linear-gradient(135deg, var(--health), var(--career));
-    color: white;
+    color: var(--bg-1);
     border: none;
     box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--health) 40%, transparent);
   }

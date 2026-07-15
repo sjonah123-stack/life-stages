@@ -323,8 +323,8 @@
   }
   .sex-toggle button.active {
     background: var(--accent);
-    color: white;
-    box-shadow: 0 2px 8px rgba(255, 140, 97, 0.3);
+    color: var(--bg-1);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
   details.personalize-section {
@@ -360,7 +360,7 @@
   details.personalize-section:hover > summary { color: var(--ink-dim); }
 
   .personalize-private {
-    background: linear-gradient(135deg, var(--panel-warm), rgba(255, 201, 60, 0.08));
+    background: linear-gradient(135deg, var(--panel-warm), color-mix(in srgb, var(--money) 8%, transparent));
     border-radius: 12px;
     padding: 14px 16px;
     margin-top: 12px;
@@ -383,7 +383,7 @@
     margin-left: auto;
     align-self: flex-end;
     background: linear-gradient(135deg, var(--accent), var(--money));
-    color: white;
+    color: var(--bg-1);
     padding: 9px 14px;
     border-radius: 10px;
     font-size: 12px;

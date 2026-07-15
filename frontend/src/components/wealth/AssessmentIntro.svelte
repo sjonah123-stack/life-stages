@@ -124,7 +124,7 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow:
-      0 6px 20px -4px rgba(255, 140, 97, 0.45),
+      0 6px 20px -4px color-mix(in srgb, var(--accent) 45%, transparent),
       0 1px 0 rgba(255, 255, 255, 0.3) inset;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
     letter-spacing: -0.01em;
@@ -132,7 +132,7 @@
   .cta:hover {
     transform: translateY(-2px);
     box-shadow:
-      0 10px 26px -4px rgba(255, 140, 97, 0.55),
+      0 10px 26px -4px color-mix(in srgb, var(--accent) 55%, transparent),
       0 1px 0 rgba(255, 255, 255, 0.3) inset;
   }
   .cta .arrow {

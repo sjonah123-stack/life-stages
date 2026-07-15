@@ -48,8 +48,8 @@
     <div class="category">
       <div class="category-label">{CATEGORY_LABEL[cat]}</div>
       <div class="grid">
-        {#each items as a (a.id)}
-          <div class="tile" class:unlocked={a.unlocked} title={a.description}>
+        {#each items as a, i (a.id)}
+          <div class="tile" class:unlocked={a.unlocked} style="--i: {i}" title={a.description}>
             <div class="tile-emoji">{a.unlocked ? a.emoji : '🔒'}</div>
             <div class="tile-title">{a.title}</div>
             <div class="tile-desc">{a.description}</div>
@@ -61,14 +61,6 @@
 </section>
 
 <style>
-  .module-section {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 22px 26px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
-  }
   .head {
     display: flex;
     justify-content: space-between;
@@ -121,18 +113,30 @@
   .tile {
     background: var(--panel-warm);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     padding: 14px 14px 12px;
     text-align: center;
     opacity: 0.55;
-    transition: opacity 0.2s, transform 0.15s;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.15s;
   }
   .tile.unlocked {
     opacity: 1;
-    background: linear-gradient(135deg, rgba(255, 201, 60, 0.12), rgba(255, 140, 97, 0.06));
-    border-color: rgba(255, 140, 97, 0.3);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--money) 12%, transparent),
+      color-mix(in srgb, var(--accent) 6%, transparent)
+    );
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    animation: tile-rise 0.4s ease-out both;
+    animation-delay: calc(var(--i, 0) * 35ms);
   }
-  .tile.unlocked:hover { transform: translateY(-1px); }
+  .tile.unlocked:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tile.unlocked { animation: none; }
+  }
   .tile-emoji {
     font-size: 30px;
     line-height: 1;
