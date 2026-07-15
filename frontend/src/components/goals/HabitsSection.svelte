@@ -66,9 +66,8 @@
 <section class="module-section">
   <h2>Daily habits</h2>
   <p class="sub">
-    Small daily practices — meditation, gym, no-phone-after-9. Different from rituals
-    (annual) and milestones (one-time). Streak counts consecutive days; the chain shows
-    your last 28 days.
+    Small daily practices — meditation, gym, no-phone-after-9. Different from milestones
+    (one-time). Streak counts consecutive days; the chain shows your last 28 days.
   </p>
 
   {#if list.length === 0}

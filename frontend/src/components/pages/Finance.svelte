@@ -1,6 +1,5 @@
 <script lang="ts">
   import PageHeader from '../shared/PageHeader.svelte';
-  import NetWorthSection from '../finance/NetWorthSection.svelte';
   import CashflowSection from '../finance/CashflowSection.svelte';
   import SavingsSection from '../finance/SavingsSection.svelte';
   import GivingSection from '../finance/GivingSection.svelte';
@@ -9,11 +8,10 @@
 <section class="page">
   <PageHeader
     title="Your finances"
-    subtitle="Track what you have, what you're saving, and what you're giving back."
+    subtitle="Budget the month, watch where it goes, and give some back."
   />
 
   <div class="stack">
-    <NetWorthSection />
     <CashflowSection />
     <SavingsSection />
     <GivingSection />

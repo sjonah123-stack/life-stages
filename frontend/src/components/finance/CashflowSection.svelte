@@ -9,12 +9,16 @@
     cashflowEntries,
     addCashflowEntry,
     deleteCashflowEntry,
+    budgetPlan,
+    setBudgetPlan,
+    isBudgetPlanEmpty,
     CASHFLOW_CATEGORIES,
     monthKey,
     summarizeMonth,
     expensesByCategory,
     lastMonths,
   } from '../../stores/financial';
+  import BudgetCoach from './BudgetCoach.svelte';
   import { motionDuration } from '../../lib/motion';
   import { formatDOB } from '../../utils';
   import type { CashflowKind } from '../../types';
@@ -40,6 +44,70 @@
   $: summary = summarizeMonth($cashflowEntries, thisMonth);
   $: categories = expensesByCategory($cashflowEntries, thisMonth);
   $: maxCategory = categories.length > 0 ? categories[0].total : 0;
+
+  // ---- Budget plan ----
+  $: plan = $budgetPlan;
+  $: hasPlan = !isBudgetPlanEmpty(plan);
+  $: totalBudget = Object.values(plan.categories).reduce(
+    (a: number, b) => a + (b ?? 0),
+    0,
+  );
+  $: leftToSpend = totalBudget > 0 ? totalBudget - summary.expenses : null;
+
+  // Rows for the breakdown: every category with a target or spending.
+  $: budgetRows = (() => {
+    const spent = new Map(categories.map((c) => [c.category, c.total]));
+    const names = new Set<string>([
+      ...Object.keys(plan.categories),
+      ...categories.map((c) => c.category),
+    ]);
+    // Keep the curated order, then anything else (spending on old categories).
+    const ordered = [
+      ...CASHFLOW_CATEGORIES.expense.filter((c) => names.has(c)),
+      ...[...names].filter((c) => !CASHFLOW_CATEGORIES.expense.includes(c)),
+    ];
+    return ordered.map((name) => {
+      const target = plan.categories[name] ?? null;
+      const actual = spent.get(name) ?? 0;
+      return {
+        name,
+        target,
+        actual,
+        pct: target
+          ? Math.min(100, Math.round((actual / target) * 100))
+          : maxCategory > 0 ? Math.round((actual / maxCategory) * 100) : 0,
+        over: target !== null && actual > target,
+      };
+    }).filter((r) => r.target !== null || r.actual > 0);
+  })();
+
+  // Budget editor
+  let budgetFormOpen = false;
+  let incomeTargetInput = '';
+  let categoryInputs: Record<string, string> = {};
+
+  function openBudgetForm() {
+    incomeTargetInput = plan.expectedIncome ? String(plan.expectedIncome) : '';
+    categoryInputs = {};
+    for (const c of CASHFLOW_CATEGORIES.expense) {
+      categoryInputs[c] = plan.categories[c] ? String(plan.categories[c]) : '';
+    }
+    budgetFormOpen = true;
+  }
+
+  function saveBudget() {
+    const cats: Record<string, number> = {};
+    for (const [k, v] of Object.entries(categoryInputs)) {
+      const n = parseFloat(String(v).replace(/[$,\s]/g, ''));
+      if (Number.isFinite(n) && n > 0) cats[k] = n;
+    }
+    const inc = parseFloat(incomeTargetInput.replace(/[$,\s]/g, ''));
+    setBudgetPlan({
+      ...(Number.isFinite(inc) && inc > 0 ? { expectedIncome: inc } : {}),
+      categories: cats,
+    });
+    budgetFormOpen = false;
+  }
 
   $: monthEntries = $cashflowEntries.filter((e) => monthKey(e.date) === thisMonth);
   $: visibleEntries = showAllEntries ? monthEntries : monthEntries.slice(0, 8);
@@ -110,22 +178,62 @@
 
 <section class="module-section">
   <header>
-    <div class="eyebrow">CASH FLOW · {monthName(thisMonth)}</div>
+    <div class="head-row">
+      <div class="eyebrow">MONTHLY BUDGET · {monthName(thisMonth)}</div>
+      <button class="link-btn" type="button" on:click={() => (budgetFormOpen ? (budgetFormOpen = false) : openBudgetForm())}>
+        {hasPlan ? 'Edit budget' : 'Set a budget'}
+      </button>
+    </div>
     {#if summary.income > 0 || summary.expenses > 0}
       <h2 class:negative={summary.net < 0}>{fmtSigned(summary.net)}</h2>
       <div class="meta">
-        <span class="in">{fmt.format(summary.income)} in</span>
+        <span class="in">
+          {fmt.format(summary.income)} in{plan.expectedIncome ? ` of ${fmt.format(plan.expectedIncome)} expected` : ''}
+        </span>
         <span class="dot">·</span>
         <span class="out">{fmt.format(summary.expenses)} out</span>
+        {#if leftToSpend !== null}
+          <span class="dot">·</span>
+          <span class="left" class:overspent={leftToSpend < 0}>
+            {leftToSpend >= 0
+              ? `${fmt.format(leftToSpend)} left in budget`
+              : `${fmt.format(-leftToSpend)} over budget`}
+          </span>
+        {/if}
       </div>
     {:else}
-      <h2>Cash flow</h2>
+      <h2>Monthly budget</h2>
       <p class="empty-prose">
-        Log income and spending to see where each month actually goes. Charitable giving
-        has its own tracker below.
+        Set category targets, then log income and spending to see where each month
+        actually goes. Charitable giving has its own tracker below.
       </p>
     {/if}
   </header>
+
+  {#if budgetFormOpen}
+    <form class="form budget-form" transition:slide|local={{ duration: motionDuration(180) }} on:submit|preventDefault={saveBudget}>
+      <label class="field">
+        <span>Expected monthly income</span>
+        <input type="text" inputmode="decimal" bind:value={incomeTargetInput} placeholder="4000" />
+      </label>
+      <div class="budget-grid">
+        {#each CASHFLOW_CATEGORIES.expense as c (c)}
+          <label class="field">
+            <span>{c}</span>
+            <input type="text" inputmode="decimal" bind:value={categoryInputs[c]} placeholder="—" />
+          </label>
+        {/each}
+      </div>
+      <p class="budget-hint">
+        Leave a category blank to skip it. "Savings" is pay-yourself-first — transfers
+        you log there fill your savings goal below.
+      </p>
+      <div class="form-actions">
+        <button class="btn ghost" type="button" on:click={() => (budgetFormOpen = false)}>Cancel</button>
+        <button class="btn primary" type="submit">Save budget</button>
+      </div>
+    </form>
+  {/if}
 
   {#if hasHistory}
     <div class="chart" role="img" aria-label="Income and expenses over the last 6 months">
@@ -145,16 +253,20 @@
     </div>
   {/if}
 
-  {#if categories.length > 0}
+  {#if budgetRows.length > 0}
     <div class="breakdown">
-      <div class="breakdown-label">Where it went this month</div>
-      {#each categories as c (c.category)}
+      <div class="breakdown-label">
+        {hasPlan ? 'Budget vs. actual this month' : 'Where it went this month'}
+      </div>
+      {#each budgetRows as r (r.name)}
         <div class="cat-row">
-          <span class="cat-name">{c.category}</span>
+          <span class="cat-name">{r.name}</span>
           <div class="cat-bar-track">
-            <div class="cat-bar" style="width: {(c.total / maxCategory) * 100}%"></div>
+            <div class="cat-bar" class:over={r.over} style="width: {r.pct}%"></div>
           </div>
-          <span class="cat-amount">{fmt.format(c.total)}</span>
+          <span class="cat-amount" class:over-text={r.over}>
+            {fmt.format(r.actual)}{r.target !== null ? ` / ${fmt.format(r.target)}` : ''}
+          </span>
         </div>
       {/each}
     </div>
@@ -257,10 +369,18 @@
       </ul>
     </div>
   {/if}
+
+  <BudgetCoach />
 </section>
 
 <style>
   header { margin-bottom: 16px; }
+  .head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
   .eyebrow {
     font-size: 11px;
     color: var(--accent);
@@ -287,7 +407,10 @@
   }
   .meta .in { color: var(--health); font-weight: 600; }
   .meta .out { color: var(--ink-dim); font-weight: 600; }
+  .meta .left { color: var(--ink); font-weight: 700; }
+  .meta .left.overspent { color: var(--love); }
   .dot { color: var(--ink-faint); }
+  .meta { flex-wrap: wrap; }
   .empty-prose {
     color: var(--ink-dim);
     font-size: 15px;
@@ -346,10 +469,22 @@
   }
   .cat-row {
     display: grid;
-    grid-template-columns: 110px 1fr 80px;
+    grid-template-columns: 110px 1fr minmax(80px, auto);
     align-items: center;
     gap: 10px;
     padding: 3px 0;
+  }
+  .budget-form { margin-bottom: 16px; }
+  .budget-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+  }
+  .budget-hint {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin: 0;
+    line-height: 1.5;
   }
   .cat-name { font-size: 13px; color: var(--ink); font-weight: 600; }
   .cat-bar-track {
@@ -364,13 +499,16 @@
     border-radius: var(--radius-pill);
     transition: width 0.3s ease;
   }
+  .cat-bar.over { background: var(--love); }
   .cat-amount {
     font-size: 13px;
     font-weight: 700;
     color: var(--ink);
     font-variant-numeric: tabular-nums;
     text-align: right;
+    white-space: nowrap;
   }
+  .cat-amount.over-text { color: var(--love); }
 
   .actions { display: flex; gap: 8px; }
 

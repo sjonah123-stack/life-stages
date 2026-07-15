@@ -287,3 +287,130 @@ export async function reflectOnWeek(ctx: WeeklyContext): Promise<WeeklyReflectio
   const raw = await runStructured(WEEKLY_SCHEMA, weeklyReflectionPrompt(ctx));
   return normalizeWeeklyReflection(raw);
 }
+
+// ---- Budget coach ----
+// Reviews the user's logged months of cash flow (numbers only — no notes,
+// no recipients) and suggests a concrete improvement plan. Regenerable,
+// cached locally like the other AI artifacts.
+
+const BUDGET_ADVICE_SCHEMA = Schema.object({
+  properties: {
+    observations: Schema.array({ items: Schema.string() }),
+    recommendations: Schema.array({
+      items: Schema.object({
+        properties: {
+          category: Schema.string(),
+          advice: Schema.string(),
+        },
+      }),
+    }),
+    suggestedPlan: Schema.array({
+      items: Schema.object({
+        properties: {
+          category: Schema.string(),
+          amount: Schema.integer(),
+        },
+      }),
+    }),
+  },
+});
+
+export interface BudgetAdvice {
+  observations: string[];
+  recommendations: { category: string; advice: string }[];
+  suggestedPlan: { category: string; amount: number }[];
+}
+
+export interface BudgetMonthSummary {
+  month: string; // 'YYYY-MM'
+  income: number;
+  expenses: number;
+  categories: { category: string; total: number }[];
+}
+
+export interface BudgetContext {
+  months: BudgetMonthSummary[]; // oldest first, only months with data
+  expectedIncome?: number;
+  budget?: { category: string; amount: number }[]; // current plan, if set
+  savingsGoal?: { label: string; target: number; saved: number };
+}
+
+export function budgetCoachPrompt(ctx: BudgetContext): string {
+  const lines: string[] = [];
+  lines.push(
+    'You are a practical, non-judgemental budget coach for one person. ' +
+    'Only use the numbers below — never invent amounts or categories. ' +
+    'Dollar amounts are USD per month.',
+  );
+  for (const m of ctx.months.slice(-6)) {
+    const cats = m.categories.map((c) => `${c.category} $${Math.round(c.total)}`).join(', ');
+    lines.push(
+      `Month ${m.month}: income $${Math.round(m.income)}, spent $${Math.round(m.expenses)}` +
+      (cats ? ` (${cats})` : '') + '.',
+    );
+  }
+  if (ctx.expectedIncome) lines.push(`They expect about $${Math.round(ctx.expectedIncome)} of income per month.`);
+  if (ctx.budget?.length) {
+    lines.push(
+      'Their current budget targets: ' +
+      ctx.budget.map((b) => `${b.category} $${Math.round(b.amount)}`).join(', ') + '.',
+    );
+  }
+  if (ctx.savingsGoal) {
+    lines.push(
+      `They are saving toward "${ctx.savingsGoal.label}" ($${Math.round(ctx.savingsGoal.saved)} of ` +
+      `$${Math.round(ctx.savingsGoal.target)} so far). "Savings" is a budget category — money set aside counts there.`,
+    );
+  }
+  lines.push(
+    'Write: observations (2-3 short sentences naming real patterns in the numbers), ' +
+    'recommendations (2-4 items, each with the category it targets and one specific, doable change), ' +
+    'and suggestedPlan (a monthly dollar target per spending category they actually use, ' +
+    'including Savings, that adds up to less than their income).',
+  );
+  return lines.join('\n');
+}
+
+export function normalizeBudgetAdvice(raw: unknown): BudgetAdvice {
+  const r = (raw ?? {}) as {
+    observations?: unknown;
+    recommendations?: unknown;
+    suggestedPlan?: unknown;
+  };
+  const observations = Array.isArray(r.observations)
+    ? r.observations
+        .filter((o): o is string => typeof o === 'string' && o.trim() !== '')
+        .map((o) => o.trim())
+        .slice(0, 3)
+    : [];
+  const recommendations = Array.isArray(r.recommendations)
+    ? r.recommendations
+        .map((item) => {
+          const it = (item ?? {}) as { category?: unknown; advice?: unknown };
+          const category = typeof it.category === 'string' ? it.category.trim() : '';
+          const advice = typeof it.advice === 'string' ? it.advice.trim() : '';
+          return category && advice ? { category, advice } : null;
+        })
+        .filter((x): x is { category: string; advice: string } => x !== null)
+        .slice(0, 4)
+    : [];
+  const suggestedPlan = Array.isArray(r.suggestedPlan)
+    ? r.suggestedPlan
+        .map((item) => {
+          const it = (item ?? {}) as { category?: unknown; amount?: unknown };
+          const category = typeof it.category === 'string' ? it.category.trim() : '';
+          const amount = Math.round(Number(it.amount));
+          return category && Number.isFinite(amount) && amount > 0
+            ? { category, amount }
+            : null;
+        })
+        .filter((x): x is { category: string; amount: number } => x !== null)
+        .slice(0, 12)
+    : [];
+  return { observations, recommendations, suggestedPlan };
+}
+
+export async function adviseOnBudget(ctx: BudgetContext): Promise<BudgetAdvice> {
+  const raw = await runStructured(BUDGET_ADVICE_SCHEMA, budgetCoachPrompt(ctx));
+  return normalizeBudgetAdvice(raw);
+}

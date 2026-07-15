@@ -186,6 +186,13 @@ export interface CashflowEntry {
   note?: string;
 }
 
+// Monthly budget plan — expected income plus a target per expense
+// category. Sparse: only categories the user has set carry a number.
+export interface BudgetPlan {
+  expectedIncome?: number;
+  categories: Partial<Record<string, number>>;
+}
+
 // ---- Personal settings (the personalize panel) ----
 // `retirementAge` is intentionally absent — the app's worldview doesn't
 // treat retirement as a goal to plan toward. Old user docs may still
@@ -270,6 +277,7 @@ export interface CloudPayload extends Partial<PersonalSettings> {
   givingEntries?: GivingEntry[];
   // Cash flow / budget (v1).
   cashflowEntries?: CashflowEntry[];
+  budgetPlan?: BudgetPlan;
   // Habits (v1).
   habits?: Habit[];
   habitChecks?: HabitCheck[];

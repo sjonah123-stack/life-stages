@@ -5,7 +5,6 @@
   import { formatDOB, parseDOB } from '../../utils';
   import PageHeader from '../shared/PageHeader.svelte';
   import BooksSection from '../goals/BooksSection.svelte';
-  import RitualsSection from '../goals/RitualsSection.svelte';
   import HabitsSection from '../goals/HabitsSection.svelte';
   import CalendarExportButton from '../goals/CalendarExportButton.svelte';
   import AiMilestoneSuggest from '../goals/AiMilestoneSuggest.svelte';
@@ -235,8 +234,6 @@
   </div>
 
   <HabitsSection />
-
-  <RitualsSection />
 
   <BooksSection />
 </section>

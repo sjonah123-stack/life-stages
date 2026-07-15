@@ -8,7 +8,7 @@
 // internals, and crypto.randomUUID-based ids for goals.
 import { derived } from 'svelte/store';
 import type {
-  NetWorthEntry, SavingsGoal, GivingEntry, CashflowEntry, CashflowKind,
+  NetWorthEntry, SavingsGoal, GivingEntry, CashflowEntry, CashflowKind, BudgetPlan,
 } from '../types';
 import { persisted, persistedJSON } from './persisted';
 
@@ -99,9 +99,14 @@ export const CASHFLOW_CATEGORIES: Record<CashflowKind, readonly string[]> = {
   income: ['Salary', 'Side income', 'Gifts', 'Other'],
   expense: [
     'Housing', 'Food', 'Transport', 'Health', 'Subscriptions',
-    'Fun', 'Travel', 'Education', 'Other',
+    'Fun', 'Travel', 'Education', 'Savings', 'Other',
   ],
 };
+
+// 'Savings' is an expense category by design — "pay yourself first". Money
+// moved to savings counts against the monthly budget like rent does, and
+// feeds savings-goal progress (savedTowardGoal below).
+export const SAVINGS_CATEGORY = 'Savings';
 
 function normalizeCashflowEntries(input: unknown): CashflowEntry[] {
   if (!Array.isArray(input)) return [];
@@ -124,6 +129,33 @@ function normalizeCashflowEntries(input: unknown): CashflowEntry[] {
     });
   }
   return [...seen.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export function normalizeBudgetPlan(input: unknown): BudgetPlan {
+  const empty: BudgetPlan = { categories: {} };
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return empty;
+  const r = input as Partial<BudgetPlan>;
+  const out: BudgetPlan = { categories: {} };
+  if (
+    typeof r.expectedIncome === 'number' &&
+    Number.isFinite(r.expectedIncome) &&
+    r.expectedIncome > 0
+  ) {
+    out.expectedIncome = r.expectedIncome;
+  }
+  if (r.categories && typeof r.categories === 'object' && !Array.isArray(r.categories)) {
+    for (const [k, v] of Object.entries(r.categories)) {
+      if (typeof k !== 'string' || !k) continue;
+      if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) continue;
+      out.categories[k] = v;
+    }
+  }
+  return out;
+}
+
+export function isBudgetPlanEmpty(p: BudgetPlan | null | undefined): boolean {
+  if (!p) return true;
+  return !p.expectedIncome && Object.keys(p.categories ?? {}).length === 0;
 }
 
 // ---- Persisted writables ----
@@ -156,6 +188,12 @@ export const cashflowEntries = persistedJSON<CashflowEntry[]>(
   normalizeCashflowEntries,
 );
 
+export const budgetPlan = persistedJSON<BudgetPlan>(
+  'budgetPlan',
+  { categories: {} },
+  normalizeBudgetPlan,
+);
+
 // ---- Derived ----
 
 export const latestNetWorth = derived(
@@ -173,12 +211,14 @@ export const givingThisYear = derived(givingEntries, ($list) => {
   return sum;
 });
 
-// Default annual giving target = 10% of latest net-worth amount. 0 when
-// no NW entry exists (the GivingSection hides the block in that case).
-export const givingTargetAnnual = derived(
-  latestNetWorth,
-  ($latest) => ($latest && $latest.amount > 0 ? Math.round($latest.amount * 0.1) : 0),
-);
+// Default annual giving target = 10% of annualized income from the
+// cash-flow log (tithe framing; re-anchored from net worth when the
+// net-worth tracker UI was retired, 2026-07). 0 when no income is logged
+// (the GivingSection hides the target in that case).
+export const givingTargetAnnual = derived(cashflowEntries, ($entries) => {
+  const annual = annualizeIncome($entries, currentMonthKey());
+  return annual > 0 ? Math.round(annual * 0.1) : 0;
+});
 
 // ---- Cash-flow helpers (pure, unit-tested) ----
 
@@ -229,6 +269,62 @@ export function lastMonths(endMonth: string, n: number): string[] {
     out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
   return out;
+}
+
+function currentMonthKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Annualized income from the cash-flow log: total logged income across the
+// trailing-12-month window, scaled by how many of those months actually
+// have data (any kind of entry). One month of $3k salary → $36k/yr while
+// history is short; fills in toward the true figure as months accumulate.
+export function annualizeIncome(entries: CashflowEntry[], endMonth: string): number {
+  const window = new Set(lastMonths(endMonth, 12));
+  const monthsWithData = new Set<string>();
+  let income = 0;
+  for (const e of entries) {
+    const m = monthKey(e.date);
+    if (!window.has(m)) continue;
+    monthsWithData.add(m);
+    if (e.kind === 'income') income += e.amount;
+  }
+  if (monthsWithData.size === 0) return 0;
+  return (income / monthsWithData.size) * 12;
+}
+
+// Actual savings rate over the trailing `monthsBack` months with data:
+// (income − expenses) / income. Null when no income is logged in-window.
+export function actualSavingsRate(
+  entries: CashflowEntry[],
+  endMonth: string,
+  monthsBack = 3,
+): number | null {
+  const window = new Set(lastMonths(endMonth, monthsBack));
+  let income = 0;
+  let expenses = 0;
+  for (const e of entries) {
+    if (!window.has(monthKey(e.date))) continue;
+    if (e.kind === 'income') income += e.amount;
+    else expenses += e.amount;
+  }
+  if (income <= 0) return null;
+  return Math.round(((income - expenses) / income) * 100);
+}
+
+// Dollars logged to the Savings category since a goal was created —
+// powers savings-goal progress ("pay yourself first" transfers).
+export function savedTowardGoal(entries: CashflowEntry[], createdAtMs: number): number {
+  const created = new Date(createdAtMs);
+  const createdYmd = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}-${String(created.getDate()).padStart(2, '0')}`;
+  let sum = 0;
+  for (const e of entries) {
+    if (e.kind !== 'expense' || e.category !== SAVINGS_CATEGORY) continue;
+    if (e.date < createdYmd) continue;
+    sum += e.amount;
+  }
+  return sum;
 }
 
 // ---- Mutations ----
@@ -289,6 +385,10 @@ export function deleteGivingEntry(date: string, recipient?: string): void {
   );
 }
 
+export function setBudgetPlan(plan: BudgetPlan): void {
+  budgetPlan.set(normalizeBudgetPlan(plan));
+}
+
 export function addCashflowEntry(input: Omit<CashflowEntry, 'id'>): CashflowEntry {
   const entry: CashflowEntry = { id: makeId(), ...input };
   cashflowEntries.update((list) =>
@@ -312,6 +412,7 @@ export function setFromCloud(cloud: {
   savingsRate?: unknown;
   givingEntries?: unknown;
   cashflowEntries?: unknown;
+  budgetPlan?: unknown;
 }): void {
   if (cloud.netWorthEntries !== undefined) {
     netWorthEntries.set(normalizeNetWorthEntries(cloud.netWorthEntries));
@@ -328,5 +429,8 @@ export function setFromCloud(cloud: {
   }
   if (cloud.cashflowEntries !== undefined) {
     cashflowEntries.set(normalizeCashflowEntries(cloud.cashflowEntries));
+  }
+  if (cloud.budgetPlan !== undefined) {
+    budgetPlan.set(normalizeBudgetPlan(cloud.budgetPlan));
   }
 }

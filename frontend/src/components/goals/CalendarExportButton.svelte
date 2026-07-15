@@ -1,17 +1,18 @@
 <script lang="ts">
-  // Export milestones + rituals + savings-goal deadlines as a .ics file.
+  // Export milestones + savings-goal deadlines as a .ics file.
   // No backend, no auth — pure client-side blob download. Works with
   // Apple Calendar, Google Calendar, Outlook, etc.
+  // (Rituals were retired from the UI; buildIcs still accepts the field,
+  // so we pass an empty list.)
   import { milestones } from '../../stores/collections';
   import { savingsGoals } from '../../stores/financial';
-  import { rituals } from '../../stores/collections';
   import { birthdate } from '../../stores/personal';
   import { buildIcs, countExportable } from '../../lib/ics';
   import { formatDOB } from '../../utils';
 
   $: count = countExportable({
     milestones: $milestones,
-    rituals: $rituals,
+    rituals: [],
     savingsGoals: $savingsGoals,
     birthdate: $birthdate,
   });
@@ -21,7 +22,7 @@
   function download() {
     const text = buildIcs({
       milestones: $milestones,
-      rituals: $rituals,
+      rituals: [],
       savingsGoals: $savingsGoals,
       birthdate: $birthdate,
     });
@@ -44,7 +45,7 @@
     <div class="export-title">📅 Export to your calendar</div>
     <div class="export-sub">
       Download an .ics file with {count} {count === 1 ? 'event' : 'events'}
-      (milestones, rituals, savings deadlines). Works with Apple Calendar, Google Calendar, and Outlook.
+      (milestones and savings deadlines). Works with Apple Calendar, Google Calendar, and Outlook.
     </div>
     {#if lastDownload}
       <div class="export-flash">Downloaded at {lastDownload} ✓</div>

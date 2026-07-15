@@ -15,7 +15,7 @@ import {
   milestones, journal, letters, people, books, rituals,
 } from './collections';
 import {
-  netWorthEntries, savingsGoals, savingsRate, givingEntries,
+  cashflowEntries, savingsGoals, givingEntries,
 } from './financial';
 import { habitChecks, anyHabitCheckedRecently } from './habits';
 import { bodyEntries, hasRecentBodyEntry } from './body';
@@ -144,14 +144,14 @@ export const behavioralScores = derived(
     dob, partnership, careerField,
     smoker, exerciseLevel, sleepHours, familyLongevity,
     milestones, journal, letters, people, books, rituals,
-    netWorthEntries, savingsGoals, savingsRate, givingEntries,
+    cashflowEntries, savingsGoals, givingEntries,
     habitChecks, bodyEntries,
   ],
   ([
     $dob, $partnership, $careerField,
     $smoker, $exerciseLevel, $sleepHours, $familyLongevity,
     $milestones, $journal, $letters, $people, $books, $rituals,
-    $netWorthEntries, $savingsGoals, $savingsRate, $givingEntries,
+    $cashflowEntries, $savingsGoals, $givingEntries,
     $habitChecks, $bodyEntries,
   ]) => {
     // ---- Time ----
@@ -225,22 +225,22 @@ export const behavioralScores = derived(
     physical = Math.min(100, physical);
 
     // ---- Financial ----
-    // 5 signals × 20pt. Replaces the thin retirementAge + careerField
-    // pair after the Finance page launched. Reflects actual financial
-    // behavior: tracking, saving, giving — not retirement targeting.
+    // 5 signals × 20pt. Re-anchored to budgeting behavior when the
+    // net-worth tracker was retired (2026-07): tracking cash flow,
+    // keeping it current, saving toward a goal, giving.
     let financial = 0;
     if ($careerField) financial += 20;
-    if ($netWorthEntries.length >= 1) financial += 20;
-    // Recent net-worth check-in (within 60 days). Today is anchored to
+    if ($cashflowEntries.length >= 1) financial += 20;
+    // Cash flow logged recently (within 45 days). Today is anchored to
     // 00:00 local — daysBetween is DST-safe.
     const todayMidnight = new Date();
     todayMidnight.setHours(0, 0, 0, 0);
-    const recentCheckIn = $netWorthEntries.some((e) => {
+    const recentBudgeting = $cashflowEntries.some((e) => {
       const d = parseDOB(e.date);
-      return d ? daysBetween(d, todayMidnight) <= 60 : false;
+      return d ? daysBetween(d, todayMidnight) <= 45 : false;
     });
-    if (recentCheckIn) financial += 20;
-    if ($savingsGoals.length >= 1 || $savingsRate > 0) financial += 20;
+    if (recentBudgeting) financial += 20;
+    if ($savingsGoals.length >= 1) financial += 20;
     // Charitable giving in the past 365 days.
     const recentGiving = $givingEntries.some((e) => {
       const d = parseDOB(e.date);

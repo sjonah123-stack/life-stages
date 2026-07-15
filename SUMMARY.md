@@ -1,8 +1,9 @@
 # Session Summary — life-stages
 
-Last updated: 2026-07-15 — Journal reorg + Goals icons/emoji + cash-flow tracker on preview
-channel `journal-finance` (https://life-stages-90806--journal-finance-ewj1zldm.web.app, expires
-2026-07-22). Earlier today-declutter preview is superseded by this one (includes it).
+Last updated: 2026-07-15 — budget-first Finance (net worth retired, AI budget coach) + rituals
+removed, on preview channel `budget-first`
+(https://life-stages-90806--budget-first-ssfw0pi9.web.app, expires 2026-07-22). Supersedes the
+earlier `journal-finance` and `today-declutter` previews (includes both).
 
 ## Where prod stands
 
@@ -15,7 +16,26 @@ Backend is deployed: 3 Cloud Functions (Node 22), Firestore + Storage rules rele
 pushes commits via **GitHub Desktop** (the terminal here has no git auth). Tell them the pending
 commit count each session: `git rev-list --count origin/main..HEAD`.
 
-## Session 2026-07-15 (latest) — Journal reorg + Goals emoji + cash-flow (preview-pending)
+## Session 2026-07-15 (latest) — budget-first Finance + rituals removed (preview-pending)
+
+1. **Rituals retired** — RitualsSection deleted; `rituals` store/cloud round-trip stays
+   read-tolerant; `ritual-first` badge removed; .ics export passes `rituals: []`.
+2. **Net worth retired** — NetWorthSection + sparkline deleted; data read-tolerant; peak stays
+   in Personal Bests. **Giving target re-anchored to 10% of annualized income** (`annualizeIncome`
+   from the cash-flow log). Savings rate now computed from actuals (`actualSavingsRate`, trailing
+   3 months); savings-goal progress = Savings-category logs since goal creation (`savedTowardGoal`).
+   Financial behavioral scoring re-anchored to budgeting activity; nw badges → `budget-first`/
+   `budget-three`.
+3. **Monthly Budget** — `BudgetPlan` (expected income + per-category targets, persisted +
+   cloud-synced); CashflowSection is now budget-vs-actual: per-category bars turn terracotta→red
+   when over, income-vs-expected + left-to-spend header, "Savings" is a first-class category.
+4. **AI budget coach** (`BudgetCoach.svelte` in the budget section) — `adviseOnBudget` sends
+   month summaries + category totals only (never notes/recipients); returns observations,
+   per-category recommendations, and a suggested plan with one-tap "Use as my budget". Unlocks
+   once a prior month has data; signed-in only; cached locally (`latestBudgetAdvice`).
+   320 tests, 0 type errors, clean build.
+
+## Session 2026-07-15 (earlier) — Journal reorg + Goals emoji + cash-flow (in same preview)
 
 1. **Journal reorganized** — FutureLetters UI removed (the `letters` store/normalizer/cloud
    round-trip stay so old letters still surface on the anniversary card + feed Mental Wealth);

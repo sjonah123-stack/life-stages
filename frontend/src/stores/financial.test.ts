@@ -8,6 +8,7 @@ import {
   savingsGoals,
   savingsRate,
   givingEntries,
+  cashflowEntries,
   latestNetWorth,
   givingThisYear,
   givingTargetAnnual,
@@ -19,8 +20,10 @@ import {
   setSavingsRate,
   addGivingEntry,
   deleteGivingEntry,
+  addCashflowEntry,
   setFromCloud,
 } from './financial';
+import { formatDOB } from '../utils';
 
 beforeEach(() => {
   // Global setup wipes localStorage; we also reset the in-memory stores
@@ -29,6 +32,7 @@ beforeEach(() => {
   savingsGoals.set([]);
   savingsRate.set(0);
   givingEntries.set([]);
+  cashflowEntries.set([]);
 });
 
 describe('addNetWorthEntry', () => {
@@ -193,24 +197,31 @@ describe('derived: givingThisYear', () => {
 });
 
 describe('derived: givingTargetAnnual', () => {
-  it('returns 10% of latest net worth (rounded), or 0 when no NW entry', () => {
+  // Re-anchored (2026-07): 10% of annualized income from the cash-flow
+  // log, replacing the old 10%-of-net-worth base when the net-worth
+  // tracker UI was retired.
+  const today = formatDOB(new Date());
+
+  it('returns 0 with no logged income, and net worth no longer matters', () => {
     expect(get(givingTargetAnnual)).toBe(0);
     addNetWorthEntry({ date: '2026-05-08', amount: 48200 });
-    expect(get(givingTargetAnnual)).toBe(4820);
+    expect(get(givingTargetAnnual)).toBe(0);
   });
 
-  it('updates when latest net worth changes', () => {
-    addNetWorthEntry({ date: '2026-01-08', amount: 30000 });
-    expect(get(givingTargetAnnual)).toBe(3000);
-    addNetWorthEntry({ date: '2026-05-08', amount: 50000 });
-    expect(get(givingTargetAnnual)).toBe(5000);
+  it('annualizes a single month of income and takes 10%', () => {
+    // $3,000 in the only month with data → $36,000/yr → $3,600 target.
+    addCashflowEntry({ date: today, amount: 3000, kind: 'income', category: 'Salary' });
+    expect(get(givingTargetAnnual)).toBe(3600);
   });
 
-  it('returns 0 when latest net worth is zero or negative', () => {
-    addNetWorthEntry({ date: '2026-05-08', amount: 0 });
-    expect(get(givingTargetAnnual)).toBe(0);
-    addNetWorthEntry({ date: '2026-06-08', amount: -1000 });
-    expect(get(givingTargetAnnual)).toBe(0);
+  it('expense-only months dilute the monthly average', () => {
+    // Current month: $3,000 income. Last month: expenses only.
+    // → $3,000 over 2 data months → $18,000/yr → $1,800 target.
+    const d = new Date();
+    const prev = new Date(d.getFullYear(), d.getMonth() - 1, 15);
+    addCashflowEntry({ date: today, amount: 3000, kind: 'income', category: 'Salary' });
+    addCashflowEntry({ date: formatDOB(prev), amount: 500, kind: 'expense', category: 'Food' });
+    expect(get(givingTargetAnnual)).toBe(1800);
   });
 });
 

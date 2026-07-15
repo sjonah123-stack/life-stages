@@ -2,50 +2,32 @@
   import { tick } from 'svelte';
   import {
     savingsGoals,
-    savingsRate,
-    latestNetWorth,
+    cashflowEntries,
     addGoal,
     updateGoal,
     deleteGoal,
-    setSavingsRate,
+    actualSavingsRate,
+    savedTowardGoal,
+    monthKey,
+    SAVINGS_CATEGORY,
   } from '../../stores/financial';
   import { birthdate } from '../../stores/personal';
   import { formatDOB } from '../../utils';
   import type { SavingsGoal } from '../../types';
 
-  // ---- Savings rate ----
-  let editingRate = false;
-  let rateInput = '';
-  let rateEl: HTMLInputElement | null = null;
-
-  async function openRate() {
-    rateInput = String($savingsRate);
-    editingRate = true;
-    await tick();
-    rateEl?.select();
-  }
-
-  function saveRate() {
-    const n = parseFloat(rateInput);
-    if (!Number.isFinite(n)) {
-      editingRate = false;
-      return;
-    }
-    setSavingsRate(n);
-    editingRate = false;
-  }
-
-  function cancelRate() {
-    editingRate = false;
-  }
+  // ---- Actual savings rate ----
+  // Computed from the cash-flow log (trailing 3 months with data), not
+  // self-reported — the budget above is the source of truth.
+  $: rate = actualSavingsRate($cashflowEntries, monthKey(formatDOB(new Date())));
 
   // ---- Goal ----
-  // v1 surfaces the first goal in the list. The store supports many but the
-  // UI is single-goal for simplicity.
+  // v1 surfaces the first goal in the list. Progress = dollars logged to
+  // the Savings category since the goal was created ("pay yourself first"
+  // transfers in the budget above).
   $: goal = $savingsGoals[0] ?? null;
-  $: latestAmount = $latestNetWorth?.amount ?? 0;
+  $: savedAmount = goal ? savedTowardGoal($cashflowEntries, goal.createdAt) : 0;
   $: progressPct = goal && goal.target > 0
-    ? Math.max(0, Math.min(100, Math.round((latestAmount / goal.target) * 100)))
+    ? Math.max(0, Math.min(100, Math.round((savedAmount / goal.target) * 100)))
     : 0;
 
   let goalFormOpen = false;
@@ -139,31 +121,21 @@
     <h2>What you're putting away</h2>
   </header>
 
-  <!-- Savings rate -->
+  <!-- Actual savings rate, from the budget log -->
   <div class="rate-row">
     <div class="rate-label">Savings rate</div>
-    {#if editingRate}
-      <input
-        type="number"
-        min="0"
-        max="100"
-        step="1"
-        bind:value={rateInput}
-        bind:this={rateEl}
-        on:blur={saveRate}
-        on:keydown={(e) => { if (e.key === 'Enter') saveRate(); if (e.key === 'Escape') cancelRate(); }}
-        class="rate-input"
-      />
-      <span class="rate-suffix">%</span>
-    {:else}
-      <button class="rate-value" type="button" on:click={openRate}>
-        {$savingsRate}%
-        <span class="rate-edit-hint">edit</span>
-      </button>
-    {/if}
+    <span class="rate-value" class:negative={rate !== null && rate < 0}>
+      {rate !== null ? `${rate}%` : '—'}
+    </span>
   </div>
   <p class="rate-prose">
-    The portion of your income you set aside each month. The trend matters more than the level — small increases compound.
+    {#if rate !== null}
+      Computed from your last three months of logged cash flow: what's left of income
+      after expenses. Small increases compound.
+    {:else}
+      Log income in the budget above and this becomes your real, computed rate —
+      what's actually left after expenses.
+    {/if}
   </p>
 
   <!-- Goal -->
@@ -186,11 +158,14 @@
           <div class="progress-fill" style="width: {progressPct}%"></div>
         </div>
         <div class="progress-meta">
-          <span>{fmt.format(latestAmount)} / {fmt.format(goal.target)}</span>
+          <span>{fmt.format(savedAmount)} / {fmt.format(goal.target)}</span>
           <span>{progressPct}%</span>
         </div>
-        {#if latestAmount === 0}
-          <div class="hint">Add a net-worth check-in above to see your progress.</div>
+        {#if savedAmount === 0}
+          <div class="hint">
+            Log transfers under the "{SAVINGS_CATEGORY}" category in the budget above —
+            they fill this bar.
+          </div>
         {/if}
       </div>
     {:else if !goalFormOpen}
@@ -274,44 +249,12 @@
     color: var(--ink-dim);
   }
   .rate-value {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
     font-size: 28px;
     font-weight: 800;
     color: var(--ink);
     font-variant-numeric: tabular-nums;
-    padding: 0;
-    display: inline-flex;
-    align-items: baseline;
-    gap: 8px;
   }
-  .rate-edit-hint {
-    font-size: 11px;
-    color: var(--accent);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-  .rate-input {
-    font-size: 28px;
-    font-weight: 800;
-    width: 80px;
-    padding: 2px 8px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--panel-warm);
-    font-family: inherit;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-  }
-  .rate-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  .rate-suffix {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--ink-dim);
-  }
+  .rate-value.negative { color: var(--love); }
   .rate-prose {
     color: var(--ink-dim);
     font-size: 13px;

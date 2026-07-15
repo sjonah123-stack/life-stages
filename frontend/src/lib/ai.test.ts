@@ -3,6 +3,7 @@ import {
   normalizeAiMilestones, normalizeInsight, normalizePrompts,
   milestonePrompt, journalInsightPrompt,
   weeklyReflectionPrompt, normalizeWeeklyReflection,
+  budgetCoachPrompt, normalizeBudgetAdvice,
 } from './ai';
 
 describe('normalizeAiMilestones', () => {
@@ -129,5 +130,59 @@ describe('normalizeWeeklyReflection', () => {
     expect(normalizeWeeklyReflection({ reflection: 'x', focus: 'y', wealthKey: 'bogus' }))
       .toEqual({ reflection: 'x', focus: 'y' });
     expect(normalizeWeeklyReflection(null)).toEqual({ reflection: '', focus: '' });
+  });
+});
+
+describe('budgetCoachPrompt', () => {
+  it('includes month summaries, plan, and savings goal', () => {
+    const p = budgetCoachPrompt({
+      months: [
+        {
+          month: '2026-06',
+          income: 3200,
+          expenses: 2100,
+          categories: [{ category: 'Housing', total: 1200 }],
+        },
+      ],
+      expectedIncome: 3200,
+      budget: [{ category: 'Food', amount: 500 }],
+      savingsGoal: { label: 'Emergency fund', target: 10000, saved: 800 },
+    });
+    expect(p).toContain('Month 2026-06: income $3200, spent $2100 (Housing $1200)');
+    expect(p).toContain('$3200 of income per month');
+    expect(p).toContain('Food $500');
+    expect(p).toContain('"Emergency fund" ($800 of $10000');
+    expect(p).toContain('never invent amounts');
+  });
+});
+
+describe('normalizeBudgetAdvice', () => {
+  it('trims and caps well-formed advice', () => {
+    const out = normalizeBudgetAdvice({
+      observations: ['  a  ', 'b', 'c', 'd'],
+      recommendations: [
+        { category: ' Food ', advice: ' cook twice a week ' },
+        { category: '', advice: 'dropped — no category' },
+        { category: 'NoAdvice' },
+      ],
+      suggestedPlan: [
+        { category: 'Housing', amount: 1200.6 },
+        { category: 'Bad', amount: -5 },
+        { category: '', amount: 100 },
+      ],
+    });
+    expect(out.observations).toEqual(['a', 'b', 'c']); // capped at 3
+    expect(out.recommendations).toEqual([{ category: 'Food', advice: 'cook twice a week' }]);
+    expect(out.suggestedPlan).toEqual([{ category: 'Housing', amount: 1201 }]);
+  });
+
+  it('degrades garbage to empty advice', () => {
+    expect(normalizeBudgetAdvice(null)).toEqual({
+      observations: [],
+      recommendations: [],
+      suggestedPlan: [],
+    });
+    expect(normalizeBudgetAdvice({ observations: 'x', recommendations: 3, suggestedPlan: {} }))
+      .toEqual({ observations: [], recommendations: [], suggestedPlan: [] });
   });
 });

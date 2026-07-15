@@ -7,7 +7,11 @@ import { achievements, personalBests } from './achievements';
 import { journal, milestones, books, rituals } from './collections';
 import { habits, habitChecks, toggleHabitCheck, addHabit } from './habits';
 import { bodyEntries, addBodyEntry } from './body';
-import { netWorthEntries, savingsRate, givingEntries, addNetWorthEntry, addGivingEntry } from './financial';
+import {
+  netWorthEntries, savingsRate, givingEntries, cashflowEntries,
+  addNetWorthEntry, addGivingEntry, addCashflowEntry,
+} from './financial';
+import { formatDOB } from '../utils';
 import { assessmentResults } from './assessment';
 import { dob } from './personal';
 import type { AssessmentResult } from '../types';
@@ -25,6 +29,7 @@ beforeEach(() => {
   netWorthEntries.set([]);
   savingsRate.set(0);
   givingEntries.set([]);
+  cashflowEntries.set([]);
   assessmentResults.set([]);
   dob.set('2002-12-04');
 });
@@ -109,28 +114,34 @@ describe('body achievements', () => {
 });
 
 describe('finance achievements', () => {
-  it('nw-first unlocks on first check-in', () => {
-    addNetWorthEntry({ date: '2026-05-08', amount: 50000 });
-    expect(findAchievement('nw-first').unlocked).toBe(true);
+  it('budget-first unlocks on the first cash-flow entry', () => {
+    addCashflowEntry({ date: '2026-05-08', amount: 50, kind: 'expense', category: 'Food' });
+    expect(findAchievement('budget-first').unlocked).toBe(true);
   });
 
-  it('nw-six requires 6 distinct date entries', () => {
-    for (let i = 0; i < 6; i++) {
-      addNetWorthEntry({ date: `2026-0${(i % 9) + 1}-01`, amount: 1000 * (i + 1) });
+  it('budget-three requires three consecutive months of entries', () => {
+    const today = new Date();
+    // Two consecutive months (incl. grace for this month) is not enough.
+    for (const back of [1, 2]) {
+      const d = new Date(today.getFullYear(), today.getMonth() - back, 15);
+      addCashflowEntry({ date: formatDOB(d), amount: 10, kind: 'expense', category: 'Food' });
     }
-    expect(findAchievement('nw-six').unlocked).toBe(true);
+    expect(findAchievement('budget-three').unlocked).toBe(false);
+    const d3 = new Date(today.getFullYear(), today.getMonth() - 3, 15);
+    addCashflowEntry({ date: formatDOB(d3), amount: 10, kind: 'expense', category: 'Food' });
+    expect(findAchievement('budget-three').unlocked).toBe(true);
   });
 
-  it('give-ten-percent unlocks when this-year giving >= 10% of latest net worth', () => {
-    addNetWorthEntry({ date: '2026-01-01', amount: 50000 });
-    // 10% of 50000 = 5000 target. Log 6000 this year.
+  it('give-ten-percent unlocks when this-year giving >= 10% of annualized income', () => {
+    // One month of income $5,000 → $60,000/yr → $6,000 target.
+    addCashflowEntry({ date: formatDOB(new Date()), amount: 5000, kind: 'income', category: 'Salary' });
     const year = new Date().getFullYear();
     addGivingEntry({ date: `${year}-03-01`, amount: 3000 });
-    addGivingEntry({ date: `${year}-06-01`, amount: 3000 });
+    addGivingEntry({ date: `${year}-06-01`, amount: 3500 });
     expect(findAchievement('give-ten-percent').unlocked).toBe(true);
   });
 
-  it('give-ten-percent stays locked without a NW reference', () => {
+  it('give-ten-percent stays locked without logged income', () => {
     const year = new Date().getFullYear();
     addGivingEntry({ date: `${year}-03-01`, amount: 10000 });
     expect(findAchievement('give-ten-percent').unlocked).toBe(false);
@@ -185,10 +196,6 @@ describe('books + overall achievements', () => {
     expect(findAchievement('milestone-first-done').unlocked).toBe(true);
   });
 
-  it('ritual-first unlocks on first ritual added', () => {
-    rituals.set([{ name: 'Thanksgiving', frequency: 1 }]);
-    expect(findAchievement('ritual-first').unlocked).toBe(true);
-  });
 });
 
 describe('personalBests', () => {

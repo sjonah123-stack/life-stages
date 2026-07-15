@@ -4,7 +4,6 @@
     givingEntries,
     givingThisYear,
     givingTargetAnnual,
-    latestNetWorth,
     addGivingEntry,
     deleteGivingEntry,
   } from '../../stores/financial';
@@ -22,7 +21,7 @@
   $: list = $givingEntries;
   $: thisYearTotal = $givingThisYear;
   $: target = $givingTargetAnnual;
-  $: hasNetWorth = $latestNetWorth !== null;
+  $: hasTarget = target > 0;
   // Show this year's gifts in the recent list, since past-year gifts are
   // still in storage but contextually less relevant for the running total.
   $: thisYearList = list.filter((e) => e.date.startsWith(String(new Date().getFullYear())));
@@ -87,10 +86,10 @@
     <h2>What you're giving back</h2>
   </header>
 
-  {#if !hasNetWorth}
+  {#if !hasTarget}
     <p class="empty-prose">
-      Add a net-worth check-in above to unlock the giving tracker. The annual
-      target is 10% of your net worth — that anchor only makes sense once
+      Log some income in the budget above to unlock the giving tracker. The
+      annual target is 10% of your income — that anchor only makes sense once
       there's a number to anchor to.
     </p>
   {:else}
@@ -99,7 +98,7 @@
         <span class="progress-amount">{fmt.format(thisYearTotal)}</span>
         <span class="progress-of">of {fmt.format(target)} goal</span>
       </div>
-      <div class="progress-sub">10% of net worth · {new Date().getFullYear()}</div>
+      <div class="progress-sub">10% of income · {new Date().getFullYear()}</div>
       <div class="progress-bar">
         <div class="progress-fill" style="width: {progressPct}%"></div>
       </div>

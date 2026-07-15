@@ -7,10 +7,13 @@
 // No XP/levels, no "don't break your streak!" anxiety bait. Just badges
 // that mark real progress through the app's data.
 import { derived } from 'svelte/store';
-import { journal, milestones, books, rituals } from './collections';
+import { journal, milestones, books } from './collections';
 import { habits, habitChecks, streakFor, checkKeys } from './habits';
 import { bodyEntries } from './body';
-import { netWorthEntries, savingsGoals, givingEntries, givingThisYear, givingTargetAnnual } from './financial';
+import {
+  cashflowEntries, netWorthEntries, savingsGoals, givingEntries,
+  givingThisYear, givingTargetAnnual, monthKey, lastMonths,
+} from './financial';
 import { assessmentResults, latestAssessment } from './assessment';
 import { todayAge } from './personal';
 import type { Mood } from '../types';
@@ -93,6 +96,28 @@ function netWorthPeak($entries: { amount: number }[]): number {
   return peak;
 }
 
+// Distinct 'YYYY-MM' months with at least one cash-flow entry.
+function distinctCashflowMonths($entries: { date: string }[]): number {
+  const months = new Set<string>();
+  for (const e of $entries) months.add(monthKey(e.date));
+  return months.size;
+}
+
+// Consecutive months with entries, counting back from this month (this
+// month not required yet — same grace rule as habit streaks).
+function consecutiveBudgetMonths($entries: { date: string }[]): number {
+  const months = new Set<string>();
+  for (const e of $entries) months.add(monthKey(e.date));
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const walk = lastMonths(thisMonth, 120); // newest last
+  let count = 0;
+  let i = walk.length - 1;
+  if (!months.has(walk[i])) i--;
+  while (i >= 0 && months.has(walk[i])) { count++; i--; }
+  return count;
+}
+
 function booksInCurrentAge($books: { age: number }[], age: number): number {
   return $books.filter((b) => b.age === age).length;
 }
@@ -104,21 +129,22 @@ function booksInCurrentAge($books: { age: number }[], age: number): number {
 export const achievements = derived(
   [
     journal, habits, habitChecks, bodyEntries,
-    netWorthEntries, savingsGoals, givingEntries, givingThisYear, givingTargetAnnual,
-    milestones, books, rituals, assessmentResults, latestAssessment, todayAge,
+    cashflowEntries, savingsGoals, givingEntries, givingThisYear, givingTargetAnnual,
+    milestones, books, assessmentResults, latestAssessment, todayAge,
     checkKeys,
   ],
   ([
     $journal, $habits, $habitChecks, $bodyEntries,
-    $netWorthEntries, $savingsGoals, $givingEntries, $givingThisYear, $givingTargetAnnual,
-    $milestones, $books, $rituals, $assessmentResults, $latestAssessment, $todayAge,
+    $cashflowEntries, $savingsGoals, $givingEntries, $givingThisYear, $givingTargetAnnual,
+    $milestones, $books, $assessmentResults, $latestAssessment, $todayAge,
     $checkKeys,
   ]): Achievement[] => {
     const entryCount = journalEntryCount($journal as Record<string, unknown>);
     const longestStreak = journalLongestStreak($journal as Record<string, unknown>);
     const bestHabit = bestHabitStreak($habits, $checkKeys);
     const bodyConsec = consecutiveBodyDays($bodyEntries);
-    const nwPeak = netWorthPeak($netWorthEntries);
+    const budgetMonths = distinctCashflowMonths($cashflowEntries);
+    const budgetRun = consecutiveBudgetMonths($cashflowEntries);
     const booksThisYear = $todayAge >= 0 ? booksInCurrentAge($books, $todayAge) : 0;
     const milestonesCompleted = $milestones.filter((m) => m.completed).length;
     const allWealths60 = $latestAssessment
@@ -227,20 +253,20 @@ export const achievements = derived(
 
       // Finance
       {
-        id: 'nw-first',
+        id: 'budget-first',
         category: 'finance',
-        emoji: '📈',
-        title: 'First net-worth check-in',
-        description: 'Logged your first net-worth snapshot.',
-        unlocked: $netWorthEntries.length >= 1,
+        emoji: '📒',
+        title: 'First month on the books',
+        description: 'Logged your first month of income or spending.',
+        unlocked: budgetMonths >= 1,
       },
       {
-        id: 'nw-six',
+        id: 'budget-three',
         category: 'finance',
         emoji: '📊',
-        title: 'Half-year of finances',
-        description: 'Logged 6 net-worth check-ins.',
-        unlocked: $netWorthEntries.length >= 6,
+        title: 'Quarter of clarity',
+        description: 'Logged cash flow three months in a row.',
+        unlocked: budgetRun >= 3,
       },
       {
         id: 'give-ten-percent',
@@ -277,14 +303,6 @@ export const achievements = derived(
         title: 'First milestone done',
         description: 'Marked a milestone completed.',
         unlocked: milestonesCompleted >= 1,
-      },
-      {
-        id: 'ritual-first',
-        category: 'overall',
-        emoji: '🔁',
-        title: 'Keeper of rituals',
-        description: 'Added your first ritual worth keeping.',
-        unlocked: $rituals.length >= 1,
       },
     ];
   },

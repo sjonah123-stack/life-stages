@@ -41,13 +41,6 @@ export const PRIVATE_URL_PARAMS = [
 // Mood selector options (in order). The empty string '' means no mood set.
 export const MOOD_OPTIONS: Exclude<Mood, ''>[] = ['😞', '😕', '😐', '🙂', '😄'];
 
-// Frequency labels for the rituals page.
-export const FREQ_LABEL: Record<1 | 2 | 4 | 12, string> = {
-  1: 'yearly',
-  2: 'twice a year',
-  4: 'quarterly',
-  12: 'monthly',
-};
 
 // localStorage key prefix. All app data namespaced under this.
 export const LS_PREFIX = 'lifeStages.';

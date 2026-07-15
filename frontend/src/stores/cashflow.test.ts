@@ -5,14 +5,21 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { get } from 'svelte/store';
 import {
   cashflowEntries,
+  budgetPlan,
   addCashflowEntry,
   deleteCashflowEntry,
   monthKey,
   summarizeMonth,
   expensesByCategory,
   lastMonths,
+  annualizeIncome,
+  actualSavingsRate,
+  savedTowardGoal,
+  normalizeBudgetPlan,
+  isBudgetPlanEmpty,
   setFromCloud,
   CASHFLOW_CATEGORIES,
+  SAVINGS_CATEGORY,
 } from './financial';
 import type { CashflowEntry } from '../types';
 
@@ -131,5 +138,116 @@ describe('setFromCloud (cashflow)', () => {
 describe('CASHFLOW_CATEGORIES', () => {
   it('excludes giving from expense categories (it has its own tracker)', () => {
     expect(CASHFLOW_CATEGORIES.expense.some((c) => /giv/i.test(c))).toBe(false);
+  });
+
+  it('includes Savings as pay-yourself-first', () => {
+    expect(CASHFLOW_CATEGORIES.expense).toContain(SAVINGS_CATEGORY);
+  });
+});
+
+describe('annualizeIncome', () => {
+  const entries = [
+    { id: '1', date: '2026-07-01', amount: 3000, kind: 'income', category: 'Salary' },
+    { id: '2', date: '2026-06-15', amount: 3000, kind: 'income', category: 'Salary' },
+    { id: '3', date: '2026-06-20', amount: 800, kind: 'expense', category: 'Food' },
+  ] as CashflowEntry[];
+
+  it('averages over months with data and scales to a year', () => {
+    // $6,000 over 2 data months → $3,000/mo → $36,000/yr.
+    expect(annualizeIncome(entries, '2026-07')).toBe(36000);
+  });
+
+  it('counts expense-only months as data months', () => {
+    const withGap = [
+      ...entries,
+      { id: '4', date: '2026-05-10', amount: 100, kind: 'expense', category: 'Fun' },
+    ] as CashflowEntry[];
+    // $6,000 over 3 data months → $2,000/mo → $24,000/yr.
+    expect(annualizeIncome(withGap, '2026-07')).toBe(24000);
+  });
+
+  it('ignores entries outside the trailing-12-month window', () => {
+    const old = [
+      { id: 'o', date: '2024-01-01', amount: 99999, kind: 'income', category: 'Salary' },
+    ] as CashflowEntry[];
+    expect(annualizeIncome(old, '2026-07')).toBe(0);
+  });
+
+  it('returns 0 with no data', () => {
+    expect(annualizeIncome([], '2026-07')).toBe(0);
+  });
+});
+
+describe('actualSavingsRate', () => {
+  it('computes (income − expenses) / income over the window', () => {
+    const entries = [
+      { id: '1', date: '2026-07-01', amount: 4000, kind: 'income', category: 'Salary' },
+      { id: '2', date: '2026-07-10', amount: 3000, kind: 'expense', category: 'Housing' },
+    ] as CashflowEntry[];
+    expect(actualSavingsRate(entries, '2026-07')).toBe(25);
+  });
+
+  it('returns null when no income is in the window', () => {
+    const entries = [
+      { id: '1', date: '2026-07-10', amount: 500, kind: 'expense', category: 'Food' },
+    ] as CashflowEntry[];
+    expect(actualSavingsRate(entries, '2026-07')).toBeNull();
+    expect(actualSavingsRate([], '2026-07')).toBeNull();
+  });
+
+  it('goes negative when spending exceeds income', () => {
+    const entries = [
+      { id: '1', date: '2026-07-01', amount: 1000, kind: 'income', category: 'Salary' },
+      { id: '2', date: '2026-07-10', amount: 1500, kind: 'expense', category: 'Travel' },
+    ] as CashflowEntry[];
+    expect(actualSavingsRate(entries, '2026-07')).toBe(-50);
+  });
+});
+
+describe('savedTowardGoal', () => {
+  const createdAt = new Date(2026, 5, 15).getTime(); // Jun 15 2026 local
+
+  it('sums Savings-category expenses on/after the creation date', () => {
+    const entries = [
+      { id: '1', date: '2026-06-15', amount: 200, kind: 'expense', category: SAVINGS_CATEGORY },
+      { id: '2', date: '2026-07-01', amount: 300, kind: 'expense', category: SAVINGS_CATEGORY },
+      { id: '3', date: '2026-06-14', amount: 999, kind: 'expense', category: SAVINGS_CATEGORY }, // before creation
+      { id: '4', date: '2026-07-02', amount: 500, kind: 'expense', category: 'Food' },           // not savings
+      { id: '5', date: '2026-07-03', amount: 500, kind: 'income', category: 'Salary' },          // not an expense
+    ] as CashflowEntry[];
+    expect(savedTowardGoal(entries, createdAt)).toBe(500);
+  });
+
+  it('returns 0 with no savings logs', () => {
+    expect(savedTowardGoal([], createdAt)).toBe(0);
+  });
+});
+
+describe('normalizeBudgetPlan / isBudgetPlanEmpty', () => {
+  it('keeps valid income + positive category targets', () => {
+    const plan = normalizeBudgetPlan({
+      expectedIncome: 4000,
+      categories: { Housing: 1500, Food: 600, Junk: -5, Bad: 'x' },
+    });
+    expect(plan).toEqual({ expectedIncome: 4000, categories: { Housing: 1500, Food: 600 } });
+    expect(isBudgetPlanEmpty(plan)).toBe(false);
+  });
+
+  it('degrades garbage to an empty plan', () => {
+    expect(normalizeBudgetPlan('nope')).toEqual({ categories: {} });
+    expect(normalizeBudgetPlan(null)).toEqual({ categories: {} });
+    expect(normalizeBudgetPlan([1, 2])).toEqual({ categories: {} });
+    expect(isBudgetPlanEmpty(normalizeBudgetPlan(null))).toBe(true);
+  });
+
+  it('drops non-positive expected income', () => {
+    const plan = normalizeBudgetPlan({ expectedIncome: -100, categories: {} });
+    expect('expectedIncome' in plan).toBe(false);
+  });
+
+  it('round-trips through setFromCloud', () => {
+    budgetPlan.set({ categories: {} });
+    setFromCloud({ budgetPlan: { expectedIncome: 5000, categories: { Food: 700 } } });
+    expect(get(budgetPlan)).toEqual({ expectedIncome: 5000, categories: { Food: 700 } });
   });
 });

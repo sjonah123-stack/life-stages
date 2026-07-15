@@ -15,6 +15,7 @@ import {
 import { assessmentResults, setFromCloud as setAssessmentFromCloud } from './assessment';
 import {
   netWorthEntries, savingsGoals, savingsRate, givingEntries, cashflowEntries,
+  budgetPlan, isBudgetPlanEmpty,
   setFromCloud as setFinancialFromCloud,
 } from './financial';
 import {
@@ -61,6 +62,7 @@ export function isPayloadEmpty(p: Partial<CloudPayload> | null | undefined): boo
   // journal + letters are keyed objects, not arrays.
   if (p.journal && Object.keys(p.journal).length > 0) return false;
   if (p.letters && Object.keys(p.letters).length > 0) return false;
+  if (!isBudgetPlanEmpty(p.budgetPlan)) return false;
   return true;
 }
 
@@ -95,6 +97,7 @@ export function collectStateForCloud(): CloudPayload {
     savingsRate: get(savingsRate),
     givingEntries: get(givingEntries),
     cashflowEntries: get(cashflowEntries),
+    budgetPlan: get(budgetPlan),
     habits: get(habits),
     habitChecks: get(habitChecks),
     bodyEntries: get(bodyEntries),
@@ -287,6 +290,7 @@ function subscribeAll(): void {
     milestones, journal, letters, people, books, rituals,
     assessmentResults,
     netWorthEntries, savingsGoals, savingsRate, givingEntries, cashflowEntries,
+    budgetPlan,
     habits, habitChecks, bodyEntries,
   ];
   everyStore.forEach((s) => s.subscribe(() => scheduleCloudSave()));

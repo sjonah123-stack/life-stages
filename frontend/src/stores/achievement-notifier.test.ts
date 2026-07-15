@@ -65,50 +65,52 @@ describe('diffNewlyUnlocked', () => {
 
 describe('initAchievementNotifier', () => {
   it('first run seeds currently-unlocked ids silently (no toast)', async () => {
-    // Pre-existing data: one ritual → 'ritual-first' is already unlocked.
+    // Pre-existing data: one cash-flow entry → 'budget-first' is already unlocked.
     localStorage.setItem(
-      'lifeStages.rituals',
-      JSON.stringify([{ name: 'Thanksgiving', frequency: 1 }]),
+      'lifeStages.cashflowEntries',
+      JSON.stringify([
+        { id: 'c1', date: '2026-07-01', amount: 50, kind: 'expense', category: 'Food' },
+      ]),
     );
     const notifier = await import('./achievement-notifier');
     const { toasts } = await import('./toasts');
 
     notifier.initAchievementNotifier();
 
-    expect(get(notifier.seenAchievementIds)).toContain('ritual-first');
+    expect(get(notifier.seenAchievementIds)).toContain('budget-first');
     expect(get(toasts)).toHaveLength(0);
   });
 
   it('a genuine unlock after seeding pushes a toast and records it', async () => {
     const notifier = await import('./achievement-notifier');
     const { toasts } = await import('./toasts');
-    const { rituals } = await import('./collections');
+    const { addCashflowEntry } = await import('./financial');
 
     notifier.initAchievementNotifier();
     expect(get(notifier.seenAchievementIds)).toEqual([]); // seeded, empty
 
-    rituals.update((arr) => [...arr, { name: 'Summer trip', frequency: 1 }]);
+    addCashflowEntry({ date: '2026-07-01', amount: 50, kind: 'expense', category: 'Food' });
 
     const shown = get(toasts);
     expect(shown).toHaveLength(1);
     expect(shown[0].kind).toBe('achievement');
-    expect(shown[0].title).toBe('Keeper of rituals');
-    expect(get(notifier.seenAchievementIds)).toContain('ritual-first');
+    expect(shown[0].title).toBe('First month on the books');
+    expect(get(notifier.seenAchievementIds)).toContain('budget-first');
   });
 
   it('does not re-toast an id already in seen, even after re-lock', async () => {
     const notifier = await import('./achievement-notifier');
     const { toasts } = await import('./toasts');
-    const { rituals } = await import('./collections');
+    const { cashflowEntries, addCashflowEntry } = await import('./financial');
 
     notifier.initAchievementNotifier();
-    rituals.update((arr) => [...arr, { name: 'Trip', frequency: 1 }]);
+    addCashflowEntry({ date: '2026-07-01', amount: 50, kind: 'expense', category: 'Food' });
     const firstCount = get(toasts).length;
     expect(firstCount).toBe(1);
 
-    // Delete the ritual (badge re-locks), then add it back (re-unlocks).
-    rituals.set([]);
-    rituals.update((arr) => [...arr, { name: 'Trip again', frequency: 1 }]);
+    // Delete the entry (badge re-locks), then add one back (re-unlocks).
+    cashflowEntries.set([]);
+    addCashflowEntry({ date: '2026-07-02', amount: 60, kind: 'expense', category: 'Food' });
 
     expect(get(toasts)).toHaveLength(firstCount); // no second toast
   });
