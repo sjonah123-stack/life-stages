@@ -1,8 +1,10 @@
 # life-stages
 
 A personal life dashboard built around the **5 Types of Wealth** framework (Sahil Bloom).
-Single-user-per-account PWA: walk through the years of your life, journal, track habits,
-finances, relationships, and a periodic wealth self-assessment.
+Single-user-per-account PWA: walk through the years of your life, journal, track habits
+(one-tap daily check-offs with streaks, confetti, and achievement badges), finances,
+relationships, and a periodic wealth self-assessment. AI-assisted goal suggestions,
+journal insights, and weekly reflections via Gemini.
 
 **Live:** https://life-stages-90806.web.app · **Firebase project:** `life-stages-90806`
 
