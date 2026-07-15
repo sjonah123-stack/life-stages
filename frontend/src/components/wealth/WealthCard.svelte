@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { WealthMeta, RecommendationId } from '../../data/assessment';
   import { RECOMMENDATIONS } from '../../data/assessment';
+  import WealthIcon from '../shared/WealthIcon.svelte';
 
   export let wealth: WealthMeta;
   export let selfScore: number | null;
@@ -31,7 +32,7 @@
 
   <div class="card-head">
     <div class="head-meta">
-      <div class="glyph"><span>{wealth.emoji}</span></div>
+      <div class="glyph"><WealthIcon key={wealth.key} size={22} /></div>
       <div class="head-text">
         <div class="label">{wealth.label}</div>
         <div class="desc">{wealth.description}</div>
@@ -161,6 +162,7 @@
     width: 42px;
     height: 42px;
     border-radius: 13px;
+    color: var(--ink);
     display: flex;
     align-items: center;
     justify-content: center;

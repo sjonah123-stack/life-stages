@@ -2,6 +2,7 @@
   import { SURVEY, LIKERT_LABELS, computeSelfScores, WEALTHS } from '../../data/assessment';
   import { submitAssessment } from '../../stores/assessment';
   import type { SurveyAnswer, WealthKey } from '../../types';
+  import WealthIcon from '../shared/WealthIcon.svelte';
 
   // Called whether the user cancels mid-survey or finishes — parent flips
   // back to whatever non-survey state should follow (intro or results).
@@ -55,7 +56,7 @@
 
   {#if wealth}
     <div class="wealth-tag">
-      <span class="emoji">{wealth.emoji}</span>
+      <WealthIcon key={wealth.key} size={15} />
       <span class="label">{wealth.label}</span>
     </div>
   {/if}

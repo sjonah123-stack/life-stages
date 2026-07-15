@@ -11,6 +11,7 @@
   } from '../../stores/habits';
   import { toggleHabitWithCelebration } from '../../lib/habit-celebration';
   import { motionDuration } from '../../lib/motion';
+  import FlameIcon from '../shared/FlameIcon.svelte';
   import { formatDOB } from '../../utils';
   import type { WealthKey } from '../../types';
 
@@ -98,7 +99,7 @@
                 <span class="wealth-tag wealth-{h.wealthKey}">{h.wealthKey}</span>
               {/if}
               {#if streak > 0}
-                <span class="streak">🔥 {streak}-day{streak === 1 ? '' : 's'}</span>
+                <span class="streak"><FlameIcon /> {streak}-day{streak === 1 ? '' : 's'}</span>
               {/if}
             </div>
             <div class="chain">
@@ -254,6 +255,9 @@
   }
   .streak {
     margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 12px;
     font-weight: 700;
     color: var(--accent);

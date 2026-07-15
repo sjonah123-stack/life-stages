@@ -199,27 +199,12 @@ export interface PersonalSettings {
 }
 
 // ---- Stage data ----
-export interface DimensionContent {
-  h: string;
-  b: string;
-}
-
-export interface HealthContent {
-  common?: DimensionContent;
-  female?: DimensionContent;
-  male?: DimensionContent;
-}
-
+// Timeline labels only — the per-dimension prose was removed with the
+// Today-page de-bloat (2026-07).
 export interface Stage {
   range: [number, number];
   name: string;
   poetic: string;
-  career: DimensionContent;
-  love: DimensionContent;
-  health: HealthContent;
-  money: DimensionContent;
-  growth: DimensionContent;
-  goodNews: string;
 }
 
 // ---- 5 Types of Wealth assessment ----

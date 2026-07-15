@@ -1,6 +1,8 @@
 # Session Summary — life-stages
 
-Last updated: 2026-07-15 — delight features (confetti, badge toasts, Today habits strip) + full UI polish pass **deployed to prod**.
+Last updated: 2026-07-15 — Today de-bloat + SVG icons + swipe navigation on preview channel
+`today-declutter` (https://life-stages-90806--today-declutter-ci57qdky.web.app, expires 2026-07-22);
+earlier delight/polish pass is live on prod.
 
 ## Where prod stands
 
@@ -13,7 +15,20 @@ Backend is deployed: 3 Cloud Functions (Node 22), Firestore + Storage rules rele
 pushes commits via **GitHub Desktop** (the terminal here has no git auth). Tell them the pending
 commit count each session: `git rev-list --count origin/main..HEAD`.
 
-## Session 2026-07-15 — delight features + UI polish (preview-pending)
+## Session 2026-07-15 (later) — Today de-bloat + icons + swipe (preview-pending)
+
+1. **Today decluttered** — removed TexturePanel ("what's still ahead"), GoodNews, and
+   DimensionCards; page is now hero → anniversary → slider+stats → check-in → habits → wealth.
+   Pruned the now-dead data: CAREER_FIELDS, PARTNERSHIP_NOTES, getCareerCallout, and all
+   per-stage dimension prose/goodNews (Stage is now just {range, name, poetic}).
+2. **Professional icons** — new hand-rolled `WealthIcon` (5 line glyphs, also embedded in the
+   radar) + `FlameIcon` replace ⏳🤝🧠💪💰/🔥/🎉; mood faces on the anniversary card became
+   "x.x/5 avg mood"; `emoji` field removed from WEALTHS. User-entered emojis untouched.
+3. **Swipe navigation** — `lib/swipe.ts` (touch-only, threshold + ignore-zones for the age
+   slider/nav strip/habit chain, no wrap) + directional slide transition in App.svelte.
+   301 tests (12 new), 0 type errors, clean build.
+
+## Session 2026-07-15 — delight features + UI polish (deployed to prod)
 
 Goal: make the app one people *want* to open daily. User chose "tasteful delight" (no XP/levels/
 streak-guilt), full UI polish, and habits on Today. 289 tests, 0 type errors, clean build.

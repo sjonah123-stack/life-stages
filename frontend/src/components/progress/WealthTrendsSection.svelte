@@ -7,6 +7,7 @@
   import { WEALTHS } from '../../data/assessment';
   import { formatDOB } from '../../utils';
   import Sparkline from './Sparkline.svelte';
+  import WealthIcon from '../shared/WealthIcon.svelte';
   import type { WealthKey } from '../../types';
 
   // Saved results are newest-first; reverse to chronological for the trend.
@@ -39,7 +40,7 @@
     <div class="snapshot">
       {#each WEALTHS as w}
         <div class="snap">
-          <span class="snap-emoji">{w.emoji}</span>
+          <span class="snap-icon"><WealthIcon key={w.key} size={15} /></span>
           <span class="snap-label">{w.label}</span>
           <span class="snap-score">{latest?.selfScores[w.key] ?? 0}</span>
         </div>
@@ -50,7 +51,7 @@
       {#each WEALTHS as w}
         <div class="row">
           <div class="row-head">
-            <span class="row-label">{w.emoji} {w.label}</span>
+            <span class="row-label"><WealthIcon key={w.key} size={15} /> {w.label}</span>
             <span class="row-score">{latest?.selfScores[w.key] ?? 0}<span class="of">/100</span></span>
           </div>
           <Sparkline points={pointsFor(w.key)} zeroBased={true} formatValue={(v) => `${v}/100`} />
@@ -104,7 +105,14 @@
     align-items: baseline;
     margin-bottom: 2px;
   }
-  .row-label { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .row-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
   .row-score {
     font-size: 16px;
     font-weight: 700;
@@ -127,7 +135,7 @@
     border: 1px solid var(--border);
     border-radius: 12px;
   }
-  .snap-emoji { font-size: 16px; }
+  .snap-icon { display: inline-flex; color: var(--ink-dim); }
   .snap-label { font-size: 13px; color: var(--ink-dim); }
   .snap-score {
     font-size: 15px;

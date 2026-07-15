@@ -72,8 +72,8 @@ life-stages/
         └── components/
             ├── nav/           ← TopNav.svelte, AuthPill.svelte
             ├── pages/         ← Today, Journal, Goals, Finance, Progress, Settings
-            ├── today/         ← AgeSlider, DimensionCards, GoodNews, StatRow, TexturePanel, TodayWealth,
-            │                     AnniversaryCard, DailyCheckInCard
+            ├── today/         ← AgeSlider, StatRow, TodayWealth, AnniversaryCard,
+            │                     DailyCheckInCard, TodayHabitsCard
             ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid, FutureLetters,
             │                     OnThisDayBanner, MoodSparkline
             ├── goals/         ← BooksSection, RitualsSection, HabitsSection
@@ -137,6 +137,13 @@ The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` d
   fresh-device sign-in — don't remove either guard.
 - Shared UI: `stores/toasts.ts` + `ToastHost.svelte` (mounted once in App.svelte); `.module-section`
   and `.btn` are global classes in `app.css` — don't re-declare them per component.
+- **Icons are hand-rolled SVG, not emoji** (Today/wealth surfaces): `shared/WealthIcon.svelte`
+  (5 wealth glyphs, works inside the radar via nested `<svg x y>`) and `shared/FlameIcon.svelte`
+  (streaks). User-entered emojis (habit `emoji` field, journal moods) are data — leave them.
+- **Swipe navigation** (`lib/swipe.ts`): touch-only swipes move through `TAB_PAGES` (no wrap;
+  Settings gear-only). Gestures starting on form controls or horizontally-scrollable elements are
+  ignored — keep that guard when adding new horizontal-scroll UI. Directional slide lives in
+  App.svelte (`slideDirection` + `{#key $currentPage}`).
 
 ### Hash router
 

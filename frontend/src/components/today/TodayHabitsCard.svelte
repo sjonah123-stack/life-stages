@@ -7,6 +7,7 @@
   import { toggleHabitWithCelebration } from '../../lib/habit-celebration';
   import { navigate } from '../../lib/router';
   import { formatDOB } from '../../utils';
+  import FlameIcon from '../shared/FlameIcon.svelte';
 
   $: today = formatDOB(new Date());
   $: list = $activeHabits;
@@ -41,7 +42,7 @@
           <span class="pill-mark">{checked ? '✓' : ''}</span>
           {#if h.emoji}<span class="pill-emoji">{h.emoji}</span>{/if}
           <span class="pill-label">{h.label}</span>
-          {#if streak > 0}<span class="pill-streak">🔥 {streak}</span>{/if}
+          {#if streak > 0}<span class="pill-streak"><FlameIcon /> {streak}</span>{/if}
         </button>
       {/each}
     </div>
@@ -144,6 +145,9 @@
     white-space: nowrap;
   }
   .pill-streak {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     font-size: 11px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;

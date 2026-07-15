@@ -3,9 +3,6 @@
   import { birthdate } from '../../stores/personal';
   import AgeSlider from '../today/AgeSlider.svelte';
   import StatRow from '../today/StatRow.svelte';
-  import TexturePanel from '../today/TexturePanel.svelte';
-  import DimensionCards from '../today/DimensionCards.svelte';
-  import GoodNews from '../today/GoodNews.svelte';
   import TodayWealth from '../today/TodayWealth.svelte';
   import AnniversaryCard from '../today/AnniversaryCard.svelte';
   import DailyCheckInCard from '../today/DailyCheckInCard.svelte';
@@ -46,13 +43,6 @@
   <DailyCheckInCard />
 
   <TodayHabitsCard />
-
-  <div class="texture-row">
-    <TexturePanel />
-    <GoodNews />
-  </div>
-
-  <DimensionCards />
 
   <TodayWealth />
 </section>
@@ -109,18 +99,6 @@
     flex-direction: column;
     gap: 16px;
     margin-bottom: 24px;
-  }
-
-  /* Two-up below the hero: texture and good-news side-by-side on wide
-     viewports, stacked on narrow. */
-  .texture-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  @media (max-width: 820px) {
-    .texture-row { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 480px) {

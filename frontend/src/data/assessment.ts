@@ -11,7 +11,6 @@ export interface SurveyQuestion {
 export interface WealthMeta {
   key: WealthKey;
   label: string;
-  emoji: string;
   description: string;
 }
 
@@ -33,31 +32,26 @@ export const WEALTHS: WealthMeta[] = [
   {
     key: 'time',
     label: 'Time Wealth',
-    emoji: '⏳',
     description: 'Freedom over how you spend your time. Presence in your daily life.',
   },
   {
     key: 'social',
     label: 'Social Wealth',
-    emoji: '🤝',
     description: 'The depth and warmth of your relationships. Who you know and how known you are.',
   },
   {
     key: 'mental',
     label: 'Mental Wealth',
-    emoji: '🧠',
     description: 'Mental clarity, learning, and a sense of purpose.',
   },
   {
     key: 'physical',
     label: 'Physical Wealth',
-    emoji: '💪',
     description: "Your body's health, energy, and resilience.",
   },
   {
     key: 'financial',
     label: 'Financial Wealth',
-    emoji: '💰',
     description: 'Enough money that it isn\'t a stressor. Building toward freedom.',
   },
 ];

@@ -10,6 +10,7 @@
   import type { WealthKey } from '../../types';
   import WealthRadar from './WealthRadar.svelte';
   import WealthCard from './WealthCard.svelte';
+  import WealthIcon from '../shared/WealthIcon.svelte';
 
   export let onRetake: (() => void) | undefined = undefined;
 
@@ -86,7 +87,7 @@
         <ul>
           {#each focusWealths as w}
             <li>
-              <span class="emoji">{w.emoji}</span>
+              <span class="focus-icon"><WealthIcon key={w.key} size={20} /></span>
               <span class="name">{w.label}</span>
             </li>
           {/each}
@@ -239,7 +240,7 @@
     margin-bottom: 8px;
     box-shadow: 0 4px 10px -4px rgba(44, 24, 16, 0.08);
   }
-  .focus .emoji { font-size: 22px; }
+  .focus .focus-icon { display: inline-flex; color: var(--accent); }
   .focus .name {
     font-weight: 700;
     color: var(--ink);

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { WEALTHS } from '../../data/assessment';
+  import WealthIcon from '../shared/WealthIcon.svelte';
 
   export let onStart: () => void;
 
@@ -21,7 +22,7 @@
         data-wealth={w.key}
         style="--c1: {TILE_COLORS[w.key]?.c1 ?? 'var(--accent)'}; --c2: {TILE_COLORS[w.key]?.c2 ?? 'var(--future-3)'};"
       >
-        <div class="tile-glyph"><span>{w.emoji}</span></div>
+        <div class="tile-glyph"><WealthIcon key={w.key} size={20} /></div>
         <div class="name">{w.label}</div>
         <div class="desc">{w.description}</div>
       </div>
@@ -78,6 +79,7 @@
     width: 38px;
     height: 38px;
     border-radius: 12px;
+    color: var(--ink);
     display: flex;
     align-items: center;
     justify-content: center;

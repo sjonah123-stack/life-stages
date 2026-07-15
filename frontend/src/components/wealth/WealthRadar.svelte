@@ -3,6 +3,7 @@
   // polygons (self-report filled, behavioral outline). Scores are 0-100.
   import type { WealthScores } from '../../types';
   import { WEALTHS } from '../../data/assessment';
+  import WealthIcon from '../shared/WealthIcon.svelte';
 
   export let self: WealthScores | null;
   export let behavioral: WealthScores;
@@ -53,15 +54,9 @@
       {@const [x, y] = pointAt(100, angles[i])}
       {@const [lx, ly] = pointAt(118, angles[i])}
       <line x1={cx} y1={cy} x2={x} y2={y} class="spoke" />
-      <text
-        x={lx}
-        y={ly}
-        text-anchor="middle"
-        dominant-baseline="middle"
-        class="axis-label"
-      >
-        {w.emoji}
-      </text>
+      <g class="axis-label">
+        <WealthIcon key={w.key} size={20} x={lx - 10} y={ly - 10} />
+      </g>
     {/each}
     <!-- behavioral polygon (outline) -->
     <polygon points={behavioralPoints} class="behavioral" />
@@ -110,7 +105,7 @@
     opacity: 0.5;
   }
   .axis-label {
-    font-size: 18px;
+    color: var(--ink-dim);
   }
   .behavioral {
     fill: none;

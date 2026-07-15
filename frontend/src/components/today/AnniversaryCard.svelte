@@ -25,15 +25,6 @@
     $yearInReview.relevantLetters.length > 0
   );
 
-  function moodEmoji(avg: number | null): string {
-    if (avg == null) return '';
-    if (avg < 1.75) return '😞';
-    if (avg < 2.5) return '😕';
-    if (avg < 3.5) return '😐';
-    if (avg < 4.25) return '🙂';
-    return '😄';
-  }
-
   let expandedLetterAge: number | null = null;
   function toggleLetter(age: number) {
     expandedLetterAge = expandedLetterAge === age ? null : age;
@@ -43,7 +34,6 @@
 {#if $isAnniversaryWindow && $celebrationAge > 0}
   <section class="anniversary-card glass-tinted" style="--tint: var(--now);">
     <div class="header">
-      <div class="confetti">🎉</div>
       <div>
         <div class="eyebrow">A YEAR AT {$celebrationAge - 1}</div>
         <h2>Happy {$celebrationAge}{ordinalSuffix($celebrationAge)}, you.</h2>
@@ -57,7 +47,7 @@
             <span class="stat-num">{$yearInReview.journal.count}</span>
             <span class="stat-label">journal {$yearInReview.journal.count === 1 ? 'entry' : 'entries'}</span>
             {#if $yearInReview.journal.avgMood !== null}
-              <span class="stat-extra">{moodEmoji($yearInReview.journal.avgMood)} avg</span>
+              <span class="stat-extra">{$yearInReview.journal.avgMood.toFixed(1)}/5 avg mood</span>
             {/if}
           </div>
         {/if}
@@ -147,11 +137,6 @@
     gap: 16px;
     align-items: center;
     margin-bottom: 18px;
-  }
-  .confetti {
-    font-size: 36px;
-    line-height: 1;
-    flex-shrink: 0;
   }
   .eyebrow {
     font-size: 11px;
