@@ -1,5 +1,4 @@
-// Tests for journal-helpers — week math (DST regression coverage) and
-// dynamic letter horizons (the boundary table from the spec).
+// Tests for journal-helpers — week math (DST regression coverage).
 import { beforeEach, describe, expect, it } from 'vitest';
 import { get } from 'svelte/store';
 import {
@@ -8,8 +7,6 @@ import {
   dateToWeekStart,
   ageAtWeek,
   currentWeekIndex,
-  letterHorizonsForAge,
-  MAX_LETTER_AGE,
   TOTAL_WEEKS,
 } from './journal-helpers';
 import { dob } from './personal';
@@ -129,53 +126,3 @@ describe('TOTAL_WEEKS', () => {
   });
 });
 
-describe('letterHorizonsForAge', () => {
-  it('returns +5/+10/+20 for ages under 65', () => {
-    expect(letterHorizonsForAge(23)).toEqual([28, 33, 43]);
-    expect(letterHorizonsForAge(45)).toEqual([50, 55, 65]);
-    expect(letterHorizonsForAge(64)).toEqual([69, 74, 84]);
-  });
-
-  it('returns +5/+10/+15 for ages 65–79', () => {
-    expect(letterHorizonsForAge(65)).toEqual([70, 75, 80]);
-    expect(letterHorizonsForAge(70)).toEqual([75, 80, 85]);
-    expect(letterHorizonsForAge(79)).toEqual([84, 89, 94]);
-  });
-
-  it('returns +3/+7 for ages 80–87', () => {
-    expect(letterHorizonsForAge(80)).toEqual([83, 87]);
-    expect(letterHorizonsForAge(85)).toEqual([88, 92]);
-    expect(letterHorizonsForAge(87)).toEqual([90, 94]);
-  });
-
-  it('returns just +3 for ages 88+', () => {
-    expect(letterHorizonsForAge(88)).toEqual([91]);
-    expect(letterHorizonsForAge(92)).toEqual([95]);
-  });
-
-  it('clamps target ages to MAX_LETTER_AGE (95)', () => {
-    // 90 + 10 = 100 → clamp to 95. The 5/10/20 set collapses with dedup.
-    const out = letterHorizonsForAge(90);
-    expect(out.every((a) => a <= MAX_LETTER_AGE)).toBe(true);
-  });
-
-  it('falls back to fixed [40, 60, 80] when no DOB is set (age < 0)', () => {
-    expect(letterHorizonsForAge(-1)).toEqual([40, 60, 80]);
-  });
-
-  it('drops dedup-collapsed targets so an entry never repeats', () => {
-    // At age 92: 92+3=95, 92+7=99→95, 92+15=107→95. After dedup → [95].
-    // (Note current rule for 88+ only emits +3, but verifying the dedup
-    // and clamp logic is correct at a stress age.)
-    const out = letterHorizonsForAge(92);
-    const unique = new Set(out);
-    expect(out.length).toBe(unique.size);
-  });
-
-  it('never emits a target ≤ current age', () => {
-    for (const age of [23, 45, 65, 80, 88, 92, 95]) {
-      const out = letterHorizonsForAge(age);
-      expect(out.every((target) => target > age)).toBe(true);
-    }
-  });
-});

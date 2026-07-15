@@ -9,6 +9,7 @@
   import HabitsSection from '../goals/HabitsSection.svelte';
   import CalendarExportButton from '../goals/CalendarExportButton.svelte';
   import AiMilestoneSuggest from '../goals/AiMilestoneSuggest.svelte';
+  import WealthIcon from '../shared/WealthIcon.svelte';
   import type { WealthKey } from '../../types';
 
   // SMART milestone form — Specific (label), Measurable (measure),
@@ -19,6 +20,7 @@
   let targetDateInput = '';
   let measureInput = '';
   let whyInput = '';
+  let emojiInput = '';
   let wealthInput: WealthKey | '' = '';
   let checkInInput: '' | '30' | '90' = '';
   let completedInput = false;
@@ -59,6 +61,7 @@
           completed,
           ...(measureInput.trim() ? { measure: measureInput.trim() } : {}),
           ...(whyInput.trim() ? { why: whyInput.trim() } : {}),
+          ...(emojiInput.trim() ? { emoji: emojiInput.trim() } : {}),
           ...(hasTargetDate ? { targetDate: targetDateInput } : {}),
           ...(wealthInput ? { wealthKey: wealthInput as WealthKey } : {}),
           ...(checkInInput ? { checkInIntervalDays: parseInt(checkInInput, 10) } : {}),
@@ -72,6 +75,7 @@
     targetDateInput = '';
     measureInput = '';
     whyInput = '';
+    emojiInput = '';
     wealthInput = '';
     checkInInput = '';
     completedInput = false;
@@ -128,9 +132,13 @@
             </button>
             <div class="milestone-body">
               <div class="milestone-head">
+                {#if m.emoji}<span class="milestone-emoji">{m.emoji}</span>{/if}
                 <span class="milestone-label">{m.label}</span>
                 {#if m.wealthKey}
-                  <span class="wealth-tag wealth-{m.wealthKey}">{m.wealthKey}</span>
+                  <span class="wealth-tag wealth-{m.wealthKey}">
+                    <WealthIcon key={m.wealthKey} size={11} />
+                    {m.wealthKey}
+                  </span>
                 {/if}
                 {#if m.targetDate}
                   <span class="milestone-when">by {fmtNice(m.targetDate)}</span>
@@ -139,7 +147,7 @@
                 {/if}
                 {#if m.checkInIntervalDays}
                   <span class="checkin-tag" title="Calendar check-ins included in .ics export">
-                    📋 {m.checkInIntervalDays === 30 ? 'monthly' : m.checkInIntervalDays === 90 ? 'quarterly' : `every ${m.checkInIntervalDays}d`} check-ins
+                    {m.checkInIntervalDays === 30 ? 'monthly' : m.checkInIntervalDays === 90 ? 'quarterly' : `every ${m.checkInIntervalDays}d`} check-ins
                   </span>
                 {/if}
               </div>
@@ -157,10 +165,16 @@
     </div>
 
     <form class="entry-form" on:submit={add}>
-      <label class="field full">
-        <span>Specific — what's the goal?</span>
-        <input type="text" bind:value={labelInput} placeholder="e.g. Run a half-marathon" maxlength={80} required />
-      </label>
+      <div class="form-row">
+        <label class="field">
+          <span>Specific — what's the goal?</span>
+          <input type="text" bind:value={labelInput} placeholder="e.g. Run a half-marathon" maxlength={80} required />
+        </label>
+        <label class="field emoji-field">
+          <span>Emoji (optional)</span>
+          <input type="text" bind:value={emojiInput} placeholder="🏔" maxlength={2} />
+        </label>
+      </div>
       <div class="form-row">
         <label class="field">
           <span>Measurable — how you'll know</span>
@@ -180,11 +194,11 @@
           <span>Wealth dimension</span>
           <select bind:value={wealthInput}>
             <option value="">— none —</option>
-            <option value="time">⏳ Time</option>
-            <option value="social">🤝 Social</option>
-            <option value="mental">🧠 Mental</option>
-            <option value="physical">💪 Physical</option>
-            <option value="financial">💰 Financial</option>
+            <option value="time">Time</option>
+            <option value="social">Social</option>
+            <option value="mental">Mental</option>
+            <option value="physical">Physical</option>
+            <option value="financial">Financial</option>
           </select>
         </label>
       </div>
@@ -208,11 +222,11 @@
 
     <div class="year-tags">
       <div class="field">
-        <span class="field-label">✨ Best year so far</span>
+        <span class="field-label">Best year so far</span>
         <input type="number" bind:value={$bestYear} min="0" max={SLIDER_MAX} placeholder="—" />
       </div>
       <div class="field">
-        <span class="field-label">💪 Hardest year (you made it)</span>
+        <span class="field-label">Hardest year (you made it)</span>
         <input type="number" bind:value={$hardestYear} min="0" max={SLIDER_MAX} placeholder="—" />
       </div>
     </div>
@@ -294,11 +308,13 @@
     gap: 10px;
     flex-wrap: wrap;
   }
+  .milestone-emoji { font-size: 17px; line-height: 1; }
   .milestone-label {
     font-weight: 700;
     color: var(--ink);
     font-size: 15px;
   }
+  .emoji-field input { text-align: center; font-size: 18px; }
   .milestone-when {
     font-size: 11px;
     text-transform: uppercase;
@@ -308,9 +324,12 @@
     flex-shrink: 0;
   }
   .wealth-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     padding: 2px 8px;
     font-size: 10px;
     text-transform: uppercase;

@@ -104,32 +104,6 @@ export const TOTAL_WEEKS = LIFESPAN * 52;
 import { derived } from 'svelte/store';
 export const entryKeySet = derived(journal, ($j) => new Set(Object.keys($j)));
 
-// ---- Future-letter horizons ----
-// Active letter slots are derived from the user's current age:
-//   < 65       → +5,  +10, +20
-//   65-79      → +5,  +10, +15  (twenty years out crosses 90)
-//   80-87      → +3,  +7        (drop the third)
-//   88+        → +3              (single slot, age-capped at MAX)
-//   no DOB yet → 40, 60, 80     (legacy fallback so the page still renders)
-// Any horizon clamped past MAX_LETTER_AGE collapses; duplicates dedupe.
-
-export const MAX_LETTER_AGE = 95;
-
-export function letterHorizonsForAge(age: number): number[] {
-  if (age < 0) return [40, 60, 80];
-  let offsets: number[];
-  if (age < 65) offsets = [5, 10, 20];
-  else if (age < 80) offsets = [5, 10, 15];
-  else if (age < 88) offsets = [3, 7];
-  else offsets = [3];
-  const seen = new Set<number>();
-  const out: number[] = [];
-  for (const o of offsets) {
-    const target = Math.min(age + o, MAX_LETTER_AGE);
-    if (target <= age) continue;
-    if (seen.has(target)) continue;
-    seen.add(target);
-    out.push(target);
-  }
-  return out;
-}
+// The future-letters UI was removed (2026-07); the `letters` store and its
+// normalizer stay in collections.ts so existing letters still round-trip
+// through cloud sync and surface on the anniversary card.

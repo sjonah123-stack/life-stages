@@ -1,8 +1,8 @@
 # Session Summary — life-stages
 
-Last updated: 2026-07-15 — Today de-bloat + SVG icons + swipe navigation on preview channel
-`today-declutter` (https://life-stages-90806--today-declutter-ci57qdky.web.app, expires 2026-07-22);
-earlier delight/polish pass is live on prod.
+Last updated: 2026-07-15 — Journal reorg + Goals icons/emoji + cash-flow tracker on preview
+channel `journal-finance` (https://life-stages-90806--journal-finance-ewj1zldm.web.app, expires
+2026-07-22). Earlier today-declutter preview is superseded by this one (includes it).
 
 ## Where prod stands
 
@@ -15,7 +15,24 @@ Backend is deployed: 3 Cloud Functions (Node 22), Firestore + Storage rules rele
 pushes commits via **GitHub Desktop** (the terminal here has no git auth). Tell them the pending
 commit count each session: `git rev-list --count origin/main..HEAD`.
 
-## Session 2026-07-15 (later) — Today de-bloat + icons + swipe (preview-pending)
+## Session 2026-07-15 (latest) — Journal reorg + Goals emoji + cash-flow (preview-pending)
+
+1. **Journal reorganized** — FutureLetters UI removed (the `letters` store/normalizer/cloud
+   round-trip stay so old letters still surface on the anniversary card + feed Mental Wealth);
+   `letterHorizonsForAge`/`MAX_LETTER_AGE` pruned. Composer now first; JournalPulse slimmed to a
+   compact stat-pill strip (streak/best/entries/words + mood sparkline) and its redundant
+   "years ago" card dropped (OnThisDayBanner in the composer covers it).
+2. **Goals** — wealth-tag pills now carry WealthIcon; select options de-emoji'd; milestones
+   gained an optional `emoji` field (form + display, mirrors Habit.emoji; no normalizer needed);
+   stray 📋✨💪 removed.
+3. **Cash-flow tracker (Finance)** — new `CashflowEntry` model (`cashflowEntries` persisted +
+   cloud-synced; curated CASHFLOW_CATEGORIES, giving deliberately excluded — it has its own
+   tracker). `CashflowSection` between Net worth and Savings: monthly net headline, 6-month
+   in/out bar chart (hand-rolled), category breakdown bars, income/expense segmented form,
+   this-month entry list. Pure helpers (`summarizeMonth`, `expensesByCategory`, `lastMonths`)
+   unit-tested. 304 tests, 0 type errors, clean build.
+
+## Session 2026-07-15 (earlier) — Today de-bloat + icons + swipe (in same preview)
 
 1. **Today decluttered** — removed TexturePanel ("what's still ahead"), GoodNews, and
    DimensionCards; page is now hero → anniversary → slider+stats → check-in → habits → wealth.

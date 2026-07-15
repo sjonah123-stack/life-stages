@@ -12,6 +12,7 @@
   import { toggleHabitWithCelebration } from '../../lib/habit-celebration';
   import { motionDuration } from '../../lib/motion';
   import FlameIcon from '../shared/FlameIcon.svelte';
+  import WealthIcon from '../shared/WealthIcon.svelte';
   import { formatDOB } from '../../utils';
   import type { WealthKey } from '../../types';
 
@@ -96,7 +97,10 @@
               {#if h.emoji}<span class="habit-emoji">{h.emoji}</span>{/if}
               <span class="habit-label">{h.label}</span>
               {#if h.wealthKey}
-                <span class="wealth-tag wealth-{h.wealthKey}">{h.wealthKey}</span>
+                <span class="wealth-tag wealth-{h.wealthKey}">
+                  <WealthIcon key={h.wealthKey} size={11} />
+                  {h.wealthKey}
+                </span>
               {/if}
               {#if streak > 0}
                 <span class="streak"><FlameIcon /> {streak}-day{streak === 1 ? '' : 's'}</span>
@@ -156,11 +160,11 @@
         <span>Wealth dimension (optional)</span>
         <select bind:value={wealthInput}>
           <option value="">— none —</option>
-          <option value="time">⏳ Time</option>
-          <option value="social">🤝 Social</option>
-          <option value="mental">🧠 Mental</option>
-          <option value="physical">💪 Physical</option>
-          <option value="financial">💰 Financial</option>
+          <option value="time">Time</option>
+          <option value="social">Social</option>
+          <option value="mental">Mental</option>
+          <option value="physical">Physical</option>
+          <option value="financial">Financial</option>
         </select>
       </label>
       {#if formError}
@@ -243,9 +247,12 @@
     font-size: 15px;
   }
   .wealth-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     padding: 2px 8px;
     font-size: 10px;
     text-transform: uppercase;

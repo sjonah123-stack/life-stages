@@ -1,11 +1,12 @@
 <script lang="ts">
+  // Compact journal stats strip — streak, totals, and the mood sparkline.
+  // Sits below the composer; the "years ago" surface lives in the
+  // composer's OnThisDayBanner (this used to duplicate it).
   import { journal } from '../../stores/collections';
   import { birthdate } from '../../stores/personal';
-  import {
-    getEntry, weekKey, currentWeekIndex, dateToWeekStart,
-  } from '../../stores/journal-helpers';
-  import { ageInYears, daysBetween } from '../../utils';
+  import { getEntry, weekKey, currentWeekIndex } from '../../stores/journal-helpers';
   import MoodSparkline from './MoodSparkline.svelte';
+  import FlameIcon from '../shared/FlameIcon.svelte';
 
   // Streak: consecutive weeks with entries, walking back from this week.
   // Grace rule: if this week is empty, we don't break the streak — just
@@ -31,44 +32,8 @@
     return { current, best };
   }
 
-  interface Anniversary {
-    yearsAgo: number;
-    key: string;
-    text: string;
-    photo: string;
-    weekStart: Date;
-    age: number;
-  }
-
-  function findOldestAnniversary(): Anniversary | null {
-    if (!$birthdate) return null;
-    const todayWeekStart = dateToWeekStart(new Date());
-    for (const y of [10, 5, 2, 1]) {
-      const target = new Date(todayWeekStart);
-      target.setFullYear(target.getFullYear() - y);
-      const ws = dateToWeekStart(target);
-      // DST-safe day diff (raw ms drifts an hour across DST → off-by-one).
-      const weekIdx = Math.floor(daysBetween($birthdate, ws) / 7);
-      if (weekIdx < 0) continue;
-      const key = weekKey(weekIdx);
-      const e = getEntry(key);
-      if ((e.text && e.text.trim()) || e.photo) {
-        return {
-          yearsAgo: y,
-          key,
-          text: e.text || '',
-          photo: e.photo || '',
-          weekStart: ws,
-          age: ageInYears(ws, $birthdate),
-        };
-      }
-    }
-    return null;
-  }
-
   // Recompute whenever the journal store updates.
   $: streak = (() => { void $journal; return computeStreak(); })();
-  $: ann = (() => { void $journal; return findOldestAnniversary(); })();
 
   // Total entries (text or photo present) and total words across all entries.
   $: totals = (() => {
@@ -88,183 +53,71 @@
   function fmtNum(n: number): string {
     return n.toLocaleString();
   }
-
-  function loadAnn() {
-    if (!ann) return;
-    window.dispatchEvent(new CustomEvent('journal:load', { detail: { key: ann.key } }));
-  }
-
-  $: annPreview = ann
-    ? (ann.text.trim() ? (ann.text.length > 160 ? ann.text.slice(0, 160) + '…' : ann.text) : '(photo entry)')
-    : '';
-  $: annDateStr = ann
-    ? ann.weekStart.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
-    : '';
 </script>
 
-<div class="journal-pulse">
-  {#if streak.current === 0}
-    <div class="streak-card">
-      <span class="streak-icon">✨</span>
-      <div>
-        <div class="streak-label">Start a streak</div>
-        <div class="streak-meta">Any entry this week begins it.</div>
-      </div>
+{#if totals.entries > 0 || streak.current > 0}
+  <div class="pulse-strip">
+    <div class="stat streak" class:active={streak.current > 0}>
+      <span class="flame"><FlameIcon size={14} /></span>
+      <span class="stat-num">{streak.current}</span>
+      <span class="stat-label">week streak</span>
     </div>
-  {:else}
-    <div class="streak-card">
-      <span class="streak-icon">🔥</span>
-      <div>
-        <div class="streak-label">{streak.current} week streak</div>
-        <div class="streak-meta">
-          {streak.best > streak.current
-            ? `Best: ${streak.best} ${streak.best === 1 ? 'week' : 'weeks'}`
-            : 'New best!'}
-        </div>
+    {#if streak.best > streak.current}
+      <div class="stat">
+        <span class="stat-num">{streak.best}</span>
+        <span class="stat-label">best</span>
       </div>
+    {/if}
+    <div class="stat">
+      <span class="stat-num">{fmtNum(totals.entries)}</span>
+      <span class="stat-label">{totals.entries === 1 ? 'entry' : 'entries'}</span>
     </div>
-  {/if}
+    <div class="stat">
+      <span class="stat-num">{fmtNum(totals.words)}</span>
+      <span class="stat-label">{totals.words === 1 ? 'word' : 'words'}</span>
+    </div>
+  </div>
 
-  {#if totals.entries > 0}
-    <div class="totals-card">
-      <div class="total-stat">
-        <div class="total-num">{fmtNum(totals.entries)}</div>
-        <div class="total-label">{totals.entries === 1 ? 'entry' : 'entries'}</div>
-      </div>
-      <div class="total-stat">
-        <div class="total-num">{fmtNum(totals.words)}</div>
-        <div class="total-label">{totals.words === 1 ? 'word' : 'words'}</div>
-      </div>
-    </div>
-  {/if}
-
-  {#if ann}
-    <div
-      class="anniversary-card"
-      role="button"
-      tabindex="0"
-      on:click={loadAnn}
-      on:keydown={(e) => { if (e.key === 'Enter') loadAnn(); }}
-    >
-      <div class="years-ago">
-        {ann.yearsAgo === 1 ? '1 year ago this week' : `${ann.yearsAgo} years ago this week`}
-      </div>
-      <div class="anniversary-meta">{annDateStr} · Age {ann.age}</div>
-      <div class="anniversary-preview">"{annPreview}"</div>
-    </div>
-  {:else}
-    <div class="anniversary-card placeholder">
-      <div class="years-ago">No anniversaries yet</div>
-      <div class="anniversary-meta">In a year, an entry from this week will surface here.</div>
-      <div class="anniversary-preview">Keep writing — the magic compounds.</div>
-    </div>
-  {/if}
-</div>
-
-<MoodSparkline />
+  <MoodSparkline />
+{/if}
 
 <style>
-  .journal-pulse {
-    display: grid;
-    grid-template-columns: minmax(220px, 1fr) minmax(160px, auto) 2fr;
-    gap: 12px;
-    margin-bottom: 22px;
-  }
-  @media (max-width: 720px) { .journal-pulse { grid-template-columns: 1fr; } }
-  .totals-card {
+  .pulse-strip {
     display: flex;
-    align-items: center;
-    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 18px 0 14px;
+  }
+  .stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 8px 14px;
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 18px;
-    gap: 14px;
+    border-radius: var(--radius-pill);
   }
-  .total-stat { text-align: center; }
-  .total-num {
-    font-size: 22px;
+  .stat.streak.active {
+    background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+    border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .flame {
+    display: inline-flex;
+    align-self: center;
+    color: var(--accent);
+  }
+  .stat-num {
+    font-size: 16px;
     font-weight: 800;
     color: var(--ink);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
-    line-height: 1;
   }
-  .total-label {
+  .stat-label {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--ink-faint);
     font-weight: 700;
-    margin-top: 4px;
-  }
-  .streak-card {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--money) 18%, transparent),
-      color-mix(in srgb, var(--accent) 10%, transparent)
-    );
-    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
-    border-radius: 14px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .streak-icon { font-size: 28px; flex-shrink: 0; }
-  .streak-label {
-    font-size: 16px;
-    font-weight: 800;
-    color: var(--ink);
-    letter-spacing: -0.01em;
-  }
-  .streak-meta {
-    font-size: 12px;
-    color: var(--ink-dim);
-    margin-top: 1px;
-  }
-
-  .anniversary-card {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--growth) 12%, transparent),
-      color-mix(in srgb, var(--growth) 8%, transparent)
-    );
-    border: 1px solid color-mix(in srgb, var(--growth) 24%, transparent);
-    border-radius: 14px;
-    padding: 14px 16px;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
-  }
-  .anniversary-card.placeholder {
-    cursor: default;
-    opacity: 0.7;
-  }
-  .anniversary-card:not(.placeholder):hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
-  }
-  .years-ago {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--growth);
-    font-weight: 700;
-  }
-  .anniversary-meta {
-    font-size: 12px;
-    color: var(--ink-dim);
-    margin: 2px 0 6px;
-    font-weight: 600;
-  }
-  .anniversary-preview {
-    color: var(--ink);
-    font-size: 14px;
-    line-height: 1.5;
-    font-style: italic;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
   }
 </style>

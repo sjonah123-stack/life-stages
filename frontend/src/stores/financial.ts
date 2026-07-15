@@ -7,7 +7,9 @@
 // entry-point that the cloud-sync layer routes to without knowing schema
 // internals, and crypto.randomUUID-based ids for goals.
 import { derived } from 'svelte/store';
-import type { NetWorthEntry, SavingsGoal, GivingEntry } from '../types';
+import type {
+  NetWorthEntry, SavingsGoal, GivingEntry, CashflowEntry, CashflowKind,
+} from '../types';
 import { persisted, persistedJSON } from './persisted';
 
 const num = (raw: string) => parseFloat(raw) || 0;
@@ -90,6 +92,40 @@ function normalizeGoals(input: unknown): SavingsGoal[] {
   return out;
 }
 
+// Curated cash-flow categories — fixed (not user-defined) so the monthly
+// breakdown stays legible. Giving is deliberately absent from expenses:
+// it has its own tracker with the 10% target.
+export const CASHFLOW_CATEGORIES: Record<CashflowKind, readonly string[]> = {
+  income: ['Salary', 'Side income', 'Gifts', 'Other'],
+  expense: [
+    'Housing', 'Food', 'Transport', 'Health', 'Subscriptions',
+    'Fun', 'Travel', 'Education', 'Other',
+  ],
+};
+
+function normalizeCashflowEntries(input: unknown): CashflowEntry[] {
+  if (!Array.isArray(input)) return [];
+  const seen = new Map<string, CashflowEntry>();
+  for (const raw of input) {
+    if (!raw || typeof raw !== 'object') continue;
+    const r = raw as Partial<CashflowEntry>;
+    if (!isYmd(r.date)) continue;
+    if (typeof r.amount !== 'number' || !Number.isFinite(r.amount) || r.amount <= 0) continue;
+    if (r.kind !== 'income' && r.kind !== 'expense') continue;
+    if (typeof r.category !== 'string' || !r.category) continue;
+    const id = typeof r.id === 'string' && r.id ? r.id : makeId();
+    seen.set(id, {
+      id,
+      date: r.date,
+      amount: r.amount,
+      kind: r.kind,
+      category: r.category,
+      ...(typeof r.note === 'string' && r.note ? { note: r.note } : {}),
+    });
+  }
+  return [...seen.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+
 // ---- Persisted writables ----
 
 export const netWorthEntries = persistedJSON<NetWorthEntry[]>(
@@ -112,6 +148,12 @@ export const givingEntries = persistedJSON<GivingEntry[]>(
   'givingEntries',
   [],
   normalizeGivingEntries,
+);
+
+export const cashflowEntries = persistedJSON<CashflowEntry[]>(
+  'cashflowEntries',
+  [],
+  normalizeCashflowEntries,
 );
 
 // ---- Derived ----
@@ -137,6 +179,57 @@ export const givingTargetAnnual = derived(
   latestNetWorth,
   ($latest) => ($latest && $latest.amount > 0 ? Math.round($latest.amount * 0.1) : 0),
 );
+
+// ---- Cash-flow helpers (pure, unit-tested) ----
+
+// 'YYYY-MM' key for an entry date.
+export function monthKey(date: string): string {
+  return date.slice(0, 7);
+}
+
+export interface MonthSummary {
+  income: number;
+  expenses: number;
+  net: number;
+}
+
+// Totals for one 'YYYY-MM' month.
+export function summarizeMonth(entries: CashflowEntry[], month: string): MonthSummary {
+  let income = 0;
+  let expenses = 0;
+  for (const e of entries) {
+    if (monthKey(e.date) !== month) continue;
+    if (e.kind === 'income') income += e.amount;
+    else expenses += e.amount;
+  }
+  return { income, expenses, net: income - expenses };
+}
+
+// Expense totals per category for one month, largest first.
+export function expensesByCategory(
+  entries: CashflowEntry[],
+  month: string,
+): { category: string; total: number }[] {
+  const sums = new Map<string, number>();
+  for (const e of entries) {
+    if (e.kind !== 'expense' || monthKey(e.date) !== month) continue;
+    sums.set(e.category, (sums.get(e.category) ?? 0) + e.amount);
+  }
+  return [...sums.entries()]
+    .map(([category, total]) => ({ category, total }))
+    .sort((a, b) => b.total - a.total);
+}
+
+// The last N month keys ending at `endMonth` ('YYYY-MM'), oldest first.
+export function lastMonths(endMonth: string, n: number): string[] {
+  const [y, m] = endMonth.split('-').map(Number);
+  const out: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(y, m - 1 - i, 1);
+    out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return out;
+}
 
 // ---- Mutations ----
 
@@ -196,6 +289,18 @@ export function deleteGivingEntry(date: string, recipient?: string): void {
   );
 }
 
+export function addCashflowEntry(input: Omit<CashflowEntry, 'id'>): CashflowEntry {
+  const entry: CashflowEntry = { id: makeId(), ...input };
+  cashflowEntries.update((list) =>
+    [...list, entry].sort((a, b) => b.date.localeCompare(a.date)),
+  );
+  return entry;
+}
+
+export function deleteCashflowEntry(id: string): void {
+  cashflowEntries.update((list) => list.filter((e) => e.id !== id));
+}
+
 // ---- Cloud-sync entry point ----
 // Mirrors stores/assessment.ts' setFromCloud: cloud-sync routes the whole
 // payload here without knowing the schema internals. Each field falls
@@ -206,6 +311,7 @@ export function setFromCloud(cloud: {
   savingsGoals?: unknown;
   savingsRate?: unknown;
   givingEntries?: unknown;
+  cashflowEntries?: unknown;
 }): void {
   if (cloud.netWorthEntries !== undefined) {
     netWorthEntries.set(normalizeNetWorthEntries(cloud.netWorthEntries));
@@ -219,5 +325,8 @@ export function setFromCloud(cloud: {
   }
   if (cloud.givingEntries !== undefined) {
     givingEntries.set(normalizeGivingEntries(cloud.givingEntries));
+  }
+  if (cloud.cashflowEntries !== undefined) {
+    cashflowEntries.set(normalizeCashflowEntries(cloud.cashflowEntries));
   }
 }

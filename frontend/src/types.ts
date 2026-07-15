@@ -82,6 +82,7 @@ export interface Milestone {
   targetDate?: DateString;
   wealthKey?: WealthKey;
   checkInIntervalDays?: number;
+  emoji?: string; // optional user-chosen glyph, mirrors Habit.emoji
 }
 
 // ---- Reading ----
@@ -168,6 +169,23 @@ export interface GivingEntry {
   recipient?: string;   // optional org/cause
 }
 
+// ---- Cash flow (budget) ----
+// Income and expense log powering the Finance page's monthly cash-flow
+// view. Categories come from the fixed CASHFLOW_CATEGORIES lists in
+// stores/financial.ts — curated, not user-defined, so the monthly
+// breakdown stays legible. Charitable giving has its own tracker; the
+// expense categories deliberately exclude it.
+export type CashflowKind = 'income' | 'expense';
+
+export interface CashflowEntry {
+  id: string;
+  date: DateString;      // 'YYYY-MM-DD'
+  amount: number;        // positive dollars; kind carries the sign
+  kind: CashflowKind;
+  category: string;      // one of CASHFLOW_CATEGORIES[kind]
+  note?: string;
+}
+
 // ---- Personal settings (the personalize panel) ----
 // `retirementAge` is intentionally absent — the app's worldview doesn't
 // treat retirement as a goal to plan toward. Old user docs may still
@@ -250,6 +268,8 @@ export interface CloudPayload extends Partial<PersonalSettings> {
   savingsGoals?: SavingsGoal[];
   savingsRate?: number;
   givingEntries?: GivingEntry[];
+  // Cash flow / budget (v1).
+  cashflowEntries?: CashflowEntry[];
   // Habits (v1).
   habits?: Habit[];
   habitChecks?: HabitCheck[];

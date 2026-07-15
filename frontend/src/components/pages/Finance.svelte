@@ -1,6 +1,7 @@
 <script lang="ts">
   import PageHeader from '../shared/PageHeader.svelte';
   import NetWorthSection from '../finance/NetWorthSection.svelte';
+  import CashflowSection from '../finance/CashflowSection.svelte';
   import SavingsSection from '../finance/SavingsSection.svelte';
   import GivingSection from '../finance/GivingSection.svelte';
 </script>
@@ -13,6 +14,7 @@
 
   <div class="stack">
     <NetWorthSection />
+    <CashflowSection />
     <SavingsSection />
     <GivingSection />
   </div>

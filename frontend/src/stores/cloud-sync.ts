@@ -14,7 +14,7 @@ import {
 } from './collections';
 import { assessmentResults, setFromCloud as setAssessmentFromCloud } from './assessment';
 import {
-  netWorthEntries, savingsGoals, savingsRate, givingEntries,
+  netWorthEntries, savingsGoals, savingsRate, givingEntries, cashflowEntries,
   setFromCloud as setFinancialFromCloud,
 } from './financial';
 import {
@@ -54,7 +54,7 @@ export function isPayloadEmpty(p: Partial<CloudPayload> | null | undefined): boo
   if (p.dob) return false;
   const arrays: unknown[] = [
     p.milestones, p.people, p.books, p.rituals, p.priorities,
-    p.netWorthEntries, p.savingsGoals, p.givingEntries,
+    p.netWorthEntries, p.savingsGoals, p.givingEntries, p.cashflowEntries,
     p.habits, p.habitChecks, p.bodyEntries, p.assessmentResults,
   ];
   if (arrays.some((a) => Array.isArray(a) && a.length > 0)) return false;
@@ -94,6 +94,7 @@ export function collectStateForCloud(): CloudPayload {
     savingsGoals: get(savingsGoals),
     savingsRate: get(savingsRate),
     givingEntries: get(givingEntries),
+    cashflowEntries: get(cashflowEntries),
     habits: get(habits),
     habitChecks: get(habitChecks),
     bodyEntries: get(bodyEntries),
@@ -285,7 +286,7 @@ function subscribeAll(): void {
     priorities, bestYear, hardestYear,
     milestones, journal, letters, people, books, rituals,
     assessmentResults,
-    netWorthEntries, savingsGoals, savingsRate, givingEntries,
+    netWorthEntries, savingsGoals, savingsRate, givingEntries, cashflowEntries,
     habits, habitChecks, bodyEntries,
   ];
   everyStore.forEach((s) => s.subscribe(() => scheduleCloudSave()));

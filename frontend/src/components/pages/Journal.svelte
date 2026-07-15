@@ -3,7 +3,6 @@
   import EntryFeed from '../journal/EntryFeed.svelte';
   import JournalPulse from '../journal/JournalPulse.svelte';
   import WeeksGrid from '../journal/WeeksGrid.svelte';
-  import FutureLetters from '../journal/FutureLetters.svelte';
   import AiJournalInsight from '../journal/AiJournalInsight.svelte';
   import PageHeader from '../shared/PageHeader.svelte';
 
@@ -18,8 +17,8 @@
     subtitle="Write at the top, edit anything below, view the full timeline at the bottom. Pick any date — write about any week of your life."
   />
 
-  <JournalPulse />
   <Composer />
+  <JournalPulse />
   <AiJournalInsight />
   <EntryFeed onEditEntry={handleEdit} />
 
@@ -29,8 +28,6 @@
       <WeeksGrid />
     </div>
   </details>
-
-  <FutureLetters />
 </section>
 
 <style>
