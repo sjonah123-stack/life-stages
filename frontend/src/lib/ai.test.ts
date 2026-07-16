@@ -9,17 +9,28 @@ import {
 describe('normalizeAiMilestones', () => {
   it('keeps well-formed milestones and stamps completed:false', () => {
     const out = normalizeAiMilestones(
-      [{ label: 'Run a marathon', measure: '26.2 mi', age: 30, why: 'discipline' }], 23,
+      [{ label: 'Host a monthly dinner', measure: 'six dinners hosted', age: 25, why: 'friendship' }], 23,
     );
     expect(out).toEqual([
-      { age: 30, label: 'Run a marathon', completed: false, measure: '26.2 mi', why: 'discipline' },
+      { age: 25, label: 'Host a monthly dinner', completed: false, measure: 'six dinners hosted', why: 'friendship' },
     ]);
   });
 
-  it('clamps age to (currentAge, LIFESPAN] and rounds', () => {
+  it('clamps age into the near-term window (+1..+5 years) and rounds', () => {
     expect(normalizeAiMilestones([{ label: 'a', age: 5 }], 23)[0].age).toBe(24); // below floor
-    expect(normalizeAiMilestones([{ label: 'b', age: 200 }], 23)[0].age).toBe(90); // above cap
-    expect(normalizeAiMilestones([{ label: 'c', age: 40.6 }], 23)[0].age).toBe(41); // rounded
+    expect(normalizeAiMilestones([{ label: 'b', age: 200 }], 23)[0].age).toBe(28); // above cap → +5
+    expect(normalizeAiMilestones([{ label: 'c', age: 26.6 }], 23)[0].age).toBe(27); // rounded
+    // Near LIFESPAN the window caps at 90, not beyond.
+    expect(normalizeAiMilestones([{ label: 'd', age: 99 }], 88)[0].age).toBe(90);
+  });
+
+  it('passes basedOn through when present, omits it when absent', () => {
+    const withBasis = normalizeAiMilestones(
+      [{ label: 'a', age: 25, basedOn: 'meditates daily' }], 23,
+    );
+    expect(withBasis[0].basedOn).toBe('meditates daily');
+    const without = normalizeAiMilestones([{ label: 'b', age: 25 }], 23);
+    expect('basedOn' in without[0]).toBe(false);
   });
 
   it('drops entries without a label and caps at 3', () => {
@@ -85,6 +96,29 @@ describe('prompt builders', () => {
     });
     expect(p).toContain('Run a marathon');
     expect(p).toMatch(/do NOT repeat/i);
+  });
+
+  it('milestonePrompt grounds in activity evidence (habits, books, journal, completions)', () => {
+    const p = milestonePrompt({
+      stage: 'Building',
+      currentAge: 23,
+      habits: ['Meditate', 'Gym'],
+      recentBooks: ['Deep Work'],
+      completedMilestones: ['Finish degree'],
+      recentJournal: ['felt great after the morning run'],
+    });
+    expect(p).toContain('Meditate, Gym');
+    expect(p).toContain('Deep Work');
+    expect(p).toContain('Finish degree');
+    expect(p).toContain('felt great after the morning run');
+  });
+
+  it('milestonePrompt carries the calibration rules and near-term window', () => {
+    const p = milestonePrompt({ stage: 'Building', currentAge: 23 });
+    expect(p).toContain('basedOn');
+    expect(p).toContain('between 24 and 28');
+    expect(p).toMatch(/Banned unless the facts explicitly support/);
+    expect(p).toMatch(/motivational poster/);
   });
 
   it('normalizeAiMilestones keeps a valid wealthKey and drops an invalid one', () => {

@@ -6,16 +6,16 @@
   import {
     todayAge, careerField, role, aspiration, partnership, kids,
   } from '../../stores/personal';
-  import { milestones, priorities } from '../../stores/collections';
+  import { milestones, priorities, journal, books } from '../../stores/collections';
+  import { activeHabits } from '../../stores/habits';
   import { behavioralScores } from '../../stores/assessment';
   import { currentUser } from '../../stores/auth';
-  import { suggestMilestones } from '../../lib/ai';
+  import { suggestMilestones, type AiMilestoneSuggestion } from '../../lib/ai';
   import { WEALTHS } from '../../data/assessment';
-  import type { Milestone } from '../../types';
 
   let loading = false;
   let error = '';
-  let suggestions: Milestone[] = [];
+  let suggestions: AiMilestoneSuggestion[] = [];
 
   $: stageName = $currentStage?.name ?? 'this stage of life';
 
@@ -29,6 +29,18 @@
       if (scores[k] < min) { min = scores[k]; weakestKey = k; }
     }
     return WEALTHS.find((w) => w.key === weakestKey)?.label;
+  }
+
+  // Evidence of what the user actually does — the antidote to generic,
+  // grandiose suggestions. Journal snippets are short and already flow to
+  // the AI insight feature, so this stays within the existing privacy line.
+  function recentJournalSnippets(): string[] {
+    return Object.entries($journal)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([, e]) => (e?.text ?? '').replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .slice(0, 4)
+      .map((t) => (t.length > 140 ? t.slice(0, 140) + '…' : t));
   }
 
   async function suggest() {
@@ -46,7 +58,11 @@
         aspiration: $aspiration || undefined,
         priorities: $priorities?.length ? $priorities : undefined,
         weakestWealth: weakestWealthLabel(),
-        existingMilestones: $milestones.map((m) => m.label).slice(0, 12),
+        existingMilestones: $milestones.filter((m) => !m.completed).map((m) => m.label).slice(0, 12),
+        completedMilestones: $milestones.filter((m) => m.completed).map((m) => m.label).slice(0, 8),
+        habits: $activeHabits.map((h) => h.label).slice(0, 8),
+        recentBooks: $books.slice(-3).map((b) => b.title),
+        recentJournal: recentJournalSnippets(),
       });
       if (suggestions.length === 0) error = 'No suggestions came back — try again.';
     } catch (e) {
@@ -56,13 +72,15 @@
     }
   }
 
-  function addOne(m: Milestone) {
+  function addOne(s: AiMilestoneSuggestion) {
+    // Strip the provenance field — it's UI context, not milestone data.
+    const { basedOn, ...m } = s;
     milestones.update((arr) => {
       const next = [...arr, m];
       next.sort((a, b) => a.age - b.age);
       return next;
     });
-    suggestions = suggestions.filter((s) => s !== m);
+    suggestions = suggestions.filter((x) => x !== s);
   }
 
   function dismiss() {
@@ -95,6 +113,7 @@
             </div>
             {#if s.measure}<div class="ai-card-line"><b>Measure</b> {s.measure}</div>{/if}
             {#if s.why}<div class="ai-card-line"><b>Why</b> {s.why}</div>{/if}
+            {#if s.basedOn}<div class="ai-card-basis">From your life: {s.basedOn}</div>{/if}
             <button class="ai-add" type="button" on:click={() => addOne(s)}>+ Add to goals</button>
           </div>
         {/each}
@@ -199,6 +218,15 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-right: 6px;
+  }
+  .ai-card-basis {
+    margin-top: 8px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--ink-faint);
+    border-left: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    padding-left: 8px;
+    line-height: 1.4;
   }
   .ai-add {
     margin-top: 14px;

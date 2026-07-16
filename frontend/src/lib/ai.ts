@@ -23,10 +23,18 @@ function aiBackend() {
   return aiInstance;
 }
 
-async function runStructured(schema: Schema, prompt: string): Promise<unknown> {
+async function runStructured(
+  schema: Schema,
+  prompt: string,
+  temperature?: number,
+): Promise<unknown> {
   const model = getGenerativeModel(aiBackend(), {
     model: GEMINI_MODEL,
-    generationConfig: { responseMimeType: 'application/json', responseSchema: schema },
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: schema,
+      ...(temperature !== undefined ? { temperature } : {}),
+    },
   });
   const result = await model.generateContent({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -46,15 +54,24 @@ const MILESTONE_SCHEMA = Schema.array({
       age: Schema.integer(),
       why: Schema.string(),
       wealthKey: Schema.string(),
+      // Grounding: the exact context fact this suggestion grew from. Forces
+      // the model to build on the person's real life instead of inventing a
+      // persona; the UI shows it as provenance.
+      basedOn: Schema.string(),
     },
   }),
 });
 
-interface RawAiMilestone { label?: unknown; measure?: unknown; age?: unknown; why?: unknown; wealthKey?: unknown; }
+interface RawAiMilestone {
+  label?: unknown; measure?: unknown; age?: unknown; why?: unknown;
+  wealthKey?: unknown; basedOn?: unknown;
+}
 
 // Everything the prompt can use to personalize suggestions. Only `stage` and
 // `currentAge` are required; the rest are best-effort context pulled from the
-// user's profile. The more that's present, the less generic the output.
+// user's profile AND their actual activity in the app — evidence of what they
+// really do is what keeps suggestions from becoming motivational-poster
+// fantasy.
 export interface MilestoneContext {
   stage: string;
   currentAge: number;
@@ -66,6 +83,10 @@ export interface MilestoneContext {
   priorities?: string[];    // areas they care most about right now
   weakestWealth?: string;   // label of their lowest wealth dimension
   existingMilestones?: string[]; // labels of goals they already have
+  completedMilestones?: string[]; // goals they finished — follow-through evidence
+  habits?: string[];        // active daily habits — what they actually practice
+  recentBooks?: string[];   // recently logged books
+  recentJournal?: string[]; // short snippets from recent entries
 }
 
 // Build a personalized milestone prompt. The whole point is to feed the model
@@ -89,10 +110,21 @@ export function milestonePrompt(ctx: MilestoneContext): string {
   }
   if (ctx.aspiration) facts.push(`In ~10 years, a meaningful life to them looks like: ${ctx.aspiration}.`);
   if (ctx.priorities?.length) facts.push(`They care most right now about: ${ctx.priorities.join(', ')}.`);
+  if (ctx.habits?.length) facts.push(`Daily habits they actually keep: ${ctx.habits.join(', ')}.`);
+  if (ctx.recentBooks?.length) facts.push(`Books they read recently: ${ctx.recentBooks.join(', ')}.`);
+  if (ctx.completedMilestones?.length) {
+    facts.push(`Goals they have already completed: ${ctx.completedMilestones.join(', ')}.`);
+  }
   if (ctx.weakestWealth) {
     facts.push(`Their weakest wealth dimension is ${ctx.weakestWealth}; at least one suggestion should help there.`);
   }
-  if (facts.length) lines.push('About this person: ' + facts.join(' '));
+  if (facts.length) lines.push('Known facts about this person: ' + facts.join(' '));
+  if (ctx.recentJournal?.length) {
+    lines.push(
+      'Fragments from their recent journal, in their own words: ' +
+      ctx.recentJournal.map((t) => `"${t}"`).join(' / ') + '.',
+    );
+  }
 
   if (ctx.existingMilestones?.length) {
     lines.push(
@@ -101,40 +133,62 @@ export function milestonePrompt(ctx: MilestoneContext): string {
     );
   }
 
+  const maxAge = Math.min(currentAge + 5, LIFESPAN);
   lines.push(
-    'Suggest exactly 3 milestones specific to THIS person — not generic advice that could apply to anyone. ' +
-    'Build on their actual role, relationships, and aspirations.',
+    'Suggest exactly 3 milestones. Hard rules: ' +
+    '1) Every suggestion must grow out of one of the facts above — quote that fact in basedOn. ' +
+    'If the facts are thin, suggest small discovery-sized goals rather than inventing a personality. ' +
+    `2) Near-term: age between ${currentAge + 1} and ${maxAge}, and something they could take a first step on this month. ` +
+    '3) Calibrate ambition to evidence — extend what they already do by one honest notch. ' +
+    'Someone who meditates daily might aim for a weekend retreat; never tell someone with no running habit to run a marathon. ' +
+    '4) Banned unless the facts explicitly support them: marathons, writing a book, starting a business, ' +
+    'learning a new language, visiting N countries, "financial freedom", and any goal that amounts to becoming a different person. ' +
+    '5) The measure must be something the person can count or verify themselves.',
   );
   lines.push(
-    'For each: label (specific, under 8 words), measure (how they know it is done), ' +
-    `age (an integer strictly greater than ${currentAge} and at most ${LIFESPAN}), ` +
-    'why (one grounded sentence tied to their context), and ' +
-    'wealthKey (one of: time, social, mental, physical, financial).',
+    'For each: label (specific, under 8 words), measure (how they will know it is done), ' +
+    `age (an integer strictly greater than ${currentAge} and at most ${maxAge}), ` +
+    'why (one grounded sentence tied to their context), ' +
+    'wealthKey (one of: time, social, mental, physical, financial), and ' +
+    'basedOn (the fact this grows from, quoted or closely paraphrased).',
   );
   lines.push(
-    `Good example: {"label":"Mentor two juniors","measure":"both lead a shipped project","age":${currentAge + 2},` +
-    '"why":"deepens your leadership in the work you already do","wealthKey":"mental"}.',
+    `Good example: {"label":"Host a monthly dinner for four","measure":"six dinners hosted this year","age":${currentAge + 1},` +
+    '"why":"turns the friendships you keep writing about into a standing ritual","wealthKey":"social",' +
+    '"basedOn":"journal mentions missing college friends"}. ' +
+    'Bad example: {"label":"Run a marathon"} — nothing in the facts involves running; that is a poster, not a plan.',
   );
-  lines.push('Avoid vague platitudes and goals unrelated to their stated life.');
+  lines.push(
+    'Tone: grounded, modest, human. If a suggestion would look at home on a motivational poster, replace it.',
+  );
   return lines.join(' ');
 }
 
+// A suggestion is a Milestone plus its grounding fact (shown as provenance
+// in the UI, stripped before the milestone is stored).
+export interface AiMilestoneSuggestion extends Milestone {
+  basedOn?: string;
+}
+
 // Validate/clamp the model's output into real Milestone objects. Drops anything
-// malformed; keeps at most 3. wealthKey is only kept when it's one of the 5
-// valid keys (so the existing untyped callers/tests stay unaffected).
-export function normalizeAiMilestones(raw: unknown, currentAge: number): Milestone[] {
+// malformed; keeps at most 3; ages clamp into the near-term window the prompt
+// demands (+1..+5 years). wealthKey is only kept when it's one of the 5 valid
+// keys (so the existing untyped callers/tests stay unaffected).
+export function normalizeAiMilestones(raw: unknown, currentAge: number): AiMilestoneSuggestion[] {
   if (!Array.isArray(raw)) return [];
-  const out: Milestone[] = [];
+  const maxAge = Math.min(currentAge + 5, LIFESPAN);
+  const out: AiMilestoneSuggestion[] = [];
   for (const item of raw as RawAiMilestone[]) {
     const label = typeof item?.label === 'string' ? item.label.trim() : '';
     if (!label) continue;
     let age = Math.round(Number(item?.age));
     if (!Number.isFinite(age)) age = currentAge + 1;
-    age = Math.min(LIFESPAN, Math.max(currentAge + 1, age));
+    age = Math.min(maxAge, Math.max(currentAge + 1, age));
     const wealthKey =
       typeof item?.wealthKey === 'string' && WEALTH_KEYS.includes(item.wealthKey as WealthKey)
         ? (item.wealthKey as WealthKey)
         : undefined;
+    const basedOn = typeof item?.basedOn === 'string' ? item.basedOn.trim() : '';
     out.push({
       age,
       label,
@@ -142,14 +196,17 @@ export function normalizeAiMilestones(raw: unknown, currentAge: number): Milesto
       measure: typeof item?.measure === 'string' ? item.measure.trim() : undefined,
       why: typeof item?.why === 'string' ? item.why.trim() : undefined,
       ...(wealthKey ? { wealthKey } : {}),
+      ...(basedOn ? { basedOn } : {}),
     });
     if (out.length === 3) break;
   }
   return out;
 }
 
-export async function suggestMilestones(ctx: MilestoneContext): Promise<Milestone[]> {
-  const raw = await runStructured(MILESTONE_SCHEMA, milestonePrompt(ctx));
+export async function suggestMilestones(ctx: MilestoneContext): Promise<AiMilestoneSuggestion[]> {
+  // Lower temperature than default — suggestions should be grounded and
+  // repeatable-ish, not creative writing.
+  const raw = await runStructured(MILESTONE_SCHEMA, milestonePrompt(ctx), 0.7);
   return normalizeAiMilestones(raw, ctx.currentAge);
 }
 
