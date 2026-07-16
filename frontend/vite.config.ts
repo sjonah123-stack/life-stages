@@ -11,6 +11,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
+        // `id` pins the app's identity for stores/PWABuilder even if
+        // start_url ever changes.
+        id: '/',
+        lang: 'en',
+        dir: 'ltr',
         name: 'Your one extraordinary life',
         short_name: 'Life',
         description:
