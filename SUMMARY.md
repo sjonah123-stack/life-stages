@@ -1,9 +1,7 @@
 # Session Summary — life-stages
 
-Last updated: 2026-07-15 — budget-first Finance (net worth retired, AI budget coach) + rituals
-removed, on preview channel `budget-first`
-(https://life-stages-90806--budget-first-ssfw0pi9.web.app, expires 2026-07-22). Supersedes the
-earlier `journal-finance` and `today-declutter` previews (includes both).
+Last updated: 2026-07-16 — everything through the app-icon fix + first-time tour is **live on
+prod** (the icon deploy carried budget-first Finance along with it).
 
 ## Where prod stands
 
@@ -16,7 +14,18 @@ Backend is deployed: 3 Cloud Functions (Node 22), Firestore + Storage rules rele
 pushes commits via **GitHub Desktop** (the terminal here has no git auth). Tell them the pending
 commit count each session: `git rev-list --count origin/main..HEAD`.
 
-## Session 2026-07-15 (latest) — budget-first Finance + rituals removed (preview-pending)
+## Session 2026-07-16 — app icon fix + first-time tour (deployed to prod)
+
+1. **PWA icon fixed** — the user's new icon.svg was committed at the legacy root path; copied to
+   `frontend/public/`, plus generated `apple-touch-icon.png`/`icon-192`/`icon-512` (iOS ignores
+   SVG manifest icons entirely). Re-add to home screen to see it. Note: this deploy also took the
+   budget-first work to prod.
+2. **First-time app tour** — `stores/tour.ts` + `shared/AppTour.svelte`: 5-step editorial card
+   overlay (Today/slider, daily loop, journal, goals+budget, progress+swipe tip). Auto-opens once
+   on the blank→initialized transition (wizard finish); `tourSeen` is device-local (like
+   achievementsSeen); replayable from Settings. Keyboard: arrows/Esc. 326 tests, checks clean.
+
+## Session 2026-07-15 — budget-first Finance + rituals removed (deployed to prod)
 
 1. **Rituals retired** — RitualsSection deleted; `rituals` store/cloud round-trip stays
    read-tolerant; `ritual-first` badge removed; .ics export passes `rituals: []`.

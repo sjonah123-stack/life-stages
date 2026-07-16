@@ -80,7 +80,8 @@ life-stages/
             ├── wealth/        ← AssessmentIntro, AssessmentSurvey, AssessmentResults, WealthRadar, WealthCard
             ├── finance/       ← NetWorthSection, SavingsSection, GivingSection, NetWorthSparkline
             ├── progress/      ← BodyTrendsSection, AchievementsSection, PersonalBestsSection, Sparkline
-            └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen
+            └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen, ToastHost,
+                                  AppTour, WealthIcon, FlameIcon
 ```
 
 ## Critical conventions

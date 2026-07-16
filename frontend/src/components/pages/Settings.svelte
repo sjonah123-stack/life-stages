@@ -7,6 +7,7 @@
   import { personalHorizon } from '../../stores/derived';
   import { formatDOB } from '../../utils';
   import { exportStateAsJson, importStateFromJson } from '../../stores/cloud-sync';
+  import { openTour } from '../../stores/tour';
   import PageHeader from '../shared/PageHeader.svelte';
 
   const today = formatDOB(new Date());
@@ -200,9 +201,32 @@
       {#if importMsg}<span class="import-msg">{importMsg}</span>{/if}
     </div>
   </div>
+
+  <p class="tour-replay">
+    New here, or forgot where things live?
+    <button type="button" class="tour-link" on:click={openTour}>Replay the app tour</button>
+  </p>
 </section>
 
 <style>
+  .tour-replay {
+    margin: 20px 0 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-faint);
+  }
+  .tour-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+  }
+  .tour-link:hover { text-decoration: underline; }
+
   .personalize {
     margin-bottom: 32px;
     padding: 18px 22px 16px;

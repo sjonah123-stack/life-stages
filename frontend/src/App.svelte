@@ -1,11 +1,14 @@
 <script lang="ts">
+  import { get } from 'svelte/store';
   import { currentPage } from './lib/router';
   import { isBlankState } from './stores/personal';
   import { swipeNav, slideDirection } from './lib/swipe';
   import { motionDuration } from './lib/motion';
+  import { tourSeen, shouldAutoOpenTour, openTour } from './stores/tour';
   import TopNav from './components/nav/TopNav.svelte';
   import WelcomeScreen from './components/shared/WelcomeScreen.svelte';
   import ToastHost from './components/shared/ToastHost.svelte';
+  import AppTour from './components/shared/AppTour.svelte';
   import Today from './components/pages/Today.svelte';
   import Journal from './components/pages/Journal.svelte';
   import Goals from './components/pages/Goals.svelte';
@@ -21,6 +24,15 @@
   $: {
     direction = slideDirection(prevPage, $currentPage);
     prevPage = $currentPage;
+  }
+
+  // Auto-open the first-time tour the moment the welcome wizard finishes
+  // (blank → initialized transition). Fresh-device sign-ins skip it —
+  // replayable from Settings.
+  let prevBlank = $isBlankState;
+  $: {
+    if (shouldAutoOpenTour(prevBlank, $isBlankState, get(tourSeen))) openTour();
+    prevBlank = $isBlankState;
   }
 </script>
 
@@ -56,6 +68,7 @@
 {/if}
 
 <ToastHost />
+<AppTour />
 
 <style>
   /* Directional slide for swipe/tab navigation. Composes with the global
