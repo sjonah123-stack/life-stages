@@ -35,7 +35,7 @@
 
   <AnniversaryCard />
 
-  <div class="hero-stack">
+  <div class="hero-stack" data-tour="slider">
     <AgeSlider />
     <StatRow />
   </div>

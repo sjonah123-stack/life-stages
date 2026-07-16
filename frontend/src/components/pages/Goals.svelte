@@ -103,7 +103,7 @@
     subtitle="What you're aiming toward, the rituals you're keeping, what you've been reading, and the years that mattered."
   />
 
-  <div class="module-section">
+  <div class="module-section" data-tour="milestones">
     <h2>Things you're looking forward to</h2>
     <p class="sub">
       Written in SMART format: Specific (what), Measurable (how you'll know), by-when (age

@@ -238,7 +238,7 @@
   });
 </script>
 
-<div class="journal-composer" class:editing={isExisting} bind:this={composerEl}>
+<div class="journal-composer" class:editing={isExisting} bind:this={composerEl} data-tour="composer">
   <div class="composer-meta">
     <input type="date" bind:value={dateInput} min={earliestDate} max={latestDate} />
     <div class="week-info">

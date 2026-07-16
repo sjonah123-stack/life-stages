@@ -80,7 +80,7 @@
   }
 </script>
 
-<section class="module-section">
+<section class="module-section" data-tour="giving">
   <header>
     <div class="eyebrow">GIVING</div>
     <h2>What you're giving back</h2>

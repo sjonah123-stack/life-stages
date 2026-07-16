@@ -81,7 +81,7 @@
   }
 </script>
 
-<section class="checkin-card glass">
+<section class="checkin-card glass" data-tour="daily">
   <div class="head">
     <div class="head-left">
       <div class="eyebrow">DAILY CHECK-IN</div>

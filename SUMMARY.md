@@ -20,10 +20,13 @@ commit count each session: `git rev-list --count origin/main..HEAD`.
    `frontend/public/`, plus generated `apple-touch-icon.png`/`icon-192`/`icon-512` (iOS ignores
    SVG manifest icons entirely). Re-add to home screen to see it. Note: this deploy also took the
    budget-first work to prod.
-2. **First-time app tour** — `stores/tour.ts` + `shared/AppTour.svelte`: 5-step editorial card
-   overlay (Today/slider, daily loop, journal, goals+budget, progress+swipe tip). Auto-opens once
-   on the blank→initialized transition (wizard finish); `tourSeen` is device-local (like
-   achievementsSeen); replayable from Settings. Keyboard: arrows/Esc. 326 tests, checks clean.
+2. **First-time app tour (guided walkthrough)** — `stores/tour.ts` + `shared/AppTour.svelte`:
+   a bottom-docked coach card that *navigates the real pages* — 9 stops (Today ×3 incl. a full
+   wealth-assessment explainer, Journal, Goals ×2, Finance ×2, Progress + swipe tip) — scrolling
+   to and ringing each section via `data-tour` anchors (missing anchor degrades to scroll-top).
+   An invisible shield keeps steps in sync. Auto-opens once on the blank→initialized transition;
+   `tourSeen` device-local; replayable from Settings; arrows/Esc. Gotcha: the coach centers via
+   auto margins, not transform (svelte fly overrides inline transforms). 326 tests, checks clean.
 
 ## Session 2026-07-15 — budget-first Finance + rituals removed (deployed to prod)
 

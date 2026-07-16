@@ -63,7 +63,7 @@
   }
 </script>
 
-<section class="module-section">
+<section class="module-section" data-tour="habits">
   <h2>Daily habits</h2>
   <p class="sub">
     Small daily practices — meditation, gym, no-phone-after-9. Different from milestones

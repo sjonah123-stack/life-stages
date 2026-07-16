@@ -183,6 +183,15 @@ textarea:focus-visible {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* The app tour rings the section it's describing (AppTour.svelte adds
+   this class to the step's data-tour anchor). */
+.tour-highlight {
+  outline: 3px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  outline-offset: 5px;
+  border-radius: 12px;
+  scroll-margin-top: 84px; /* clear the sticky nav when scrolled to */
+}
+
 /* === Glass + gradient atmosphere ===
    Used by the Today page revamp. Scoped utilities so other pages aren't affected
    unless they opt in. Keep these here (not in a component) so backdrop-filter and

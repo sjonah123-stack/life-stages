@@ -18,7 +18,7 @@
   const closeSurvey = () => { inSurvey = false; };
 </script>
 
-<section class="wealth-section" aria-label="Five Types of Wealth">
+<section class="wealth-section" aria-label="Five Types of Wealth" data-tour="wealth">
   <header class="section-head">
     <div class="eyebrow-modern">5 types of wealth</div>
     <h2>The full balance sheet</h2>

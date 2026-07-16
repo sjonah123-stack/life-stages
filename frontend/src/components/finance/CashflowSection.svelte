@@ -176,7 +176,7 @@
   }
 </script>
 
-<section class="module-section">
+<section class="module-section" data-tour="budget">
   <header>
     <div class="head-row">
       <div class="eyebrow">MONTHLY BUDGET · {monthName(thisMonth)}</div>
