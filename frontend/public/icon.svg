@@ -1,23 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFD6A5"/>
-      <stop offset="55%" stop-color="#FF8C61"/>
-      <stop offset="100%" stop-color="#FF6B9D"/>
-    </linearGradient>
-    <linearGradient id="sun" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#FFE9A6"/>
-      <stop offset="100%" stop-color="#FFC93C"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#FFD23F" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#FFD23F" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="256" cy="226" r="160" fill="url(#glow)"/>
-  <circle cx="256" cy="226" r="78" fill="url(#sun)"/>
-  <path d="M0 372 Q 128 332 256 352 T 512 372 L 512 512 L 0 512 Z" fill="white" opacity="0.22"/>
-  <path d="M0 408 Q 128 372 256 392 T 512 408 L 512 512 L 0 512 Z" fill="white" opacity="0.38"/>
-  <path d="M0 446 Q 128 416 256 432 T 512 446 L 512 512 L 0 512 Z" fill="white" opacity="0.55"/>
+  <rect width="512" height="512" fill="#F4F0E8"></rect>
+  <rect x="106" y="118" width="300" height="42" rx="21" fill="#DCC9BA"></rect>
+  <rect x="106" y="182" width="300" height="42" rx="21" fill="#C99A82"></rect>
+  <rect x="106" y="246" width="300" height="42" rx="21" fill="#C98E72"></rect>
+  <rect x="106" y="310" width="300" height="42" rx="21" fill="#B5654A"></rect>
+  <rect x="106" y="374" width="300" height="42" rx="21" fill="#8F4A34"></rect>
 </svg>
