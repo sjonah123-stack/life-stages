@@ -1,7 +1,7 @@
 # Session Summary — life-stages
 
-Last updated: 2026-07-16 — everything through the app-icon fix + first-time tour is **live on
-prod** (the icon deploy carried budget-first Finance along with it).
+Last updated: 2026-07-16 — everything through the guided tour + AI-suggestion grounding fix
+is **live on prod**.
 
 ## Where prod stands
 
@@ -26,7 +26,10 @@ commit count each session: `git rev-list --count origin/main..HEAD`.
    to and ringing each section via `data-tour` anchors (missing anchor degrades to scroll-top).
    An invisible shield keeps steps in sync. Auto-opens once on the blank→initialized transition;
    `tourSeen` device-local; replayable from Settings; arrows/Esc. Gotcha: the coach centers via
-   auto margins, not transform (svelte fly overrides inline transforms). 326 tests, checks clean.
+   auto margins, not transform (svelte fly overrides inline transforms).
+3. **AI milestone suggestions grounded** — prompt now feeds habits/books/journal-snippets/
+   completed goals, requires a `basedOn` fact per suggestion (shown as "From your life: …"),
+   clamps ages to +1..+5yr, bans cliché goals, temperature 0.7. 329 tests, checks clean.
 
 ## Session 2026-07-15 — budget-first Finance + rituals removed (deployed to prod)
 
@@ -64,43 +67,16 @@ commit count each session: `git rev-list --count origin/main..HEAD`.
    this-month entry list. Pure helpers (`summarizeMonth`, `expensesByCategory`, `lastMonths`)
    unit-tested. 304 tests, 0 type errors, clean build.
 
-## Session 2026-07-15 (earlier) — Today de-bloat + icons + swipe (in same preview)
+## Earlier 2026-07-15 sessions (all deployed; details in git history)
 
-1. **Today decluttered** — removed TexturePanel ("what's still ahead"), GoodNews, and
-   DimensionCards; page is now hero → anniversary → slider+stats → check-in → habits → wealth.
-   Pruned the now-dead data: CAREER_FIELDS, PARTNERSHIP_NOTES, getCareerCallout, and all
-   per-stage dimension prose/goodNews (Stage is now just {range, name, poetic}).
-2. **Professional icons** — new hand-rolled `WealthIcon` (5 line glyphs, also embedded in the
-   radar) + `FlameIcon` replace ⏳🤝🧠💪💰/🔥/🎉; mood faces on the anniversary card became
-   "x.x/5 avg mood"; `emoji` field removed from WEALTHS. User-entered emojis untouched.
-3. **Swipe navigation** — `lib/swipe.ts` (touch-only, threshold + ignore-zones for the age
-   slider/nav strip/habit chain, no wrap) + directional slide transition in App.svelte.
-   301 tests (12 new), 0 type errors, clean build.
-
-## Session 2026-07-15 — delight features + UI polish (deployed to prod)
-
-Goal: make the app one people *want* to open daily. User chose "tasteful delight" (no XP/levels/
-streak-guilt), full UI polish, and habits on Today. 289 tests, 0 type errors, clean build.
-
-1. **Confetti** — hand-rolled canvas (`lib/confetti.ts`, no dependency), palette-colored, no-op under
-   `prefers-reduced-motion`. Small burst on habit check, big on milestones/badges.
-2. **Toasts** — `stores/toasts.ts` (max 3, auto-expire) + `ToastHost.svelte` mounted in App.svelte.
-3. **Habit celebrations** — `lib/habit-celebration.ts`: `toggleHabitWithCelebration` fires confetti
-   on check only (never uncheck); streak milestones [7,30,100,365] get big confetti + toast, with a
-   session-level guard against uncheck/recheck double-toasts.
-4. **Achievement unlock toasts** — `stores/achievement-notifier.ts`. Device-local `achievementsSeen`
-   (persistedJSON, `null` = never seeded). First emission seeds silently; unlocks during cloud
-   download (`isApplyingCloud()` from cloud-sync) record silently; only genuine transitions toast.
-5. **Today habits strip** — `TodayHabitsCard.svelte`, one-tap pills with streak flames + n/n tally,
-   under DailyCheckInCard; hidden when no habits; "Manage →" routes to Goals.
-6. **UI polish** — radius tokens (`--radius-*`); `.module-section` + `.btn` family hoisted to app.css
-   (7 duplicated card blocks + 5 button blocks deleted; Finance sections renamed to module-section);
-   global `:focus-visible` rings; legacy orange/pink/yellow rgba() → `color-mix` on palette vars
-   (~40 sites); `color: white` → cream on warm fills; check-pop + badge-tile stagger animations;
-   slide transitions on habit rows/forms (`lib/motion.ts` gates all durations on reduced-motion).
-
-Deferred (intentional): wealth white-glass surfaces, AuthPill Google-brand hexes,
-CalendarExportButton grays, broader enter/exit transition sweep beyond habits/toasts.
+- **Today de-bloat + icons + swipe** — TexturePanel/GoodNews/DimensionCards removed (Stage
+  pruned to {range,name,poetic}); hand-rolled `WealthIcon`/`FlameIcon` replaced decorative
+  emojis; touch swipe between TAB_PAGES with directional slide (`lib/swipe.ts`).
+- **Delight + UI polish** — hand-rolled confetti, toast system, habit celebrations
+  (milestones [7,30,100,365], session double-toast guard), achievement unlock toasts
+  (device-local seen store + isApplyingCloud guard), TodayHabitsCard, radius tokens +
+  global `.module-section`/`.btn`, legacy-palette purge, focus rings, reduced-motion gating.
+  Deferred: wealth white-glass surfaces, AuthPill Google hexes, broader transition sweep.
 
 ## Owed by the user (console only — Claude can't do these)
 

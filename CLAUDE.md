@@ -15,8 +15,8 @@ Firebase project: `life-stages-90806`
 - **Svelte 5 + TypeScript + Vite** (the `frontend/` dir is the real app)
 - **Firebase Auth + Firestore** for cross-device sync (Google sign-in)
 - **vite-plugin-pwa** for service worker + manifest + offline cache
-- **No tests yet** (zero coverage; documented as known gap)
-- **No backend** other than Firebase — pure static SPA
+- **Vitest** (~330 tests, store/util level — see Testing conventions)
+- **No backend** other than Firebase — pure static SPA (+3 small Cloud Functions)
 
 The legacy 200KB single-file `index.html` at the repo root is preserved as a static archive served at `/legacy.html`. Don't edit it. The new app is everything under `frontend/`.
 
@@ -42,46 +42,49 @@ life-stages/
     │   ├── icon.svg
     │   └── legacy.html        ← legacy archive (SW registration stripped, manifest link removed)
     └── src/
-        ├── App.svelte         ← router root (hash-based)
-        ├── main.ts            ← entry: mount + initCloudSync + initAuth
-        ├── app.css            ← editorial palette (cream/charcoal/terracotta) CSS vars + fonts + .page animation
+        ├── App.svelte         ← router root: page slide, swipe action, tour auto-open
+        ├── main.ts            ← entry: mount + initCloudSync + initAchievementNotifier + initAuth
+        ├── app.css            ← editorial palette CSS vars, radius tokens, global .module-section/.btn,
+        │                         focus rings, celebration keyframes, .tour-highlight
         ├── types.ts           ← every domain type
-        ├── config.ts          ← LIFESPAN, FIREBASE_CONFIG, MOOD_OPTIONS, LS_PREFIX, etc.
-        ├── data.ts            ← STAGES, CAREER_FIELDS, COUNTRY_NOTES, PARTNERSHIP_NOTES, RELATION_LABEL, PROMPTS
+        ├── config.ts          ← LIFESPAN, FIREBASE_CONFIG, GEMINI_MODEL, LS_PREFIX, etc.
+        ├── data.ts            ← STAGES ({range,name,poetic} only), COUNTRY_NOTES, RELATION_LABEL, PROMPTS
         ├── data/
         │   └── assessment.ts  ← 5-Wealths survey + recommendations
-        ├── utils.ts           ← parseDOB, formatDOB, escapeHtml, readLS/writeLS, debounce, clearAllLocalData
+        ├── utils.ts           ← parseDOB, formatDOB, readLS/writeLS, debounce, clearAllLocalData
         ├── lib/
-        │   ├── firebase.ts    ← lazy-init singleton, exposes auth + db
-        │   ├── image.ts       ← canvas resize → JPEG 0.82 base64
-        │   └── router.ts      ← PAGES, TAB_PAGES, currentPage store
+        │   ├── firebase.ts    ← lazy-init singleton (auth, db, App Check)
+        │   ├── ai.ts          ← all Gemini features: prompts + schemas + normalizers
+        │   ├── router.ts      ← PAGES, TAB_PAGES, currentPage, navigate
+        │   ├── swipe.ts       ← touch page-swipe action + pure helpers
+        │   ├── confetti.ts / motion.ts / habit-celebration.ts ← delight layer
+        │   └── image.ts / photos.ts / ics.ts / openLibrary.ts
         ├── stores/
-        │   ├── personal.ts    ← dob, sex, theme, country, etc. (persisted, cross-tab synced)
+        │   ├── personal.ts    ← dob, sex, country, role, aspiration… (persisted, cross-tab)
         │   ├── collections.ts ← milestones, journal, letters, people, books, rituals
-        │   ├── journal-helpers.ts  ← getEntry/setEntry, weekKey, weekStartDate, ageAtWeek
-        │   ├── derived.ts     ← currentStage, personalHorizon
-        │   ├── slider.ts      ← selectedAge for the Today page
-        │   ├── assessment.ts  ← 5-Wealths persisted result + behavioralScores derived
-        │   ├── financial.ts   ← net-worth, savings, giving (powers the Finance page)
-        │   ├── habits.ts      ← daily-cadence habits + check log (powers HabitsSection)
-        │   ├── body.ts        ← daily body log: weight/sleep/workoutMinutes (DailyCheckInCard)
-        │   ├── anniversary.ts ← birthday-window detection + year-in-review derived
-        │   ├── achievements.ts← derived badge state + personalBests rollups
-        │   ├── auth.ts        ← Firebase auth wiring, sign-in/sign-out, syncStatus
-        │   └── cloud-sync.ts  ← Firestore upload/download, debounced
+        │   ├── journal-helpers.ts ← getEntry/setEntry, weekKey, week math
+        │   ├── financial.ts   ← budget-first: cashflowEntries, budgetPlan, savings goals,
+        │   │                     giving, annualizeIncome/actualSavingsRate/savedTowardGoal
+        │   ├── habits.ts / body.ts / assessment.ts / achievements.ts / anniversary.ts
+        │   ├── toasts.ts / achievement-notifier.ts / tour.ts / ai.ts ← UX state (device-local)
+        │   ├── derived.ts / slider.ts
+        │   ├── auth.ts        ← authTransition rules, sign-in/out, syncStatus
+        │   └── cloud-sync.ts  ← Firestore upload/download, debounced, guards
         └── components/
-            ├── nav/           ← TopNav.svelte, AuthPill.svelte
+            ├── nav/           ← TopNav, AuthPill
             ├── pages/         ← Today, Journal, Goals, Finance, Progress, Settings
             ├── today/         ← AgeSlider, StatRow, TodayWealth, AnniversaryCard,
             │                     DailyCheckInCard, TodayHabitsCard
-            ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid, FutureLetters,
-            │                     OnThisDayBanner, MoodSparkline
-            ├── goals/         ← BooksSection, RitualsSection, HabitsSection
-            ├── wealth/        ← AssessmentIntro, AssessmentSurvey, AssessmentResults, WealthRadar, WealthCard
-            ├── finance/       ← NetWorthSection, SavingsSection, GivingSection, NetWorthSparkline
-            ├── progress/      ← BodyTrendsSection, AchievementsSection, PersonalBestsSection, Sparkline
-            └── shared/        ← PageHeader, PlaceholderPage, WelcomeScreen, ToastHost,
-                                  AppTour, WealthIcon, FlameIcon
+            ├── journal/       ← Composer, EntryFeed, JournalPulse, WeeksGrid,
+            │                     OnThisDayBanner, MoodSparkline, AiJournalInsight
+            ├── goals/         ← HabitsSection, BooksSection, CalendarExportButton, AiMilestoneSuggest
+            ├── wealth/        ← AssessmentIntro/Survey/Results, WealthRadar, WealthCard
+            ├── finance/       ← CashflowSection (Monthly Budget), BudgetCoach,
+            │                     SavingsSection, GivingSection
+            ├── progress/      ← WeeklyReflectionSection, WealthTrendsSection, BodyTrendsSection,
+            │                     AchievementsSection, PersonalBestsSection, Sparkline
+            └── shared/        ← PageHeader, WelcomeScreen (3-step wizard), AppTour, ToastHost,
+                                  WealthIcon, FlameIcon, PlaceholderPage
 ```
 
 ## Critical conventions
@@ -112,8 +115,9 @@ The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` d
 ### AI features (Firebase AI Logic / Gemini)
 
 `lib/ai.ts` calls Gemini via Firebase AI Logic (`GoogleAIBackend` — the Gemini **Developer API**, not Vertex; `gemini-3.5-flash` only exists there and Vertex 404s on it, so billing is AI Studio pay-as-you-go), using `Schema`-typed **structured output** so responses come back as validated JSON. Model id is `GEMINI_MODEL` in `config.ts` — verify the exact string in the AI Logic console. Five features: milestone suggestions (`AiMilestoneSuggest.svelte` → Goals), journal insights (`AiJournalInsight.svelte` → Journal), reflective prompts (in `Composer.svelte`), weekly reflection (Progress), budget coach (`BudgetCoach.svelte` → Finance; sends category totals only, never notes/recipients). Conventions:
-- **Never trust model output** — every result runs through a pure normalizer (`normalizeAiMilestones`/`normalizeInsight`/`normalizePrompts`, tested) that clamps/validates before use.
-- **AI is gated to signed-in users** (billing tied to an account) and **never written to the `snapshots` backup buffer** — that buffer is for recovery only. Journal insights persist **locally** (`stores/ai.ts`, regenerable, keeps the user doc lean), not in Firestore.
+- **Never trust model output** — every result runs through a pure, tested normalizer that clamps/validates before use.
+- **Ground suggestions in evidence.** Milestone suggestions feed habits/books/journal-snippets/completed goals into the prompt, require a `basedOn` grounding fact per suggestion (shown as provenance, stripped before storing), clamp ages to +1..+5 years, ban cliché goals, and run at temperature 0.7. Keep this calibration when touching prompts — thin context + default temp is what produced "ridiculous" output.
+- **AI is gated to signed-in users** (billing tied to an account) and **never written to the `snapshots` backup buffer**. AI artifacts persist **locally** (`stores/ai.ts`, regenerable, keeps the user doc lean), not in Firestore.
 - **App Check** (`lib/firebase.ts`) is gated on `RECAPTCHA_SITE_KEY`; empty = disabled so the app runs unprotected-but-working until the key is set. Required before exposing AI on prod (billing-abuse protection).
 
 ### Cloud sync gotchas
@@ -146,19 +150,19 @@ The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` d
   ignored — keep that guard when adding new horizontal-scroll UI. Directional slide lives in
   App.svelte (`slideDirection` + `{#key $currentPage}`).
 
-### Hash router
+### Hash router + app tour
 
-Pages live in `lib/router.ts → PAGES`. Adding a new page:
-1. Add to `PAGES` array
-2. Add to `PAGE_LABELS`
-3. Add to `TAB_PAGES` if it should show in the top nav
-4. Create the page component in `components/pages/`
-5. Add it to the routing branch in `App.svelte`
+Pages live in `lib/router.ts → PAGES`. New page: add to `PAGES` + `PAGE_LABELS` (+ `TAB_PAGES`
+for the nav), create the component, add the branch in `App.svelte`.
+The first-time tour (`shared/AppTour.svelte` + `stores/tour.ts`) walks the real pages via
+`data-tour` anchor attributes on key sections — keep those attributes when refactoring
+(a missing anchor degrades to scroll-to-top, not a crash). `tourSeen` is device-local;
+auto-opens only on the wizard-finish transition; replayable from Settings.
 
 ## Commands
 
 ```bash
-# Dev server (use Claude Preview's preview_start with name "life-stages")
+# Dev server (use Claude Preview's preview_start with name "frontend-dev")
 cd frontend && npm run dev
 
 # Type check + Svelte check
@@ -181,23 +185,15 @@ firebase deploy --only hosting
 
 ## Testing conventions
 
-- **Tests are co-located with source as `*.test.ts`.** `src/utils.test.ts`,
-  `src/stores/assessment.test.ts`, etc. Vitest's include glob is
-  `src/**/*.test.ts` and `test/**/*.test.ts`.
-- **Each test starts with a clean `localStorage`** (wiped by
-  `test/setup.ts`'s global `beforeEach`). Persisted-store tests don't
-  bleed into each other.
-- **Initial-load migration paths** (where module-import-time logic runs
-  once) are tested by `vi.resetModules()` + dynamic `import()` after
-  seeding LS. See `src/stores/assessment.test.ts` "initial-load
-  migration from legacy LS key" for the pattern.
-- **DST regressions are pinned** in `src/utils.test.ts` and
-  `src/stores/journal-helpers.test.ts`. The Standard→Daylight off-by-one
-  bug shipped to prod once; the test for `daysBetween(Dec 4 2002, May 6
-  2026) === 8554` exists to keep it from coming back.
-- **Keep the suite fast.** Currently runs in ~1s. Component tests using
-  `@testing-library/svelte` are deferred for now — store and util
-  coverage gives the highest signal-to-cost ratio for this codebase.
+- **Tests are co-located with source as `*.test.ts`** (Vitest + jsdom; glob
+  `src/**/*.test.ts` + `test/**/*.test.ts`).
+- **Each test starts with a clean `localStorage`** (global `beforeEach` in `test/setup.ts`).
+- **Initial-load migration paths** (module-import-time logic) are tested via
+  `vi.resetModules()` + dynamic `import()` after seeding LS — see assessment.test.ts.
+- **DST regressions are pinned** in utils.test.ts + journal-helpers.test.ts; the
+  Standard→Daylight off-by-one shipped to prod once. Don't delete those tests.
+- **Keep the suite fast** (~330 tests, ~3s). Component tests are deferred — store/util
+  coverage gives the highest signal-to-cost here.
 
 ## Things NOT to do
 
@@ -205,11 +201,11 @@ firebase deploy --only hosting
 - **Don't edit the legacy `index.html` at the repo root.** It's a frozen archive. New work lives in `frontend/`.
 - **Don't deploy directly to prod for major changes** — preview-channel-first. The single-file refactor that broke prod taught us this.
 - **Don't add a chart library** for visualizations — the radar in WealthRadar.svelte is hand-rolled SVG and that's a deliberate choice. Use it as the precedent.
-- **One editorial palette, no theme switcher.** The 3-theme system (sunrise/ocean/forest) was retired for a single curated look: warm cream paper (`--bg-1` #F4F0E8), charcoal ink (`--ink` #1C1A17), terracotta accent (`--accent` #B5654A), Cormorant Garamond (serif display, `--serif`) + Hanken Grotesk (sans, `--sans`). All colours/fonts live as CSS vars in `app.css` — restyle by editing tokens, not by hardcoding hexes in components. The `theme` field stays in `PersonalSettings`/`CloudPayload` as read-tolerant only (like `retirementAge`); the body no longer carries a `theme-*` class. Don't reintroduce ThemePicker or per-theme overrides.
+- **One editorial palette, no theme switcher.** Warm cream paper (`--bg-1` #F4F0E8), charcoal ink (`--ink`), terracotta accent (`--accent` #B5654A), Cormorant Garamond serif + Hanken Grotesk sans. All colours/fonts are CSS vars in `app.css` — restyle by editing tokens, never hardcode hexes in components. The `theme` field stays in `PersonalSettings`/`CloudPayload` read-tolerant only. Don't reintroduce ThemePicker or per-theme overrides.
 - **Don't bypass `LS_PREFIX`** when reading/writing localStorage.
 - **Don't introduce `--no-verify` or `--force` git flags** without explicit user permission.
 - **Don't commit secrets or rotate Firebase keys** unless asked. The current `FIREBASE_CONFIG` in `config.ts` is the live project; treat it as user-managed.
-- **Don't reintroduce a retirement-age input.** The user's worldview rejects retirement-as-a-goal; the app doesn't track it. `retirementAge` was removed from `PersonalSettings`, the personal store, the Settings UI, and Financial Wealth's behavioral scoring. The field stays in `CloudPayload` as optional/read-tolerant only so old user docs load without error — never read or write it. If a future feature seems to want a "target age," it almost certainly belongs on a savings goal's `deadline` instead.
+- **Don't reintroduce a retirement-age input.** The worldview rejects retirement-as-a-goal. `retirementAge` stays in `CloudPayload` read-tolerant only — never read or write it. A "target age" almost certainly belongs on a savings goal's `deadline` instead.
 - **Don't make charitable giving's 10% target user-configurable in v1.** The annual baseline is built into `givingTargetAnnual` on purpose — it's a worldview anchor, not a preference. Re-anchored (2026-07) from net worth to **10% of annualized income** from the cash-flow log when the net-worth tracker was retired. If the user explicitly asks to override, that's fine; otherwise leave it as a default.
 - **Milestones are SMART by design.** `Milestone` has `label` (Specific), `measure?` (Measurable), `age` (Time-bound), `why?` (Relevant). Achievable is a self-check, not a field. When adding new milestone UI, keep the SMART framing in the form labels — it's not just data structure, it's a teaching prompt for thinking about goals well.
 - **Retired-but-read-tolerant data: rituals, letters, net-worth entries.** Their UIs were removed (2026-07) but the stores, normalizers, and cloud round-trip stay so old docs load losslessly — letters still surface on the anniversary card; the net-worth peak stays in Personal Bests. Don't delete these stores or their CloudPayload fields, and don't rebuild the UIs without asking.
@@ -248,5 +244,5 @@ docs eat the context window, which defeats their purpose.
 - **`SUMMARY.md` next to this file** — latest session's progress, decisions, what's pending
 - **`improvement-loop/LOOP.md`** — the backlog + email loop and its environment constraints
 - **`CLAUDE.md` (this file)** — durable constraints and architecture
-- The plan file: `/Users/Jonahs/.claude/plans/let-s-do-a-b-and-ancient-lobster.md` (latest plan; gets overwritten when a new plan-mode session runs)
-- User memory: `/Users/Jonahs/.claude/projects/-Users-Jonahs-Code/memory/MEMORY.md` (birthdate Dec 4 2002, 90-year framing preference, declined name personalization)
+- Project memory: `/Users/Jonahs/.claude/projects/-Users-Jonahs-Code-life-stages/memory/MEMORY.md`
+  (pending console actions, environment quirks, AI-backend facts)
