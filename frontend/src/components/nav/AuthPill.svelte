@@ -15,7 +15,7 @@
   <!-- Firebase not configured — render nothing. -->
 {:else if !user}
   <button class="signin-btn" on:click={signInWithGoogle}>
-    <span class="g-icon"></span>Sign in with Google
+    <span class="g-icon"></span>Sign in<span class="long-label">with Google</span>
   </button>
 {:else}
   <span class="auth-pill">
@@ -51,6 +51,10 @@
     transition: background 0.15s, box-shadow 0.15s;
   }
   .signin-btn:hover { background: #f8f9fa; box-shadow: 0 1px 3px rgba(60, 64, 67, 0.15); }
+  /* Keep the sign-in button compact on phones so it shares a row with the brand. */
+  @media (max-width: 640px) {
+    .long-label { display: none; }
+  }
   .g-icon {
     width: 18px;
     height: 18px;

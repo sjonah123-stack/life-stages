@@ -21,6 +21,7 @@
   import BudgetCoach from './BudgetCoach.svelte';
   import { motionDuration } from '../../lib/motion';
   import { formatDOB } from '../../utils';
+  import { amountInvalid, dateInvalid, dateOutOfRange } from '../../lib/validate';
   import type { CashflowKind } from '../../types';
 
   // Form state
@@ -96,6 +97,7 @@
   }
 
   function saveBudget() {
+    if (!canSaveBudget) return;
     const cats: Record<string, number> = {};
     for (const [k, v] of Object.entries(categoryInputs)) {
       const n = parseFloat(String(v).replace(/[$,\s]/g, ''));
@@ -108,6 +110,15 @@
     });
     budgetFormOpen = false;
   }
+
+  // Live validity — wrong values turn red and disable the submit until
+  // fixed or cleared.
+  $: amountBad = amountInvalid(amountInput);
+  $: entryDateBad = dateInvalid(dateInput) || dateOutOfRange(dateInput, undefined, formatDOB(new Date()));
+  $: canLog = !amountBad && amountInput.trim() !== '' && !!categoryInput && !!dateInput && !entryDateBad;
+  $: incomeTargetBad = amountInvalid(incomeTargetInput);
+  $: budgetCatsBad = Object.values(categoryInputs).some((v) => amountInvalid(v ?? ''));
+  $: canSaveBudget = !incomeTargetBad && !budgetCatsBad;
 
   $: monthEntries = $cashflowEntries.filter((e) => monthKey(e.date) === thisMonth);
   $: visibleEntries = showAllEntries ? monthEntries : monthEntries.slice(0, 8);
@@ -214,23 +225,25 @@
     <form class="form budget-form" transition:slide|local={{ duration: motionDuration(180) }} on:submit|preventDefault={saveBudget}>
       <label class="field">
         <span>Expected monthly income</span>
-        <input type="text" inputmode="decimal" bind:value={incomeTargetInput} placeholder="4000" />
+        <input type="text" inputmode="decimal" bind:value={incomeTargetInput} placeholder="4000" class:invalid={incomeTargetBad} />
+        {#if incomeTargetBad}<span class="field-error" role="alert">Enter a positive amount or leave blank.</span>{/if}
       </label>
       <div class="budget-grid">
         {#each CASHFLOW_CATEGORIES.expense as c (c)}
           <label class="field">
             <span>{c}</span>
-            <input type="text" inputmode="decimal" bind:value={categoryInputs[c]} placeholder="—" />
+            <input type="text" inputmode="decimal" bind:value={categoryInputs[c]} placeholder="—" class:invalid={amountInvalid(categoryInputs[c] ?? '')} />
           </label>
         {/each}
       </div>
+      {#if budgetCatsBad}<span class="field-error" role="alert">Category targets must be positive amounts — fix or clear the red fields.</span>{/if}
       <p class="budget-hint">
         Leave a category blank to skip it. "Savings" is pay-yourself-first — transfers
         you log there fill your savings goal below.
       </p>
       <div class="form-actions">
         <button class="btn ghost" type="button" on:click={() => (budgetFormOpen = false)}>Cancel</button>
-        <button class="btn primary" type="submit">Save budget</button>
+        <button class="btn primary" type="submit" disabled={!canSaveBudget}>Save budget</button>
       </div>
     </form>
   {/if}
@@ -305,7 +318,9 @@
             bind:this={amountEl}
             placeholder="120"
             required
+            class:invalid={amountBad}
           />
+          {#if amountBad}<span class="field-error" role="alert">Enter a positive amount.</span>{/if}
         </label>
         <label class="field">
           <span>Category</span>
@@ -320,7 +335,8 @@
       <div class="form-row">
         <label class="field">
           <span>Date</span>
-          <input type="date" bind:value={dateInput} max={formatDOB(new Date())} required />
+          <input type="date" bind:value={dateInput} max={formatDOB(new Date())} required class:invalid={entryDateBad} />
+          {#if entryDateBad}<span class="field-error" role="alert">Pick a real date, not in the future.</span>{/if}
         </label>
         <label class="field">
           <span>Note (optional)</span>
@@ -332,7 +348,7 @@
       {/if}
       <div class="form-actions">
         <button class="btn ghost" type="button" on:click={closeForm}>Cancel</button>
-        <button class="btn primary" type="submit">
+        <button class="btn primary" type="submit" disabled={!canLog}>
           Log {kindInput === 'income' ? 'income' : 'spending'}
         </button>
       </div>

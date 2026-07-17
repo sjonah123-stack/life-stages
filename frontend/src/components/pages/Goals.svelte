@@ -3,6 +3,7 @@
   import { todayAge, birthdate } from '../../stores/personal';
   import { SLIDER_MAX } from '../../config';
   import { formatDOB, parseDOB } from '../../utils';
+  import { numberInvalid, dateInvalid, dateOutOfRange } from '../../lib/validate';
   import PageHeader from '../shared/PageHeader.svelte';
   import BooksSection from '../goals/BooksSection.svelte';
   import HabitsSection from '../goals/HabitsSection.svelte';
@@ -28,12 +29,16 @@
   // "Already done" instead). Latest = birthdate + LIFESPAN years if known.
   $: today = formatDOB(new Date());
 
+  // Invalid values turn the field red and disable "Add milestone".
+  $: ageBad = numberInvalid(ageInput ?? '', 0, SLIDER_MAX);
+  $: targetDateBad = dateInvalid(targetDateInput) || dateOutOfRange(targetDateInput, today);
+  $: hasAge = ageInput != null && String(ageInput) !== '' && !ageBad;
+  $: hasTargetDate = !!targetDateInput && !targetDateBad;
+  $: canAdd = labelInput.trim() !== '' && (hasAge || hasTargetDate) && !ageBad && !targetDateBad;
+
   function add(e: SubmitEvent) {
     e.preventDefault();
-    // Either age OR targetDate is required.
-    const hasAge = ageInput != null && ageInput >= 0 && ageInput <= SLIDER_MAX;
-    const hasTargetDate = !!targetDateInput;
-    if (!labelInput.trim() || (!hasAge && !hasTargetDate)) return;
+    if (!canAdd) return;
 
     // Derive `age` from targetDate if only the date was provided — keeps
     // the existing chronological sort + display semantics working for the
@@ -89,6 +94,25 @@
       arr.map((m, i) => (i === idx ? { ...m, completed: !m.completed } : m)),
     );
   }
+
+  // Best/hardest year edits are buffered — out-of-range ages turn red and
+  // never reach the (cloud-synced) stores.
+  let bestYearDraft: string | null = null;
+  let hardestYearDraft: string | null = null;
+  $: bestYearBad = bestYearDraft !== null && numberInvalid(bestYearDraft, 0, SLIDER_MAX);
+  $: hardestYearBad = hardestYearDraft !== null && numberInvalid(hardestYearDraft, 0, SLIDER_MAX);
+
+  function bufferYear(store: { set(v: number): void }, assign: (d: string | null) => void) {
+    return (e: Event) => {
+      const v = (e.currentTarget as HTMLInputElement).value;
+      if (v === '') { store.set(0); assign(null); return; }
+      const n = parseFloat(v);
+      if (!numberInvalid(n, 0, SLIDER_MAX)) { store.set(n); assign(null); }
+      else assign(v);
+    };
+  }
+  const onBestYearInput = bufferYear(bestYear, (d) => (bestYearDraft = d));
+  const onHardestYearInput = bufferYear(hardestYear, (d) => (hardestYearDraft = d));
 
   function fmtNice(dateStr: string): string {
     const d = parseDOB(dateStr, true);
@@ -181,13 +205,15 @@
         </label>
         <label class="field">
           <span>By age</span>
-          <input type="number" bind:value={ageInput} placeholder="—" min="0" max={SLIDER_MAX} />
+          <input type="number" bind:value={ageInput} placeholder="—" min="0" max={SLIDER_MAX} class:invalid={ageBad} />
+          {#if ageBad}<span class="field-error" role="alert">0–{SLIDER_MAX}</span>{/if}
         </label>
       </div>
       <div class="form-row">
         <label class="field">
           <span>Or specific date</span>
-          <input type="date" bind:value={targetDateInput} min={today} />
+          <input type="date" bind:value={targetDateInput} min={today} class:invalid={targetDateBad} />
+          {#if targetDateBad}<span class="field-error" role="alert">Pick a real date from today onward.</span>{/if}
         </label>
         <label class="field">
           <span>Wealth dimension</span>
@@ -215,18 +241,20 @@
       </label>
       <div class="form-foot">
         <label class="check"><input type="checkbox" bind:checked={completedInput} /> Already done</label>
-        <button type="submit">Add milestone</button>
+        <button type="submit" disabled={!canAdd}>Add milestone</button>
       </div>
     </form>
 
     <div class="year-tags">
       <div class="field">
         <span class="field-label">Best year so far</span>
-        <input type="number" bind:value={$bestYear} min="0" max={SLIDER_MAX} placeholder="—" />
+        <input type="number" value={bestYearDraft ?? ($bestYear || '')} min="0" max={SLIDER_MAX} placeholder="—" on:input={onBestYearInput} class:invalid={bestYearBad} />
+        {#if bestYearBad}<span class="field-error" role="alert">0–{SLIDER_MAX}</span>{/if}
       </div>
       <div class="field">
         <span class="field-label">Hardest year (you made it)</span>
-        <input type="number" bind:value={$hardestYear} min="0" max={SLIDER_MAX} placeholder="—" />
+        <input type="number" value={hardestYearDraft ?? ($hardestYear || '')} min="0" max={SLIDER_MAX} placeholder="—" on:input={onHardestYearInput} class:invalid={hardestYearBad} />
+        {#if hardestYearBad}<span class="field-error" role="alert">0–{SLIDER_MAX}</span>{/if}
       </div>
     </div>
 

@@ -9,6 +9,7 @@
   } from '../../stores/financial';
   import { birthdate } from '../../stores/personal';
   import { formatDOB } from '../../utils';
+  import { amountInvalid, dateInvalid, dateOutOfRange } from '../../lib/validate';
 
   let formOpen = false;
   let dateInput = formatDOB(new Date());
@@ -34,6 +35,11 @@
   $: today = formatDOB(new Date());
   $: earliestDate = $birthdate ? formatDOB($birthdate) : '1900-01-01';
 
+  // Live validity — wrong values turn red and disable the save button.
+  $: amountBad = amountInvalid(amountInput);
+  $: dateBad = dateInvalid(dateInput) || dateOutOfRange(dateInput, earliestDate, today);
+  $: canLogGift = amountInput.trim() !== '' && !amountBad && !!dateInput && !dateBad;
+
   const fmt = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -56,6 +62,7 @@
   }
 
   function submit() {
+    if (!canLogGift) return;
     const amount = parseFloat(amountInput.replace(/[$,\s]/g, ''));
     if (!Number.isFinite(amount) || amount <= 0) {
       formError = 'Enter a positive amount.';
@@ -115,7 +122,8 @@
         <div class="form-row">
           <label class="field">
             <span>Date</span>
-            <input type="date" bind:value={dateInput} min={earliestDate} max={today} required />
+            <input type="date" bind:value={dateInput} min={earliestDate} max={today} required class:invalid={dateBad} />
+            {#if dateBad}<span class="field-error" role="alert">Pick a real date, not in the future.</span>{/if}
           </label>
           <label class="field">
             <span>Amount (USD)</span>
@@ -126,7 +134,9 @@
               bind:this={amountEl}
               placeholder="100"
               required
+              class:invalid={amountBad}
             />
+            {#if amountBad}<span class="field-error" role="alert">Enter a positive amount.</span>{/if}
           </label>
         </div>
         <label class="field full">
@@ -143,7 +153,7 @@
         {/if}
         <div class="form-actions">
           <button class="btn ghost" type="button" on:click={closeForm}>Cancel</button>
-          <button class="btn primary" type="submit">Save gift</button>
+          <button class="btn primary" type="submit" disabled={!canLogGift}>Save gift</button>
         </div>
       </form>
     {/if}

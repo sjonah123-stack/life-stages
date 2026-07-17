@@ -13,6 +13,7 @@
   } from '../../stores/financial';
   import { birthdate } from '../../stores/personal';
   import { formatDOB } from '../../utils';
+  import { amountInvalid, dateInvalid, dateOutOfRange } from '../../lib/validate';
   import type { SavingsGoal } from '../../types';
 
   // ---- Actual savings rate ----
@@ -47,6 +48,11 @@
   })();
   $: minDeadline = $birthdate ? today : '1900-01-01';
 
+  // Live validity — wrong values turn red and disable the save button.
+  $: targetBad = amountInvalid(goalTargetInput);
+  $: deadlineBad = dateInvalid(goalDeadlineInput) || dateOutOfRange(goalDeadlineInput, minDeadline, maxDeadline);
+  $: canSaveGoal = goalLabelInput.trim() !== '' && goalTargetInput.trim() !== '' && !targetBad && !deadlineBad;
+
   async function openGoalFormForCreate() {
     goalFormOpen = true;
     editingGoalId = null;
@@ -76,6 +82,7 @@
   }
 
   function submitGoal() {
+    if (!canSaveGoal) return;
     const label = goalLabelInput.trim();
     if (!label) {
       goalError = 'Give your goal a name.';
@@ -196,7 +203,9 @@
               bind:value={goalTargetInput}
               placeholder="50000"
               required
+              class:invalid={targetBad}
             />
+            {#if targetBad}<span class="field-error" role="alert">Enter a positive amount.</span>{/if}
           </label>
           <label class="field">
             <span>Deadline (optional)</span>
@@ -205,7 +214,9 @@
               bind:value={goalDeadlineInput}
               min={minDeadline}
               max={maxDeadline}
+              class:invalid={deadlineBad}
             />
+            {#if deadlineBad}<span class="field-error" role="alert">Between today and 30 years out.</span>{/if}
           </label>
         </div>
         {#if goalError}
@@ -213,7 +224,7 @@
         {/if}
         <div class="form-actions">
           <button class="btn ghost" type="button" on:click={closeGoalForm}>Cancel</button>
-          <button class="btn primary" type="submit">{editingGoalId ? 'Update goal' : 'Save goal'}</button>
+          <button class="btn primary" type="submit" disabled={!canSaveGoal}>{editingGoalId ? 'Update goal' : 'Save goal'}</button>
         </div>
       </form>
     {/if}

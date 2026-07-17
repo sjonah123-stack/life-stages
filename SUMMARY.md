@@ -1,7 +1,7 @@
 # Session Summary — life-stages
 
-Last updated: 2026-07-16 — everything through the guided tour + AI-suggestion grounding fix
-is **live on prod**.
+Last updated: 2026-07-17 — mobile scaling root-cause fix + app-wide field validation
+(local only, not yet deployed). Everything through the guided tour is live on prod.
 
 ## Where prod stands
 
@@ -13,6 +13,22 @@ is **live on prod**.
 Backend is deployed: 3 Cloud Functions (Node 22), Firestore + Storage rules released. The user
 pushes commits via **GitHub Desktop** (the terminal here has no git auth). Tell them the pending
 commit count each session: `git rev-list --count origin/main..HEAD`.
+
+## Session 2026-07-17 — mobile scaling fixed for real + field validation (NOT yet deployed)
+
+1. **Off-center/zoom bug root-caused**: the `.with-atmosphere::before` orb (460px, `right:-120px`)
+   widened the document to 485px on a 375px phone; the earlier `overflow-x:hidden` only masked it.
+   Fixed at the source (`overflow-x: clip` on `.with-atmosphere` + `.container`, which also clips
+   the transient page-slide widening). Body scrollWidth now exactly = viewport.
+2. **Mobile nav restructured**: brand + gear + sign-in on row 1, tab strip full-width below with
+   all five tabs visible — "Progress" used to be silently clipped off-screen (hidden-scrollbar
+   overflow). Sign-in button shortens to "Sign in" ≤640px.
+3. **App-wide field validation** (`lib/validate.ts`, 24 tests + global `.invalid`/`.field-error`
+   in app.css): wrong values turn red + disable submit; blank allowed. Wired: welcome wizard (DOB,
+   kids), Settings (draft-buffered DOB/kids/sleep/longevity — invalid never reaches stores), Goals
+   (age, target date, best/hardest year), Cashflow (amount/date/budget editor), Savings, Giving,
+   Daily check-in (was silently dropping out-of-range values while flashing "Logged ✓"), Composer
+   date. Global `button:disabled` opacity. 350 tests, 0 type errors, clean build.
 
 ## Session 2026-07-16 — app icon fix + first-time tour (deployed to prod)
 
@@ -50,24 +66,11 @@ commit count each session: `git rev-list --count origin/main..HEAD`.
    once a prior month has data; signed-in only; cached locally (`latestBudgetAdvice`).
    320 tests, 0 type errors, clean build.
 
-## Session 2026-07-15 (earlier) — Journal reorg + Goals emoji + cash-flow (in same preview)
-
-1. **Journal reorganized** — FutureLetters UI removed (the `letters` store/normalizer/cloud
-   round-trip stay so old letters still surface on the anniversary card + feed Mental Wealth);
-   `letterHorizonsForAge`/`MAX_LETTER_AGE` pruned. Composer now first; JournalPulse slimmed to a
-   compact stat-pill strip (streak/best/entries/words + mood sparkline) and its redundant
-   "years ago" card dropped (OnThisDayBanner in the composer covers it).
-2. **Goals** — wealth-tag pills now carry WealthIcon; select options de-emoji'd; milestones
-   gained an optional `emoji` field (form + display, mirrors Habit.emoji; no normalizer needed);
-   stray 📋✨💪 removed.
-3. **Cash-flow tracker (Finance)** — new `CashflowEntry` model (`cashflowEntries` persisted +
-   cloud-synced; curated CASHFLOW_CATEGORIES, giving deliberately excluded — it has its own
-   tracker). `CashflowSection` between Net worth and Savings: monthly net headline, 6-month
-   in/out bar chart (hand-rolled), category breakdown bars, income/expense segmented form,
-   this-month entry list. Pure helpers (`summarizeMonth`, `expensesByCategory`, `lastMonths`)
-   unit-tested. 304 tests, 0 type errors, clean build.
-
 ## Earlier 2026-07-15 sessions (all deployed; details in git history)
+
+- **Journal reorg + cash-flow tracker** — FutureLetters UI removed (stores stay read-tolerant);
+  JournalPulse slimmed; `CashflowEntry` model + hand-rolled 6-month chart; milestones gained
+  optional `emoji`.
 
 - **Today de-bloat + icons + swipe** — TexturePanel/GoodNews/DimensionCards removed (Stage
   pruned to {range,name,poetic}); hand-rolled `WealthIcon`/`FlameIcon` replaced decorative

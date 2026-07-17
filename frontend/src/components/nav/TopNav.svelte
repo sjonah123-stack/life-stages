@@ -122,4 +122,22 @@
     box-shadow: var(--shadow-sm);
   }
   .icon-btn:hover { color: var(--accent); transform: rotate(20deg); }
+
+  /* Mobile: brand + auth share the first row; the tab strip drops to its own
+     full-width row with all five tabs evenly spread (no hidden overflow —
+     "Progress" used to be silently clipped off the right edge). */
+  @media (max-width: 640px) {
+    .top-nav-inner { padding: 10px 14px; gap: 10px; }
+    .nav-tabs {
+      order: 3;
+      flex-basis: 100%;
+      overflow-x: visible;
+    }
+    .nav-tab {
+      flex: 1;
+      text-align: center;
+      padding: 8px 2px;
+      font-size: 12.5px;
+    }
+  }
 </style>

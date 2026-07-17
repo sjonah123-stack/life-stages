@@ -9,6 +9,7 @@
     sex, role, careerField, partnership, kids, aspiration, setDOBFromString,
   } from '../../stores/personal';
   import { formatDOB } from '../../utils';
+  import { dobInvalid, numberInvalid } from '../../lib/validate';
 
   const today = formatDOB(new Date());
 
@@ -16,11 +17,16 @@
   const TOTAL = 3;
   let dobInput = '';
 
+  // A typed-in future date or pre-1900 year turns the field red and blocks
+  // Continue (the `max` attribute only guards the picker, not the keyboard).
+  $: dobBad = dobInvalid(dobInput);
+  $: kidsBad = numberInvalid($kids, 0, 12);
+
   function next() { if (step < TOTAL) step += 1; }
   function back() { if (step > 1) step -= 1; }
 
   function finish() {
-    if (!dobInput) { step = 1; return; }
+    if (!dobInput || dobBad) { step = 1; return; }
     // Commit DOB last — this flips blank-state and mounts the dashboard.
     setDOBFromString(dobInput);
   }
@@ -41,7 +47,10 @@
     </p>
     <div class="field-stack">
       <label class="wlabel" for="dob-input">Your birthdate</label>
-      <input id="dob-input" type="date" bind:value={dobInput} max={today} required />
+      <input id="dob-input" type="date" bind:value={dobInput} max={today} required class:invalid={dobBad} />
+      {#if dobBad}
+        <span class="field-error" role="alert">That can't be your birthdate — pick a real date in the past.</span>
+      {/if}
 
       <span class="wlabel">You are</span>
       <div class="sex-toggle">
@@ -50,7 +59,7 @@
       </div>
     </div>
     <div class="actions">
-      <button class="primary" type="button" on:click={next} disabled={!dobInput}>Continue</button>
+      <button class="primary" type="button" on:click={next} disabled={!dobInput || dobBad}>Continue</button>
     </div>
     <div class="welcome-or">or</div>
     <div class="welcome-signin">
@@ -97,13 +106,16 @@
         </div>
         <div>
           <label class="wlabel" for="kids-input">Children</label>
-          <input id="kids-input" type="number" bind:value={$kids} min="0" max="12" placeholder="0" />
+          <input id="kids-input" type="number" bind:value={$kids} min="0" max="12" placeholder="0" class:invalid={kidsBad} />
         </div>
       </div>
+      {#if kidsBad}
+        <span class="field-error" role="alert">Children must be between 0 and 12 — fix it or leave it blank.</span>
+      {/if}
     </div>
     <div class="actions">
       <button class="ghost" type="button" on:click={back}>Back</button>
-      <button class="primary" type="button" on:click={next}>Continue</button>
+      <button class="primary" type="button" on:click={next} disabled={kidsBad}>Continue</button>
     </div>
 
   {:else}

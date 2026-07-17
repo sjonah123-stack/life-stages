@@ -7,6 +7,7 @@
     currentWeekIndex, TOTAL_WEEKS,
   } from '../../stores/journal-helpers';
   import { formatDOB, parseDOB, daysBetween } from '../../utils';
+  import { dateInvalid, dateOutOfRange } from '../../lib/validate';
   import { resizeImage, imageErrorMessage } from '../../lib/image';
   import { pickPrompt } from '../../data';
   import { MOOD_OPTIONS, LIFESPAN } from '../../config';
@@ -101,6 +102,11 @@
     cap.setFullYear(b.getFullYear() + LIFESPAN);
     return formatDOB(cap);
   })();
+
+  // An unusable date (malformed, before birth, past the lifespan cap) means
+  // the composer can't map to a week — doSave already refuses, but silently.
+  // Turn the field red so the user knows why nothing is saving.
+  $: dateBad = !!dateInput && (dateInvalid(dateInput, true) || dateOutOfRange(dateInput, earliestDate, latestDate) || weekIdx < 0);
 
   function loadFromDate() {
     if (weekIdx < 0) return;
@@ -240,7 +246,8 @@
 
 <div class="journal-composer" class:editing={isExisting} bind:this={composerEl} data-tour="composer">
   <div class="composer-meta">
-    <input type="date" bind:value={dateInput} min={earliestDate} max={latestDate} />
+    <input type="date" bind:value={dateInput} min={earliestDate} max={latestDate} class:invalid={dateBad} />
+    {#if dateBad}<span class="field-error" role="alert">Pick a date within your lifetime.</span>{/if}
     <div class="week-info">
       <span class="age-tag">{ageStr}</span>
       <span>{weekRange}</span>

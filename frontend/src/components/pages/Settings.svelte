@@ -10,9 +10,50 @@
   import { openTour } from '../../stores/tour';
   import PageHeader from '../shared/PageHeader.svelte';
 
+  import { dobInvalid, numberInvalid } from '../../lib/validate';
+
   const today = formatDOB(new Date());
 
   let importMsg = '';
+
+  // ---- Buffered numeric/date edits ----
+  // These fields feed live math (ages, horizon), so a wrong value is never
+  // committed to the store: the field turns red and holds the draft until
+  // it's fixed (or blanked, where blank is a legal "unset"). A null draft
+  // means the input is tracking the store (so cloud sync still flows in).
+  let dobDraft: string | null = null;
+  let kidsDraft: string | null = null;
+  let sleepDraft: string | null = null;
+  let longevityDraft: string | null = null;
+
+  $: dobBad = dobDraft !== null && (dobDraft === '' || dobInvalid(dobDraft));
+  $: kidsBad = kidsDraft !== null && numberInvalid(kidsDraft, 0, 12);
+  $: sleepBad = sleepDraft !== null && numberInvalid(sleepDraft, 3, 14);
+  $: longevityBad = longevityDraft !== null && numberInvalid(longevityDraft, 50, 110);
+
+  function onDobInput(e: Event) {
+    const v = (e.currentTarget as HTMLInputElement).value;
+    dobDraft = v;
+    if (v && !dobInvalid(v)) { dob.set(v); dobDraft = null; }
+  }
+
+  function bufferNumber(
+    store: { set(v: number): void },
+    min: number,
+    max: number,
+    assign: (draft: string | null) => void,
+  ) {
+    return (e: Event) => {
+      const v = (e.currentTarget as HTMLInputElement).value;
+      if (v === '') { store.set(0); assign(null); return; }
+      const n = parseFloat(v);
+      if (!numberInvalid(n, min, max)) { store.set(n); assign(null); }
+      else assign(v);
+    };
+  }
+  const onKidsInput = bufferNumber(kids, 0, 12, (d) => (kidsDraft = d));
+  const onSleepInput = bufferNumber(sleepHours, 3, 14, (d) => (sleepDraft = d));
+  const onLongevityInput = bufferNumber(familyLongevity, 50, 110, (d) => (longevityDraft = d));
 
   function downloadBackup(): void {
     const blob = new Blob([exportStateAsJson()], { type: 'application/json' });
@@ -56,7 +97,12 @@
     <div class="personalize-row">
       <div class="field">
         <span class="field-label">Birthdate</span>
-        <input type="date" bind:value={$dob} max={today} />
+        <input type="date" value={dobDraft ?? $dob} max={today} on:input={onDobInput} class:invalid={dobBad} />
+        {#if dobBad}
+          <span class="field-error" role="alert">
+            {dobDraft === '' ? 'Birthdate is required.' : 'Pick a real date in the past.'}
+          </span>
+        {/if}
       </div>
       <div class="field">
         <span class="field-label">You are</span>
@@ -101,7 +147,8 @@
         </div>
         <div class="field">
           <span class="field-label">Children</span>
-          <input type="number" bind:value={$kids} min="0" max="12" placeholder="0" />
+          <input type="number" value={kidsDraft ?? ($kids || '')} min="0" max="12" placeholder="0" on:input={onKidsInput} class:invalid={kidsBad} />
+          {#if kidsBad}<span class="field-error" role="alert">0–12</span>{/if}
         </div>
         <div class="field">
           <span class="field-label">Career field</span>
@@ -172,11 +219,13 @@
         </div>
         <div class="field">
           <span class="field-label">Sleep hrs</span>
-          <input type="number" bind:value={$sleepHours} min="3" max="14" step="0.5" placeholder="7" />
+          <input type="number" value={sleepDraft ?? ($sleepHours || '')} min="3" max="14" step="0.5" placeholder="7" on:input={onSleepInput} class:invalid={sleepBad} />
+          {#if sleepBad}<span class="field-error" role="alert">3–14 hrs</span>{/if}
         </div>
         <div class="field">
           <span class="field-label" title="Average age at death of grandparents/parents who've passed, or current age if living">Family longevity</span>
-          <input type="number" bind:value={$familyLongevity} min="50" max="110" placeholder="—" />
+          <input type="number" value={longevityDraft ?? ($familyLongevity || '')} min="50" max="110" placeholder="—" on:input={onLongevityInput} class:invalid={longevityBad} />
+          {#if longevityBad}<span class="field-error" role="alert">50–110</span>{/if}
         </div>
         <div class="horizon-display" title="Personalized horizon adjusts the 'ahead' stats">
           <div>Your horizon</div>

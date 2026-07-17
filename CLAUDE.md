@@ -128,6 +128,13 @@ The pure `authTransition(prevUid, newUid, wasInitialized)` in `stores/auth.ts` d
 - **Photos live in Cloud Storage, never the doc.** `JournalEntry.photo` holds a `data:` URL locally (offline-capable) but is uploaded to Storage (`users/{uid}/journal/{key}.jpg`, see `lib/photos.ts`) and replaced with its download URL on every `saveToCloud` (`migrateJournalPhotos`). This keeps the Firestore doc clear of the 1 MB limit. `<img src={photo}>` and `!!photo` checks work for both URL kinds, so don't special-case them. Requires Cloud Storage enabled on the project.
 - **Export / import** (`exportStateAsJson` / `importStateFromJson`, Settings → Your data): a user-owned JSON backup/restore that reuses `collectStateForCloud` / `applyCloudState`. Import rejects malformed/empty files and pushes the restored state up after the `applyingCloud` flag clears.
 
+### Field validation
+
+`lib/validate.ts` (pure, tested) + global `.invalid`/`.field-error` in `app.css`: a non-blank
+wrong value **turns the field red and disables the paired submit** until fixed or cleared; blank
+is never invalid. Live-saving fields (Settings DOB/kids/sleep/longevity, Goals best/hardest year)
+buffer drafts so invalid values never reach stores. Never silently drop or clamp a wrong value.
+
 ### Delight features (confetti / toasts / badge unlocks)
 
 "Tasteful delight" only — no XP, levels, or streak-guilt. Conventions:

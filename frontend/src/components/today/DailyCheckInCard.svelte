@@ -5,6 +5,7 @@
   // doesn't blank fields from earlier today.
   import { bodyEntries, latestBody, addBodyEntry, deleteBodyEntry } from '../../stores/body';
   import { formatDOB } from '../../utils';
+  import { numberInvalid } from '../../lib/validate';
 
   let expanded = false;
   let sleepInput = '';
@@ -46,7 +47,15 @@
     expanded = false;
   }
 
+  // Out-of-range values used to be dropped silently while "Logged ✓" still
+  // flashed — now they turn the field red and disable Save instead.
+  $: sleepBad = numberInvalid(sleepInput, 0, 24);
+  $: weightBad = numberInvalid(weightInput, 1, 1500);
+  $: workoutBad = numberInvalid(workoutInput, 0, 1440);
+  $: canSave = !sleepBad && !weightBad && !workoutBad;
+
   function save() {
+    if (!canSave) return;
     saving = true;
     const sleep = sleepInput ? parseFloat(sleepInput) : NaN;
     const weight = weightInput ? parseFloat(weightInput) : NaN;
@@ -116,7 +125,9 @@
             max="24"
             bind:value={sleepInput}
             placeholder="7.5"
+            class:invalid={sleepBad}
           />
+          {#if sleepBad}<span class="field-error" role="alert">0–24 hrs</span>{/if}
         </label>
         <label class="field">
           <span>Weight (lb)</span>
@@ -127,7 +138,9 @@
             min="0"
             bind:value={weightInput}
             placeholder="—"
+            class:invalid={weightBad}
           />
+          {#if weightBad}<span class="field-error" role="alert">Must be positive</span>{/if}
         </label>
         <label class="field">
           <span>Workout (min)</span>
@@ -137,7 +150,9 @@
             min="0"
             bind:value={workoutInput}
             placeholder="30"
+            class:invalid={workoutBad}
           />
+          {#if workoutBad}<span class="field-error" role="alert">0–1440 min</span>{/if}
         </label>
       </div>
       <div class="form-actions">
@@ -145,7 +160,7 @@
           <button class="btn ghost danger" type="button" on:click={handleDelete}>Delete today</button>
         {/if}
         <button class="btn ghost" type="button" on:click={close}>Cancel</button>
-        <button class="btn primary" type="submit" disabled={saving}>Save</button>
+        <button class="btn primary" type="submit" disabled={saving || !canSave}>Save</button>
       </div>
     </form>
   {/if}

@@ -36,6 +36,10 @@
   --accent-soft: #C98E72;
   --accent-deep: #8F4A34;
 
+  /* Errors — a true red, distinct from the terracotta accent, so an invalid
+     field never reads as "highlighted". */
+  --error: #A93226;
+
   /* Radius scale — cards use lg/md, inner rows sm, chips/inputs xs. */
   --radius-xl: 24px;
   --radius-lg: 22px;
@@ -78,6 +82,10 @@ body {
   max-width: 1080px;
   margin: 0 auto;
   padding: 64px 32px 96px;
+  /* The page-slide transition translates content ±28px; clip it here so a
+     mid-animation frame can never widen the document (the pan/zoom
+     off-center bug class). Vertical overflow stays visible. */
+  overflow-x: clip;
 }
 /* Tighten outer padding on narrow viewports so module-sections (which carry
    their own internal padding) don't get crushed against the edges. */
@@ -126,6 +134,41 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline-offset: -1px;
+}
+
+/* === Invalid-field state ===
+   Any input holding a wrong (non-blank) value gets class:invalid from its
+   component — red border + tint, and the paired submit button is disabled
+   until the value is fixed or cleared. `.field-error` is the inline message
+   that names what's wrong. */
+input.invalid,
+select.invalid,
+textarea.invalid {
+  border-color: var(--error) !important;
+  background: color-mix(in srgb, var(--error) 6%, var(--panel-warm)) !important;
+}
+input.invalid:focus-visible,
+select.invalid:focus-visible,
+textarea.invalid:focus-visible {
+  outline-color: var(--error);
+}
+/* !important: these spans often sit inside label.field, whose component-
+   scoped `span` rules (uppercase eyebrow styling) would otherwise win. */
+/* Every disabled button reads as disabled — individual components may
+   override with their own :disabled treatment. */
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.field-error {
+  color: var(--error) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.4;
+  margin-top: 4px;
+  text-transform: none !important;
+  letter-spacing: normal !important;
 }
 
 /* === Shared module card ===
@@ -205,7 +248,10 @@ textarea:focus-visible {
 /* Soft drifting gradient orbs behind everything on a .with-atmosphere page.
    Two orbs at low opacity, slowly drifting — gives the glass surfaces something
    colorful to refract without stealing focus. */
-.with-atmosphere { position: relative; isolation: isolate; }
+/* overflow-x: clip keeps the oversized ::before orb from widening the
+   document's scrollable area (the off-center pan/zoom bug on phones);
+   overflow-y stays visible so card shadows below aren't cut. */
+.with-atmosphere { position: relative; isolation: isolate; overflow-x: clip; }
 /* The editorial direction is calm flat paper. A single, barely-there warm
    wash sits top-right instead of the old drifting gradient orbs. */
 .with-atmosphere::before {
